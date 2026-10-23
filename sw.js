@@ -1,5 +1,5 @@
 // CampIL service worker: app shell is cached on install; runtime caching keeps the app usable offline.
-const VERSION = 'campil-v1';
+const VERSION = 'campil-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && !k.startsWith('campil-rt')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -24,4 +24,15 @@ self.addEventListener('fetch', e => {
       const r = await fetch(req); if (r.ok) { c.put(req, r.clone()); c.keys().then(k => { if (k.length > 1500) c.delete(k[0]); }); } return r;
     }));
   }
+});
+
+// Tapping a partner-change notification opens (or focuses) the app on that trip.
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const w = list.find(c => c.url.startsWith(self.registration.scope));
+    if (w) return w.focus().then(c => (c || w).navigate ? (c || w).navigate(url) : undefined).catch(() => w.focus());
+    return self.clients.openWindow(url);
+  }));
 });
