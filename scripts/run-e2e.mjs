@@ -13,7 +13,7 @@ for (const s of SUITES) {
   const ok = r.status === 0 && !bad.length;
   if (!ok) failed++;
   console.log(`${ok ? '✓' : '✗'} ${s}${ok ? '' : `  (exit ${r.status})`}`);
-  for (const l of ok ? [] : (bad.length ? bad : lines.slice(-15))) console.log('    ' + l);
+  for (const l of ok ? [] : (bad.length ? bad : lines.slice(-45))) console.log('    ' + l);
 }
 console.log(failed ? `${failed} suite(s) failed` : 'all browser suites passed');
 process.exit(failed ? 1 : 0);
