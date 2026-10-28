@@ -17,6 +17,7 @@ import { RouteFuel, NavButtons } from '../../components/RouteFuel';
 import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { OfficialAlerts } from '../../components/Field';
 import { DutyBoard, useShopLines } from '../../components/Duties';
+import { AssistantCard } from '../../components/Assistant';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
 import { FieldCard } from '../../components/Field';
@@ -80,6 +81,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         </Card>
       </div>
 
+      {!ended && <AssistantCard t={t} />}
       <DutyBoard t={t} lines={shopLines} compact />
       {t.shared && <Section title="מה קורה בטיול" action={<Avatars t={t} />}><Card className="p-4"><ActivityFeed t={t} /></Card></Section>}
 

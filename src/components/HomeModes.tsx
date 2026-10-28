@@ -13,6 +13,7 @@ import { navApps } from '../services/fuel';
 import { tripDay, HOME_MODE_HE, type HomeMode } from '../lib/homeMode';
 import { DayStrip, SourceLine, WxIcon } from './Weather';
 import { FieldCard, OfficialAlerts } from './Field';
+import { AssistantCard } from './Assistant';
 import { Ring, Card, Badge, cx } from './ui';
 import { href } from '../lib/router';
 
@@ -68,6 +69,7 @@ export function PrepPanel({ t }: { t: Trip }) {
         </div>
         <div className="flex items-center gap-3 md:flex-col"><Ring pct={r.pct} size={96} label={`ארוז ${r.pct}%`} /><p className="num text-sm text-muted md:text-center">{r.done} מתוך {r.total} ארוזים</p></div>
       </Card>
+      <AssistantCard t={t} max={3} />
       <div className="grid gap-3 md:grid-cols-3">
         <Tile to={`/trip/${t.id}/gear`} I={Backpack} title={left.length ? `${left.length} פריטים לארוז` : 'הכול ארוז'} sub={left.slice(0, 3).map(p => p.name).join(' · ') || 'כל הכבוד'} tone={left.length ? 'warn' : undefined} />
         <Tile to={`/trip/${t.id}/tasks`} I={ListChecks} title={tasks.length ? `${tasks.length} משימות פתוחות` : 'אין משימות פתוחות'} sub={due.length ? `${due.length} כבר בזמן: ${due[0].text}` : tasks[0]?.text ?? '—'} tone={due.length ? 'warn' : undefined} />

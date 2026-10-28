@@ -3,6 +3,8 @@
 // arches) and height up to the bottom of the rear window — the sight line, which nothing may cross.
 // Items are placed heaviest/largest first, low and against the seat back, with an extreme-point heuristic.
 // It's a planning sketch, not a guarantee: real trunks have curves, and soft bags squeeze.
+import type { Box, GearItem, Trip } from '../lib/types';
+
 export interface Trunk { depth: number; width: number; height: number } // cm
 export interface PackInput { id: string; name: string; dims?: [number, number, number] | null; qty?: number; weightKg?: number; soft?: boolean; needOnWay?: boolean }
 export interface Placed { key: string; id: string; name: string; x: number; y: number; z: number; d: number; w: number; h: number; weightKg?: number; soft?: boolean; order: number }
@@ -104,3 +106,15 @@ export const UNPLACED_HE: Record<Unplaced['reason'], string> = {
   'too-tall': 'בכל כיוון שנכנס לרצפה הוא גבוה מקו החלון',
   'no-room': 'לא נשאר מקום מתחת לקו החלון',
 };
+
+const has = (s: string, ...w: string[]) => w.some(x => s.includes(x));
+/** What goes in the trunk: the trip's boxes and its big loose items (with the dimensions the family entered). */
+export function trunkInputs(boxes: Box[], inventory: GearItem[], trip?: Trip | null): PackInput[] {
+  const packing = trip?.packing.filter(p => !p.removed) ?? [];
+  const going = (g: GearItem) => (trip ? packing.some(p => p.inventoryId === g.id) : g.available !== false);
+  const usedBoxes = boxes.filter(b => !trip || packing.some(p => p.boxId === b.id));
+  return [
+    ...usedBoxes.map(b => ({ id: b.id, name: b.name, dims: b.dims ?? null, weightKg: b.weightKg, soft: b.kind === 'bag' })),
+    ...inventory.filter(g => !g.boxId && g.big && going(g)).map(g => ({ id: g.id, name: g.name, dims: g.dims ?? null, qty: g.qty, weightKg: g.weightKg, soft: has(g.name, 'מזרן', 'שק', 'מחצלת'), needOnWay: has(g.name, 'צידנית', 'מים', 'קרחומים') })),
+  ];
+}

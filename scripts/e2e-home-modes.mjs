@@ -22,6 +22,13 @@ console.log('example trip keeps planning mode:', (await heading('לאן יוצא
 await setTrip(iso(3), iso(5)); await p.reload(); await p.waitForTimeout(1500);
 console.log('3 days before → preparing:', await heading('עוד רגע יוצאים'), '| panel:', await heading(/^ההכנות ל/));
 console.log('prep shows packing, tasks, shopping and offline prep:', (await p.getByText(/פריטים לארוז|הכול ארוז/).count()) > 0 && (await p.getByText(/משימות פתוחות/).count()) > 0 && (await p.getByText('תפריט ורשימת קניות').count()) > 0 && (await heading('מוכנים לשטח בלי קליטה?')));
+const asst = p.getByRole('region', { name: 'מה כדאי לעשות עכשיו' });
+const items = asst.locator('li'); const nItems = await items.count();
+console.log('assistant shows next steps in prep mode:', nItems > 0, nItems);
+const allSourced = (await items.evaluateAll(els => els.map(e => e.innerText))).every(x => /המלצה אוטומטית|לא אומת|המלצה רשמית|מאומת|הערכה/.test(x));
+console.log('every suggestion names its source:', allSourced);
+await asst.getByRole('button', { name: /^עוד \d+ המלצות/ }).click().catch(() => {}); await p.waitForTimeout(200);
+console.log('suggests packing and offline prep 3 days out:', (await asst.innerText()).includes('לא ארוזים') && (await asst.innerText()).includes('בלי קליטה'));
 await p.screenshot({ path: `${OUT}/home-prep.png`, fullPage: true });
 
 await setTrip(iso(-1), iso(1)); await p.reload(); await p.waitForTimeout(1500);

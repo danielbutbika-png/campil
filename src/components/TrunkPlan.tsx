@@ -2,25 +2,15 @@
 // dimensions are placed in 3D; the plan is drawn from above and from the side, with the rear-window line.
 import { useMemo, useState } from 'react';
 import { Ruler, AlertTriangle } from 'lucide-react';
-import type { Box, GearItem, Trip } from '../lib/types';
+import type { Trip } from '../lib/types';
 import { useStore } from '../lib/store';
-import { packTrunk, UNPLACED_HE, type PackInput, type Placed, type Trunk } from '../engine/pack3d';
+import { packTrunk, trunkInputs, UNPLACED_HE, type Placed, type Trunk } from '../engine/pack3d';
 import { todayISO, fmtDate } from '../lib/util';
 import { Button, cx } from './ui';
 import { href } from '../lib/router';
 
-const has = (s: string, ...w: string[]) => w.some(x => s.includes(x));
 const COLORS = ['#2f6b3f', '#3c6e9f', '#a0522d', '#7a6a9e', '#2c8c99', '#8a6d3b', '#c0392b', '#5d7a3a'];
 
-export function trunkInputs(boxes: Box[], inventory: GearItem[], trip?: Trip | null): PackInput[] {
-  const packing = trip?.packing.filter(p => !p.removed) ?? [];
-  const going = (g: GearItem) => (trip ? packing.some(p => p.inventoryId === g.id) : g.available !== false);
-  const usedBoxes = boxes.filter(b => !trip || packing.some(p => p.boxId === b.id));
-  return [
-    ...usedBoxes.map(b => ({ id: b.id, name: b.name, dims: b.dims ?? null, weightKg: b.weightKg, soft: b.kind === 'bag' })),
-    ...inventory.filter(g => !g.boxId && g.big && going(g)).map(g => ({ id: g.id, name: g.name, dims: g.dims ?? null, qty: g.qty, weightKg: g.weightKg, soft: has(g.name, 'מזרן', 'שק', 'מחצלת'), needOnWay: has(g.name, 'צידנית', 'מים', 'קרחומים') })),
-  ];
-}
 
 const zoneOf = (p: Placed, t: Trunk) => `${p.z === 0 ? 'רצפה' : `קומה ${p.z < t.height / 2 ? 2 : 3}`}, ${p.x + p.d / 2 < t.depth / 3 ? 'צמוד למושב' : p.x + p.d / 2 > (2 * t.depth) / 3 ? 'ליד הדלת' : 'באמצע'}`;
 
