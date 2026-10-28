@@ -1,7 +1,7 @@
 // Two separate browser profiles (two "phones") editing one trip through a relay that stands in for Firestore.
 import { chromium } from 'playwright-core';
 const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const store = new Map(); const pages = []; const errors = [];
 async function device(label) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });

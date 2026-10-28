@@ -1,7 +1,7 @@
 // Two separate browser profiles (two "phones") editing one trip through a relay that stands in for Firestore.
 import { chromium } from 'playwright-core';
 const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const store = new Map(); const pages = []; const errors = [];
 async function device(label) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });
@@ -54,7 +54,7 @@ console.log('B got system notifications:', JSON.stringify(notes));
 // B's own tick must not notify B; while B is open (visible) a toast appears instead.
 await B.evaluate(() => { window.__hidden = false; window.__notes = []; });
 await B.locator('input[type=checkbox][aria-label$="ארוז"]').nth(2).check(); await B.waitForTimeout(3500);
-console.log('B notified about own tick:', (await B.evaluate(() => window.__notes.length)) > 0);
+console.log('B not notified about own tick:', (await B.evaluate(() => window.__notes.length)) === 0);
 const toastA = await A.locator('#toast').textContent().catch(() => '');
 console.log('A toast while open:', toastA);
 await A.screenshot({ path: `${OUT}/71-toast.png` });

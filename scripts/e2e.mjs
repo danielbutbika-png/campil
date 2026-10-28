@@ -14,7 +14,7 @@ function forecast() {
     hourly: { time: hours, temperature_2m: hours.map((_, i) => 16 + 10 * Math.max(0, Math.sin(((i % 24) - 6) / 24 * 2 * Math.PI))), relative_humidity_2m: hours.map(() => 60), precipitation_probability: hours.map((_, i) => (Math.floor(i / 24) === 6 ? 70 : 0)), wind_speed_10m: hours.map(() => 12), wind_gusts_10m: hours.map(() => 25), weather_code: hours.map(() => 1) },
     current: { temperature_2m: 24.6, relative_humidity_2m: 55, weather_code: 1, wind_speed_10m: 11 } };
 }
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const errors = [];
 async function page(vp, dark) {
   const ctx = await b.newContext({ viewport: vp, locale: 'he-IL', colorScheme: dark ? 'dark' : 'light', deviceScaleFactor: 2, timezoneId: 'Asia/Jerusalem' });

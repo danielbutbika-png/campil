@@ -1,7 +1,7 @@
 // Two separate browser profiles (two "phones") editing one trip through a relay that stands in for Firestore.
 import { chromium } from 'playwright-core';
 const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const store = new Map(); const pages = []; const errors = [];
 async function device(label) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });
@@ -104,7 +104,8 @@ await B.getByRole('checkbox', { name: 'שק שינה / שמיכה ארוז' }).c
 console.log('A toast about B private item (should be empty):', JSON.stringify(await A.locator('#toast').textContent().catch(() => '')));
 // A switches to "all families" view and sees B's tick
 const progB = await A.locator('li', { hasText: 'משפחת כהן' }).filter({ has: A.locator('.num') }).innerText().catch(() => '');
-console.log('organiser sees family B progress only (counts):', progB.replace(/\s+/g, ' '), '| sees B items:', (await A.locator('li', { hasText: 'שק שינה / שמיכה' }).filter({ hasText: '✓ יוסי' }).count()) > 0);
+console.log('organiser sees family B progress:', /\d+\/\d+/.test(progB), progB.replace(/\s+/g, ' '));
+console.log('organiser does not see family B items:', (await A.locator('li', { hasText: 'שק שינה / שמיכה' }).filter({ hasText: '✓ יוסי' }).count()) === 0);
 await S(A, '87-A-all-view');
 console.log('errors:', errors.length ? errors.join('\n') : 'none');
 await b.close();

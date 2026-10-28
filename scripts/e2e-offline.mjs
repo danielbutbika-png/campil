@@ -1,7 +1,7 @@
 // Offline: after one online visit, the app (service worker) opens with no network, shows saved trips and keeps edits.
 import { chromium } from 'playwright-core';
 const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL' });
 await ctx.route(/open-meteo|overpass|osrm|nominatim/, r => r.abort());
 const p = await ctx.newPage(); const errors = [];
@@ -9,9 +9,9 @@ p.on('pageerror', e => errors.push(e.message));
 await p.goto(BASE); await p.waitForTimeout(2500);
 const sw = await p.evaluate(async () => !!(await navigator.serviceWorker?.getRegistration()));
 const tid = await p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0].id);
-await p.goto(BASE + `#/trip/${tid}/gear`); await p.waitForTimeout(1500); // warm caches for this route
+await p.evaluate(() => navigator.serviceWorker.ready); await p.waitForTimeout(1500); // one visit to the home screen only
 await ctx.setOffline(true);
-await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," "));
+await p.goto(BASE + `#/trip/${tid}/gear`); await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," "));
 const banner = await p.getByText('אין חיבור לאינטרנט').count();
 const items = await p.locator('input[type=checkbox][aria-label$="ארוז"]').count();
 await p.locator('input[type=checkbox][aria-label$="ארוז"]').first().check(); await p.waitForTimeout(300);

@@ -1,6 +1,9 @@
-// CampIL service worker: app shell is cached on install; runtime caching keeps the app usable offline.
-const VERSION = 'campil-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png'];
+// CampIL service worker. On install it saves every file of this build (list injected at build time by
+// vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
+const BUILD = '__BUILD_ID__';
+const VERSION = 'campil-' + BUILD;
+const PRECACHE = __PRECACHE_MANIFEST__;
+const SHELL = ['./', ...PRECACHE];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && !k.startsWith('campil-rt')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

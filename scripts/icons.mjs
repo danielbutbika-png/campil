@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core';
 import fs from 'fs';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
 const svg = fs.readFileSync('public/icon.svg', 'utf8');
 for (const s of [192, 512]) {
   const p = await b.newPage({ viewport: { width: s, height: s } });
