@@ -23,8 +23,9 @@ import type { PackItem } from '../lib/types';
 import { regenScope, isGroup, itemFamily } from '../lib/families';
 import { useCloud } from '../lib/cloud/sync';
 import EditTrip from './trip/EditTrip';
+import SafetyTab from './trip/SafetyTab';
 
-const TABS = [['overview', 'סקירה'], ['gear', 'ציוד'], ['meals', 'מטבח שטח'], ['schedule', 'לוח זמנים'], ['tasks', 'משימות'], ['album', 'אלבום'], ['journal', 'יומן']] as const;
+const TABS = [['overview', 'סקירה'], ['gear', 'ציוד'], ['meals', 'מטבח שטח'], ['schedule', 'לוח זמנים'], ['tasks', 'משימות'], ['safety', 'בטיחות'], ['album', 'אלבום'], ['journal', 'יומן']] as const;
 
 export default function TripPlan({ id, tab }: { id: string; tab: string }) {
   const st = useStore();
@@ -104,6 +105,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
         {tab === 'meals' && <MealsTab t={t} />}
         {tab === 'schedule' && <ScheduleTab t={t} wx={wx} />}
         {tab === 'tasks' && <TasksTab t={t} />}
+        {tab === 'safety' && <SafetyTab t={t} wx={wx} />}
         {tab === 'album' && <AlbumTab t={t} />}
         {tab === 'journal' && <JournalTab t={t} />}
       </div>

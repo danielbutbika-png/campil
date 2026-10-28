@@ -3,7 +3,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 const OUT = process.argv[2] || 'e2e-shots'; mkdirSync(OUT, { recursive: true });
-const SUITES = ['e2e-collab', 'e2e-families', 'e2e-notify', 'e2e-menu', 'e2e-album', 'e2e-offline', 'e2e-field', 'e2e-home-modes', 'e2e-warehouse', 'e2e-trunk', 'e2e-triptypes', 'e2e-academy', 'overflow-audit'];
+const SUITES = ['e2e-collab', 'e2e-families', 'e2e-notify', 'e2e-menu', 'e2e-album', 'e2e-offline', 'e2e-field', 'e2e-home-modes', 'e2e-warehouse', 'e2e-trunk', 'e2e-triptypes', 'e2e-academy', 'e2e-safety', 'overflow-audit'];
 let failed = 0;
 for (const s of SUITES) {
   const r = spawnSync('node', [`scripts/${s}.mjs`, OUT], { encoding: 'utf8', timeout: 300_000, env: process.env });

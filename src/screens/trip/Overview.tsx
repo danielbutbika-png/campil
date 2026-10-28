@@ -18,6 +18,7 @@ import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { OfficialAlerts, TypeChecks } from '../../components/Field';
 import { DutyBoard, useShopLines } from '../../components/Duties';
 import { AssistantCard } from '../../components/Assistant';
+import { GpxCard } from '../../components/GpxCard';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
 import { FieldCard } from '../../components/Field';
@@ -94,6 +95,8 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
           <li key={k.id}><label className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-3 py-3"><input type="checkbox" className="h-5 w-5 accent-[rgb(var(--forest))]" checked={k.done} onChange={() => { const s = stamp(); st.updateTrip(t.id, x => ({ tasks: x.tasks.map(y => (y.id === k.id ? { ...y, done: !y.done, doneBy: s.by, doneAt: s.at } : y)) })); }} /><span className="flex-1">{k.text}</span><Badge>{k.dueOffsetDays === 999 ? 'בסיום' : fmtDate(addDays(t.start, k.dueOffsetDays))}</Badge></label></li>))}</ul>
           : <p className="flex items-center gap-2 text-muted"><ListChecks size={18} />כל המשימות הושלמו.</p>}
       </Section>
+
+      <GpxCard t={t} />
 
       <Section title="האתרים בתוכנית">
         {chosen.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{chosen.map(s => <SiteCard key={s.site.id} site={s.site} scored={s} onOpen={() => sheet.open(s.site)} />)}</div>

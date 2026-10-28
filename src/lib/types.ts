@@ -67,6 +67,8 @@ export interface Trip {
   offline?: import('./offline').Prepared;
   shared?: { cloudId: string; role: 'owner' | 'editor'; joinedAt: string; familyId?: string };
   rating?: number; notes?: string;
+  /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
+  gpx?: import('../engine/gpx').GpxTrack | null; safety?: Record<string, boolean>;
   /** Trip Type Engine: the selected types (any combination) and answers to their questions. */
   types?: import('../data/tripTypes').TripTypeId[]; typeAnswers?: Record<string, number | boolean>;
   /** "what to improve next time" — noted after the trip; carried into a duplicated trip */

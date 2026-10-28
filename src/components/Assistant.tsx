@@ -6,7 +6,7 @@ import { useStore } from '../lib/store';
 import { useTripWeather } from '../lib/hooks';
 import { recommend } from '../engine/weatherRules';
 import { suggest, type Level, type Suggestion } from '../engine/assistant';
-import { SITE_BY_ID } from '../data/sites';
+import { SITE_BY_ID, SITES } from '../data/sites';
 import { todayISO } from '../lib/util';
 import { useShopLines } from './Duties';
 import { Prov } from './Provenance';
@@ -20,7 +20,7 @@ export function useSuggestions(t: Trip): Suggestion[] {
   const sites = useMemo(() => t.siteIds.map(id => SITE_BY_ID[id]).filter(Boolean), [t.siteIds]);
   return useMemo(() => suggest({
     trip: t, today: todayISO(), sites, siteChecks, inventory, boxes, trunk: settings.trunkDims ?? null, shopLines,
-    wx: { source: wx.source, recs: wx.days.length ? recommend(wx.days, t, sites) : [], rainExpected: wx.source === 'forecast' && wx.flags.rain },
+    wx: { source: wx.source, recs: wx.days.length ? recommend(wx.days, t, sites) : [], rainExpected: wx.source === 'forecast' && wx.flags.rain, flags: wx.flags }, catalog: SITES,
   }), [t, sites, siteChecks, inventory, boxes, settings.trunkDims, shopLines, wx.days, wx.source, wx.flags.rain]);
 }
 

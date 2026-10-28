@@ -38,6 +38,12 @@ describe('planning assistant', () => {
     const s = suggest(input({ trip: trip({ packing: [{ id: 'p', name: 'כירה', qty: 1, packed: true, inventoryId: 'g' }] }), inventory: [{ id: 'g', name: 'כירת גז', qty: 1, status: 'check' } as any] }));
     expect(s.find(x => x.id === 'gearcheck')?.why).toContain('כירת גז');
   });
+  it('suggests plan B when the forecast hits a flood-prone place', () => {
+    const nahal = { id: 'n', name: 'נחל', region: 'golan', type: 'trail', lat: 33, lon: 35.7, tags: [], floodRisk: true, officialUrl: 'x' } as any;
+    const alt = { ...nahal, id: 'a', name: 'יער', floodRisk: false };
+    const s = suggest(input({ sites: [nahal], catalog: [nahal, alt], siteChecks: { n: { at: '2026-10-25' } }, wx: { source: 'forecast', recs: [], rainExpected: true, flags: { known: true, rain: true } as any } }));
+    expect(s.find(x => x.id === 'planb')).toMatchObject({ level: 'warn', action: { to: '/trip/t/safety' } });
+  });
   it('flags items that will not fit the measured trunk', () => {
     const s = suggest(input({ trunk: { depth: 80, width: 100, height: 40 }, trip: trip({ packing: [{ id: 'p', name: 'שולחן', qty: 1, packed: false, inventoryId: 'g' }] }), inventory: [{ id: 'g', name: 'שולחן', qty: 1, big: true, dims: [150, 60, 8] } as any] }));
     expect(s.find(x => x.id === 'trunk')?.why).toContain('שולחן');

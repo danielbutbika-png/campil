@@ -4,7 +4,8 @@
 // opening hours or safety conditions is stated — for those it points to the official source to check.
 import type { Box, GearItem, Site, SiteCheck, Trip } from '../lib/types';
 import type { ProvKind } from '../components/Provenance';
-import type { Rec } from './weatherRules';
+import type { Rec, WxFlags } from './weatherRules';
+import { planB } from './planB';
 import type { ShopLine } from './planner';
 import type { Trunk } from './pack3d';
 import { packTrunk, trunkInputs } from './pack3d';
@@ -27,7 +28,8 @@ export interface Suggestion {
 export interface AssistantInput {
   trip: Trip; today: string; sites: Site[]; siteChecks: Record<string, SiteCheck>;
   inventory: GearItem[]; boxes: Box[]; trunk?: Trunk | null; shopLines: ShopLine[];
-  wx: { source: 'forecast' | 'climate' | 'season'; recs: Rec[]; rainExpected: boolean };
+  wx: { source: 'forecast' | 'climate' | 'season'; recs: Rec[]; rainExpected: boolean; flags?: WxFlags };
+  catalog?: Site[];
 }
 
 const IMS = 'https://ims.gov.il';
@@ -53,6 +55,13 @@ export function suggest(x: AssistantInput): Suggestion[] {
   if (flood.length && x.wx.rainExpected)
     out.push({ id: 'flood', level: 'danger', title: 'גשם צפוי ובתוכנית יש ערוצי נחלים', why: `${flood.map(s => s.name).join(', ')} · שיטפון יכול להגיע מגשם במעלה הנחל, גם כשאצלכם יבש.`, when: Math.max(0, until),
       source: { kind: 'official', label: 'התרעות השירות המטאורולוגי', url: IMS }, action: { label: 'לבדוק התרעות', to: IMS } });
+
+  // 2b · plan B: the forecast hits a planned place's known weakness (flood channel / exposed / no water in heat)
+  if (x.wx.flags && x.catalog && until <= 7) {
+    const b = planB(x.sites, x.catalog, x.wx.flags, x.wx.source === 'forecast');
+    if (b.length) out.push({ id: 'planb', level: 'warn', title: 'יש חלופות לפי התחזית', why: b.map(i => `${i.site.name}: ${i.why}`).join(' · '), when: Math.max(0, until - 1),
+      source: { kind: 'auto', label: 'תחזית Open-Meteo וסימוני הקטלוג' }, action: { label: 'לתוכנית החלופית', to: route('safety') } });
+  }
 
   // 3 · packing progress close to departure
   const r = readiness(myPacking(t));

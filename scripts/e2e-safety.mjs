@@ -1,0 +1,43 @@
+// Safety center + plan B + sharing the plan + GPX import/export, with a mocked rainy forecast.
+import { chromium } from 'playwright-core';
+import { readFileSync } from 'node:fs';
+const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2, acceptDownloads: true });
+const iso = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE'); };
+const days = Array.from({ length: 16 }, (_, i) => iso(i));
+const daily = { time: days, weather_code: days.map(() => 63), temperature_2m_max: days.map(() => 21), temperature_2m_min: days.map(() => 13), apparent_temperature_max: days.map(() => 21), precipitation_sum: days.map(() => 12), precipitation_probability_max: days.map(() => 90), wind_speed_10m_max: days.map(() => 15), wind_gusts_10m_max: days.map(() => 25), uv_index_max: days.map(() => 3), sunrise: days.map(d => `${d}T06:12`), sunset: days.map(d => `${d}T17:05`), relative_humidity_2m_mean: days.map(() => 70) };
+const hourly = { time: [], temperature_2m: [], relative_humidity_2m: [], precipitation_probability: [], wind_speed_10m: [], wind_gusts_10m: [], weather_code: [] };
+await ctx.route(/api\.open-meteo\.com\/v1\/forecast/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ daily, hourly }) }));
+await ctx.route(/archive|overpass|osrm|nominatim|openfreemap|fonts\./, r => r.abort());
+const p = await ctx.newPage(); const errors = [];
+p.on('pageerror', e => errors.push(e.message));
+await p.goto(BASE); await p.waitForTimeout(1200);
+const tid = await p.evaluate(([s, e]) => { const k = JSON.parse(localStorage.getItem('campil-v1')); Object.assign(k.state.trips[0], { start: s, end: e, example: false, regionId: 'judean_desert', siteIds: ['arugot'] }); localStorage.setItem('campil-v1', JSON.stringify(k)); return k.state.trips[0].id; }, [iso(2), iso(3)]);
+await p.goto(BASE + `#/trip/${tid}/safety`); await p.reload(); await p.waitForTimeout(2000);
+const main = () => p.locator('main').innerText();
+console.log('checklist with auto and manual items:', (await p.getByRole('checkbox', { name: /מישהו שלא מצטרף/ }).count()) === 1 && (await main()).includes('תחזית עדכנית לימי הטיול'));
+console.log('daylight from the forecast:', (await main()).includes('שקיעה 17:05'));
+console.log('plan B for the flood-prone place:', (await main()).includes('נחל ערוגות') || (await main()).includes('ערוגות'));
+const before = await main();
+const swapBtn = p.getByRole('button', { name: 'להחליף' }).first();
+const hasSwap = (await swapBtn.count()) > 0; console.log('alternatives offered:', hasSwap);
+if (hasSwap) { await swapBtn.click(); await p.waitForTimeout(500); }
+const ids = await p.evaluate(id => JSON.parse(localStorage.getItem('campil-v1')).state.trips.find(t => t.id === id).siteIds, tid);
+console.log('swap replaced the place in the plan:', !ids.includes('arugot') && ids.length === 1);
+const plan = await p.getByLabel('התוכנית שתישלח').innerText();
+console.log('shared plan has dates, return time and emergency numbers, no children names:', plan.includes('חזרה מתוכננת') && plan.includes('101') && !/ילד\/ה 1/.test(plan));
+await p.getByRole('checkbox', { name: /בדקנו היום התרעות/ }).check(); await p.reload(); await p.waitForTimeout(1200);
+console.log('manual check persisted:', await p.getByRole('checkbox', { name: /בדקנו היום התרעות/ }).isChecked());
+await p.screenshot({ path: `${OUT}/safety.png`, fullPage: true });
+// GPX
+await p.goto(BASE + `#/trip/${tid}`); await p.waitForTimeout(1200);
+await p.setInputFiles('input[aria-label="קובץ GPX"]', { name: 'route.gpx', mimeType: 'application/gpx+xml', buffer: readFileSync('tests/fixtures/route.gpx') });
+await p.waitForTimeout(800);
+const card = await p.getByRole('region', { name: 'מסלול (GPX)' }).innerText();
+console.log('GPX imported with distance and climb:', card.includes('מסלול בדיקה') && /\d+(\.\d+)? ק״מ/.test(card) && card.includes('עלייה מצטברת 238 מ׳'));
+const [dl] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'יצוא GPX' }).click()]);
+const out = readFileSync(await dl.path(), 'utf8');
+console.log('export is GPX with the track and places:', out.includes('<gpx') && out.includes('<trkpt') && out.includes('<wpt'));
+console.log('errors:', errors.length ? errors.join(' | ') : 'none');
+await b.close();
