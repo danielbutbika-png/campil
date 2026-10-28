@@ -9,6 +9,7 @@ import { useSiteSheet } from '../components/SiteCard';
 import { Button, Chip, Badge, Sheet, Toggle, Empty, cx, toast } from '../components/ui';
 import { fmtRange, todayISO, uid } from '../lib/util';
 import { go } from '../lib/router';
+import { Prov } from '../components/Provenance';
 
 const IsraelMap = lazy(() => import('../components/IsraelMap').then(m => ({ default: m.IsraelMap })));
 const FAC: [Facility, string][] = [['toilets', 'שירותים'], ['water', 'מי שתייה'], ['shower', 'מקלחות'], ['free', 'ללא תשלום']];
@@ -75,7 +76,7 @@ export default function CampSearch({ query }: { query: URLSearchParams }) {
                 <div className="flex items-start gap-2">
                   <Tent size={18} className="mt-1 shrink-0 text-moss" />
                   <div className="min-w-0 flex-1"><h2 className="font-bold">{r.name}</h2><p className="num text-xs text-muted">{r.kind}{r.km != null ? ` · ${r.km.toFixed(1)} ק״מ` : ''}{r.operator ? ` · ${r.operator}` : ''}</p></div>
-                  <Badge tone={r.source === 'catalog' ? 'accent' : 'info'}>{r.source === 'catalog' ? 'CampIL' : 'OSM'}</Badge>
+                  {r.source === 'catalog' ? <Prov kind="unknown" source="קטלוג CampIL" /> : <Prov kind="community" />}
                 </div>
                 {r.source === 'osm' && <div className="flex flex-wrap gap-1 text-xs">{([['שירותים', r.toilets], ['מי שתייה', r.water], ['מקלחות', r.shower]] as [string, boolean | undefined][]).map(([k, v]) => <Badge key={k} tone={v ? 'ok' : 'muted'}>{k}: {tri(v)}</Badge>)}<Badge tone={r.fee === false ? 'ok' : 'muted'}>תשלום: {tri(r.fee)}</Badge></div>}
                 {r.site && <p className="text-sm">{r.site.desc}</p>}

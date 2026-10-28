@@ -18,6 +18,7 @@ import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
 import { FieldCard } from '../../components/Field';
+import { Prov } from '../../components/Provenance';
 
 export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: TripWx; sites: Site[]; onFinish: () => void }) {
   const st = useStore();
@@ -45,6 +46,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         <Card className="flex flex-wrap items-center gap-3 border-sunset/40 p-4"><Flag className="text-sunset" /><p className="flex-1 font-semibold">הטיול הסתיים. סכמו אותו כדי שההמלצות הבאות ילמדו ממנו.</p><Button size="sm" onClick={onFinish}>סיכום הטיול</Button></Card>
       )}
       {!ended && <FieldCard t={t} point={wx.point ?? null} />}
+      {!ended && <OfficialAlerts flood={sites.some(x => x.floodRisk)} />}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Section title="מזג האוויר ביעד" action={<Button size="sm" variant="soft" icon={<RefreshCw size={15} />} onClick={wx.refetch}>רענון</Button>}>
           {wx.point && <p className="-mt-1 text-sm text-muted">לפי הנקודה: {wx.point.label}</p>}
@@ -104,7 +106,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
       {nearby.length > 0 && <Section title="עוד בסביבה (עד 30 ק״מ)"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{nearby.map(s => <SiteCard key={s.site.id} site={s.site} scored={s} compact onOpen={() => sheet.open(s.site)} onSelect={() => st.updateTrip(t.id, { siteIds: [...t.siteIds, s.site.id] })} />)}</div></Section>}
 
       {wx.point && (
-        <Section title="חניוני לילה ויום בקרבת היעד" action={<Badge tone="info">OpenStreetMap</Badge>}>
+        <Section title="חניוני לילה ויום בקרבת היעד" action={<Prov kind="community" />}>
           {!osm.data && !osm.loading && <Button variant="soft" icon={<Tent size={17} />} onClick={loadOsm}>חיפוש חניונים ב-OpenStreetMap</Button>}
           {osm.loading && <p className="text-muted">מחפשים…</p>}
           {osm.err && <p className="text-danger">{osm.err}</p>}
@@ -121,5 +123,23 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
       )}
       {sheet.el}
     </div>
+  );
+}
+
+/** CampIL doesn't receive official alerts automatically: point to the official sources before leaving. */
+function OfficialAlerts({ flood }: { flood: boolean }) {
+  const links: [string, string, string][] = [
+    ['השירות המטאורולוגי', 'https://ims.gov.il', 'התרעות מזג אוויר, שיטפונות ועומסי חום'],
+    ['רשות הטבע והגנים', 'https://www.parks.org.il', 'סגירות, הזמנות ושעות פתיחה בשמורות ובגנים'],
+    ['קק״ל', 'https://www.kkl.org.il', 'חניוני יער ואתרי קק״ל'],
+  ];
+  return (
+    <section aria-labelledby="alerts-h" className="space-y-2 rounded-xl2 border border-line bg-surface p-4">
+      <h2 id="alerts-h" className="flex items-center gap-2 font-bold"><AlertCircle size={18} className="text-warn" />התרעות רשמיות — לבדוק לפני היציאה</h2>
+      <p className="text-sm text-muted">CampIL לא מקבלת התרעות רשמיות אוטומטית. ההמלצות כאן מחושבות מהתחזית, ואינן מחליפות את הגופים הרשמיים.{flood ? ' בתוכנית יש אתרים בערוצי נחלים — בדקו התרעות שיטפונות גם לאזור שבמעלה הנחל.' : ''}</p>
+      <ul className="grid gap-2 sm:grid-cols-3">{links.map(([n, u, d]) => (
+        <li key={u}><a href={u} target="_blank" rel="noreferrer" className="flex h-full flex-col rounded-xl border border-line p-3 hover:border-moss"><span className="flex items-center gap-1 font-bold">{n}<ExternalLink size={13} /></span><span className="text-xs text-muted">{d}</span></a></li>))}</ul>
+      <p className="text-sm font-semibold">חירום: מד״א 101 · משטרה 100 · כבאות והצלה 102</p>
+    </section>
   );
 }

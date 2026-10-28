@@ -4,6 +4,7 @@ import { wmoIcon, wmoText, FORECAST_HORIZON } from '../services/weather';
 import type { Rec } from '../engine/weatherRules';
 import { shortDay, fmtDate, addDays, todayISO } from '../lib/util';
 import { cx, Badge, Button } from './ui';
+import { Prov } from './Provenance';
 
 export function WxIcon({ code, size = 22, className }: { code: number; size?: number; className?: string }) {
   const k = wmoIcon(code);
@@ -76,6 +77,7 @@ export function RecCards({ recs }: { recs: Rec[] }) {
           <div className="mb-2 flex items-center gap-2"><K size={20} className={r.severity === 'danger' ? 'text-danger' : r.severity === 'warning' ? 'text-warn' : 'text-moss'} /><h3 className="font-bold">{r.title}</h3><Badge tone={s.tone as any} className="ms-auto">{s.l}</Badge></div>
           <p className="mb-2 text-sm"><span className="font-semibold text-muted">הסיבה: </span><span className="num">{r.reason}</span></p>
           <ul className="space-y-1 text-sm">{r.actions.map(a => <li key={a} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sunset" />{a}</li>)}</ul>
+          <Prov kind="auto" source="לפי תחזית Open-Meteo — לא התרעה רשמית" className="mt-2" />
         </article>); })}
     </div>
   );

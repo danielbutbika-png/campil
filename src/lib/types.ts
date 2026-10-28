@@ -94,6 +94,9 @@ export interface JournalEntry {
 /** A photo in a trip's shared album. The image itself is in IndexedDB under `id`. */
 export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: string; takenAt: number; addedAt: number; caption?: string; w: number; h: number; collage?: boolean }
 
+/** What a user checked themselves on the operator's site (kept on this device). */
+export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'recommended' | 'none'; access?: 'yes' | 'partial' | 'no'; lodging?: 'yes' | 'no'; note?: string }
+
 export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolean; allergies: string[] }
 
 export interface Settings {
@@ -115,4 +118,6 @@ export interface Site {
   family?: boolean; stroller?: 'yes' | 'partial' | 'no' | 'unknown'; pets?: 'yes' | 'no' | 'unknown';
   season?: string; lodging?: boolean; operator: 'rtg' | 'kkl' | 'municipal' | 'other';
   officialUrl: string; exposed?: boolean; floodRisk?: boolean; verified: boolean; sourceNote: string; checkedAt?: string;
+  /** filled only when checked against the operator (else shown as unknown) */
+  booking?: 'required' | 'recommended' | 'none'; facilities?: string[];
 }

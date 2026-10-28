@@ -12,6 +12,7 @@ import { DietsEditor } from '../../components/DietEditor';
 import { addDays, fmtDate, shortDay, tripLength } from '../../lib/util';
 import { Button, Chip, Sheet, Badge, Section, cx, toast } from '../../components/ui';
 import { shareText } from '../../lib/share';
+import { Prov } from '../../components/Provenance';
 
 const fmtQty = (q: number, unit: string) => unit === 'גר׳' ? (q >= 1000 ? `${(Math.ceil(q / 100) / 10).toLocaleString('he-IL')} ק״ג` : `${Math.ceil(q / 50) * 50} גר׳`) : `${Math.ceil(q - 1e-9)} ${unit}`;
 
@@ -60,7 +61,7 @@ export default function MealsTab({ t }: { t: Trip }) {
               <div className="mt-1.5 flex flex-wrap gap-1.5"><Badge tone={g.diet.style === 'meat' ? 'muted' : 'ok'}>{g.diet.style === 'meat' ? 'בשרי' : STYLE_HE[g.diet.style]}</Badge><Badge tone="info">{KASHRUT_HE[g.diet.kashrut]}</Badge>{g.diet.allergies.map(a => <Badge key={a} tone="warn">ללא {a}</Badge>)}</div>
             </div>))}
         </div>
-        <p className="text-xs text-muted">{APPETITE_NOTE}.</p>
+        <p className="flex flex-wrap items-center gap-2 text-xs text-muted"><Prov kind="estimate" />{APPETITE_NOTE}.</p>
         <Button size="sm" variant="ghost" icon={<RefreshCw size={15} />} onClick={() => rebuild()}>בניית תפריט מחדש לפי ההרכב</Button>
       </Section>
 
@@ -75,7 +76,7 @@ export default function MealsTab({ t }: { t: Trip }) {
       {hasGrill && (
         <Section title="על האש — מה קונים וכמה">
           <div className="space-y-4 rounded-xl2 border border-line bg-surface p-4">
-            {grill.meatMeals > 0 && <p className="flex flex-wrap items-baseline gap-2"><Flame size={18} className="self-center text-sunset" /><span className="font-display text-2xl num">{grill.meatKg.toLocaleString('he-IL')} ק״ג</span><span className="text-sm text-muted">בשר נא סה״כ · {grill.meatMeals} {grill.meatMeals === 1 ? 'ארוחת מנגל' : 'ארוחות מנגל'} · {grill.meatEq.toLocaleString('he-IL')} מנות מבוגר × {MEAT_G_PER_ADULT} גר׳ (הערכה מקובלת 300–400 גר׳ למבוגר)</span></p>}
+            {grill.meatMeals > 0 && <p className="flex flex-wrap items-baseline gap-2"><Flame size={18} className="self-center text-sunset" /><span className="font-display text-2xl num">{grill.meatKg.toLocaleString('he-IL')} ק״ג</span><span className="text-sm text-muted">בשר נא סה״כ · {grill.meatMeals} {grill.meatMeals === 1 ? 'ארוחת מנגל' : 'ארוחות מנגל'} · {grill.meatEq.toLocaleString('he-IL')} מנות מבוגר × {MEAT_G_PER_ADULT} גר׳</span><Prov kind="estimate" source="מקובל 300–400 גר׳ למבוגר" /></p>}
             {hasMeat && <div><p className="label">בשרים — בחרו מה עולה על האש (הכמות מתחלקת ביניהם)</p><div className="flex flex-wrap gap-2">{MEATS.map(m => <Chip key={m.id} active={choice.meats.includes(m.id)} onClick={() => toggleGrill('meats', m.id)}>{m.name}</Chip>)}</div></div>}
             <div><p className="label flex items-center gap-1.5"><Leaf size={14} />צמחוני / טבעוני{kosher && hasMeat ? ' — בארוחה בשרית יוגשו רק פריטים פרווה' : ''}</p><div className="flex flex-wrap gap-2">{VEG.map(m => <Chip key={m.id} active={choice.veg.includes(m.id)} onClick={() => toggleGrill('veg', m.id)}>{m.name}{m.kashrut === 'dairy' ? ' (חלבי)' : m.vegan ? '' : ''}</Chip>)}</div></div>
             <ul className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
@@ -143,7 +144,7 @@ export default function MealsTab({ t }: { t: Trip }) {
           <p className="flex items-center gap-2 font-bold"><Droplets size={17} className="text-info" />שתייה</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div><label className="label" htmlFor="dw">מים — ליטר לאדם ליום</label><input id="dw" type="number" min={1} step={0.5} className="field num" value={t.drinks?.waterL ?? ''} placeholder={`${drinks.water.liters} (מומלץ)`} onChange={e => setDrinks({ waterL: e.target.value ? +e.target.value : undefined })} />
-              <p className="mt-1 text-xs text-muted">{drinks.water.why} · <a className="underline" href={WATER_SOURCE.url} target="_blank" rel="noreferrer">מקור</a> · ביום חם ובמסלול ארוך — יותר.</p></div>
+              <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">{t.drinks?.waterL ? <span>הכמות שהגדרתם</span> : <Prov kind="official" source="קק״ל ורשות הטבע והגנים" url={WATER_SOURCE.url} />}<span>{drinks.water.why} · ביום חם ובמסלול ארוך — יותר.</span></p></div>
             <div><label className="label" htmlFor="ds">שתייה קלה / מיץ — ליטר לאדם ליום</label><input id="ds" type="number" min={0} step={0.25} className="field num" value={t.drinks?.softL ?? ''} placeholder={`${DRINK_DEFAULTS.softL} (הערכה)`} onChange={e => setDrinks({ softL: e.target.value === '' ? undefined : +e.target.value })} /></div>
           </div>
           <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="h-5 w-5 accent-[rgb(var(--forest))]" checked={drinks.plan.alcohol} onChange={e => setDrinks({ alcohol: e.target.checked })} /><Wine size={16} />אלכוהול למבוגרים ({drinks.adults} בגיל 18+)</label>

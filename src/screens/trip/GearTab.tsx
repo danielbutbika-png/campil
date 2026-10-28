@@ -10,6 +10,8 @@ import { uid } from '../../lib/util';
 import { stamp, ago } from '../../components/Collab';
 import { useCloud } from '../../lib/cloud/sync';
 import { isGroup, itemFamily, familyById, visibleIn, useFamilyView, myFamily, canSeeAll, type View } from '../../lib/families';
+import { Prov } from '../../components/Provenance';
+import { WATER_SOURCE } from '../../engine/drinks';
 
 type Group = 'category' | 'box' | 'person' | 'family';
 
@@ -133,7 +135,7 @@ function ItemSheet({ t, item, onClose }: { t: Trip; item: PackItem | null; onClo
   return (
     <Sheet open onClose={onClose} title={live.name} footer={<>{live.removed ? <Button variant="soft" icon={<RotateCcw size={16} />} onClick={() => { up({ removed: false }); onClose(); }}>החזרה לרשימה</Button> : <Button variant="danger" onClick={() => { up({ removed: true }); onClose(); }}>הסרה מהרשימה</Button>}<Button variant="ghost" onClick={onClose}>סגירה</Button></>}>
       <div className="space-y-4">
-        <div className="rounded-xl bg-raised/60 p-3"><p className="text-sm font-bold text-muted">למה זה ברשימה</p><p>{live.reason}</p><p className="mt-1 text-xs text-muted">מקור: {{ inventory: 'מאגר הציוד', personal: 'תבנית ביגוד אישית', rule: 'כלל אוטומטי', manual: 'הוספה ידנית' }[live.source]}</p></div>
+        <div className="rounded-xl bg-raised/60 p-3"><p className="text-sm font-bold text-muted">למה זה ברשימה</p><p>{live.reason}</p><div className="mt-1.5">{live.source === 'manual' ? <span className="text-xs text-muted">נוסף ידנית</span> : /קק״ל|רשות הטבע/.test(live.reason) ? <Prov kind="official" source="קק״ל ורשות הטבע והגנים" url={WATER_SOURCE.url} /> : <Prov kind="auto" source={{ inventory: 'ממאגר הציוד שלכם', personal: 'מתבנית הביגוד', rule: 'כלל לפי פרטי הטיול והתחזית' }[live.source]} />}</div></div>
         {isGroup(t) && (
           <div><label className="label" htmlFor="fm">מי רואה את הפריט?</label>
             <select id="fm" className="field" value={itemFamily(t, live) ?? ''} onChange={e => up({ familyId: e.target.value, assignee: live.assignee && t.participants.find(m => m.id === live.assignee)?.familyId !== e.target.value ? undefined : live.assignee })}>

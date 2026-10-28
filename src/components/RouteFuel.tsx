@@ -4,6 +4,7 @@ import { useStore } from '../lib/store';
 import { BRANDS, BRAND_BY_ID, fetchRoute, fuelAlongRoute, filterBrands, navApps, type BrandId, type FuelStation, type Route } from '../services/fuel';
 import { Button, Chip, Badge, cx } from './ui';
 import { href } from '../lib/router';
+import { Prov } from './Provenance';
 
 const IsraelMap = lazy(() => import('./IsraelMap').then(m => ({ default: m.IsraelMap })));
 
@@ -74,7 +75,7 @@ export function RouteFuel({ dest }: { dest: { lat: number; lon: number; label: s
                 </li>
               ))}
             </ol>) : <p className="text-muted">לא נמצאו תחנות של החברות שנבחרו לאורך המסלול.</p>)}
-          <p className="text-xs text-muted">מסלול: OSRM (נתוני OpenStreetMap). תחנות: © תורמי OpenStreetMap, ברדיוס {settings.fuelBufferKm || 2} ק״מ מהדרך. שעות פתיחה ומחירים — לבדוק באפליקציית הניווט.</p>
+          <p className="text-xs text-muted"><Prov kind="community" className="me-1" />מסלול: OSRM (נתוני OpenStreetMap). תחנות: © תורמי OpenStreetMap, ברדיוס {settings.fuelBufferKm || 2} ק״מ מהדרך. שעות פתיחה ומחירים — לבדוק באפליקציית הניווט.</p>
           <a href={href('/settings')} className="inline-flex items-center gap-1 text-sm font-bold text-moss"><Settings2 size={14} />העדפות תדלוק</a>
         </>
       )}
