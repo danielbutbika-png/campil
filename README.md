@@ -10,7 +10,8 @@ npm test           # בדיקות יחידה (מנועים, תפריט, משפח
 npm run test:rules # בדיקות כללי האבטחה מול Firestore Emulator (דורש Java)
 npm run build      # בנייה ל-dist/ (נתיבים יחסיים — עובד מכל תת-תיקייה)
 ```
-**ענפים ופרסום:** `source` — קוד המקור. כל דחיפה מריצה CI (`.github/workflows/ci.yml`): בדיקת טיפוסים (כולל קוד שלא בשימוש) ← בדיקות יחידה ← בנייה ← כללי אבטחה מול Firestore Emulator ← בדיקות דפדפן (`scripts/run-e2e.mjs`). **רק אם הכול עבר** — הבנייה נדחפת ל-`main` (האתר ש-GitHub Pages מגיש) ומתויגת `deploy-<זמן>-<sha>`. חזרה לגרסה קודמת: Actions ← CI ← Run workflow עם `ref` של תג קודם. דוח תוצאות בענף `ci-reports`.
+**ענפים ופרסום:** `source` — קוד המקור. כל דחיפה מריצה CI (`.github/workflows/ci.yml`): בדיקת טיפוסים (כולל קוד שלא בשימוש) ← בדיקות יחידה ← בנייה ← כללי אבטחה מול Firestore Emulator ← בדיקות דפדפן (`scripts/run-e2e.mjs`). **רק אם הכול עבר** — הבנייה נדחפת ל-`main` (האתר ש-GitHub Pages מגיש) ומתויגת `deploy-<זמן>-<sha>`. חזרה לגרסה קודמת: Actions ← CI ← Run workflow עם `ref` של תג קודם.
+**סביבת בדיקות:** דחיפה לענף `staging` עוברת את אותן בדיקות ומפרסמת ל-`/campil/staging/` בלבד — פרויקט Firebase נפרד (`.env.staging`), אחסון מכשיר ומטמונים נפרדים (קידומת `campil-stg-`), ופס "סביבת בדיקות" בראש המסך. הייצור והבדיקות לא נוגעים זה בקבצים של זה. דוח תוצאות בענף `ci-reports`.
 **בדיקות דפדפן מקומיות:** `npm run build && npx vite preview --port 4173` ואז `CHROME_PATH=... node scripts/run-e2e.mjs`. אלה בדיקות בדפדפן מדומה (Chromium headless בגודל טלפון) — לא בדיקה בטלפון אמיתי; לזה `docs/PHONE-TESTS.md`.
 **מסמכים:** `docs/AUDIT.md` (ממצאי בדיקה), `docs/PLAN.md` (תוכנית עבודה), `docs/SECURITY.md` (הרשאות, מיגרציה, חזרה לאחור), `docs/PHONE-TESTS.md` (בדיקות ידניות).
 
