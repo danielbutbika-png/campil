@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Camera, Package, Car, Boxes, ChevronDown, AlertTriangle, Trash2, Wrench, Scale, Ruler, Handshake } from 'lucide-react';
+import { Plus, Search, Camera, Package, Car, Boxes, ChevronDown, AlertTriangle, Trash2, Wrench, Scale, Ruler, Handshake, BatteryCharging, QrCode } from 'lucide-react';
 import { useStore, nextTrip } from '../lib/store';
 import type { GearItem, Box, CategoryId, GearStatus } from '../lib/types';
 import { CATEGORIES, STATUS_LABEL, CONDITION_LABEL } from '../data/catalog';
@@ -10,6 +10,7 @@ import { href } from '../lib/router';
 import { planLoad, ZONE_HE } from '../engine/loading';
 import { VehiclePicker } from '../components/VehiclePicker';
 import { TrunkPlan } from '../components/TrunkPlan';
+import { PowerCalc } from '../components/PowerCalc';
 import { uid, todayISO, fmtDate } from '../lib/util';
 import { unitLiters, checkState, needsCheck, tripsUsing, warehouseStats } from '../engine/warehouse';
 import { myPacking } from '../lib/families';
@@ -20,11 +21,11 @@ export default function Gear({ tab }: { tab: string }) {
   return (
     <div className="gutter mx-auto max-w-6xl space-y-6 py-6">
       <header className="space-y-4"><h1 className="font-display text-3xl">ציוד קמפינג</h1>
-        <nav className="flex gap-2" aria-label="אזורי הציוד">
-          {[['inventory', 'מאגר הציוד', Package], ['boxes', 'ארגזים ותיקים', Boxes], ['car', 'העמסה לרכב', Car]].map(([k, l, I]: any) => <a key={k} href={href(`/gear/${k}`)} aria-current={tab === k ? 'page' : undefined} className={cx('flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold', tab === k ? 'bg-forest text-onforest' : 'bg-raised')}><I size={16} />{l}</a>)}
+        <nav className="flex flex-wrap gap-2" aria-label="אזורי הציוד">
+          {[['inventory', 'מאגר הציוד', Package], ['boxes', 'ארגזים ותיקים', Boxes], ['car', 'העמסה לרכב', Car], ['power', 'חשמל וסוללות', BatteryCharging]].map(([k, l, I]: any) => <a key={k} href={href(`/gear/${k}`)} aria-current={tab === k ? 'page' : undefined} className={cx('flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold', tab === k ? 'bg-forest text-onforest' : 'bg-raised')}><I size={16} />{l}</a>)}
         </nav>
       </header>
-      {tab === 'boxes' ? <BoxesView /> : tab === 'car' ? <CarView /> : <Inventory />}
+      {tab === 'boxes' ? <BoxesView /> : tab === 'car' ? <CarView /> : tab === 'power' ? <PowerCalc /> : <Inventory />}
     </div>
   );
 }
@@ -152,7 +153,7 @@ function BoxesView() {
   const nt = nextTrip(trips);
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2"><Button icon={<Plus size={18} />} onClick={() => setEdit({ id: uid('b'), name: '', color: '#2f6b3f', category: 'misc', kind: 'box' })}>ארגז / תיק חדש</Button>{nt && <p className="text-sm text-muted">מצב אריזה לפי: <a className="font-bold text-moss" href={href(`/trip/${nt.id}/gear`)}>{nt.name}</a></p>}</div>
+      <div className="flex flex-wrap items-center gap-2"><Button icon={<Plus size={18} />} onClick={() => setEdit({ id: uid('b'), name: '', color: '#2f6b3f', category: 'misc', kind: 'box' })}>ארגז / תיק חדש</Button><a href={href('/gear/labels')} className="inline-flex items-center gap-1 text-sm font-bold text-moss"><QrCode size={15} />מדבקות QR להדפסה</a>{nt && <p className="text-sm text-muted">מצב אריזה לפי: <a className="font-bold text-moss" href={href(`/trip/${nt.id}/gear`)}>{nt.name}</a></p>}</div>
       <div className="grid gap-4 md:grid-cols-2">
         {boxes.map(b => {
           const items = inventory.filter(g => g.boxId === b.id);
@@ -174,7 +175,7 @@ function BoxesView() {
                 </div>
                 {nt && packs.length > 0 && <div className="flex items-center gap-2 text-sm"><span className="h-2 flex-1 overflow-hidden rounded-full bg-line"><span className="block h-full bg-moss" style={{ width: `${(done / packs.length) * 100}%` }} /></span><span className="num font-bold">{done}/{packs.length} ארוזים</span></div>}
                 {b.note && <p className="text-xs text-muted">{b.note}</p>}
-                <button onClick={() => setOpen(isOpen ? null : b.id)} aria-expanded={isOpen} className="flex items-center gap-1 text-sm font-bold text-moss">תכולה<ChevronDown size={16} className={cx('transition', isOpen && 'rotate-180')} /></button>
+                <div className="flex flex-wrap items-center gap-3"><button onClick={() => setOpen(isOpen ? null : b.id)} aria-expanded={isOpen} className="flex items-center gap-1 text-sm font-bold text-moss">תכולה<ChevronDown size={16} className={cx('transition', isOpen && 'rotate-180')} /></button><a href={href(`/box/${b.id}`)} className="flex items-center gap-1 text-sm font-bold text-moss"><QrCode size={15} />פתיחת הארגז + QR</a></div>
                 {isOpen && <ul className="grid gap-1 text-sm sm:grid-cols-2">{items.map(g => <li key={g.id} className="flex justify-between gap-2 rounded-lg bg-raised/50 px-2 py-1"><span>{g.name}</span><span className="num text-muted">×{g.qty}</span></li>)}</ul>}
               </div>
             </article>
