@@ -1,21 +1,26 @@
-# CI/CD for CampIL source (branch `source`): type check → unit tests → build → Firestore security-rules tests →
-# browser scenarios → deploy the built site to `main` (GitHub Pages) ONLY if everything passed.
+# CI/CD for CampIL: type check → unit tests → build → Firestore security-rules tests → browser scenarios →
+# deploy ONLY if everything passed. Branch `staging` → /campil/staging/ (separate Firebase project, separate device
+# storage). Branch `source` → production /campil/. The two deploys never touch each other's files.
 # Every deploy is tagged deploy-<date>-<commit>. Rollback: Actions → CI → Run workflow → ref = an older source commit.
 # A short report of every run is committed to the `ci-reports` branch, so results can be read without the GitHub UI.
 name: CI
 on:
   push:
-    branches: [source]
+    branches: [source, staging]
   workflow_dispatch:
     inputs:
       ref:
-        description: 'source commit to build and deploy (empty = latest)'
+        description: 'commit to build and deploy (empty = latest)'
         required: false
+      target:
+        description: 'production or staging'
+        required: false
+        default: production
 permissions:
   contents: write
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: campil-deploy   # staging and production deploys both write to `main`: one at a time
+  cancel-in-progress: false
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -52,6 +57,14 @@ jobs:
           npx playwright-core install --with-deps chromium > /dev/null 2>&1
           (npx vite preview --port 4173 > /dev/null 2>&1 &) ; sleep 4
           node scripts/run-e2e.mjs e2e-shots 2>&1 | tee e2e.log; exit ${PIPESTATUS[0]}
+      - id: target
+        shell: bash
+        run: echo "name=$([ '${{ inputs.target }}' = staging ] || [ '${{ github.ref_name }}' = staging ] && echo staging || echo production)" >> "$GITHUB_OUTPUT"
+      - id: stagingbuild
+        name: build staging variant
+        if: steps.target.outputs.name == 'staging'
+        run: npx vite build --mode staging --outDir dist-staging --emptyOutDir 2>&1 | tee -a build.log; exit ${PIPESTATUS[0]}
+        shell: bash
       - id: deploy
         name: deploy to GitHub Pages (main)
         if: steps.typecheck.outcome == 'success' && steps.unit.outcome == 'success' && steps.build.outcome == 'success' && steps.rules.outcome == 'success' && steps.e2e.outcome == 'success'
@@ -62,14 +75,18 @@ jobs:
           git config user.name "campil-ci"; git config user.email "ci@campil.invalid"
           git fetch origin main
           git worktree add -B main site origin/main
-          find site -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -r dist/. site/
+          if [ "${{ steps.target.outputs.name }}" = staging ]; then
+            rm -rf site/staging && mkdir -p site/staging && cp -r dist-staging/. site/staging/; env=staging
+          else
+            find site -mindepth 1 -maxdepth 1 ! -name .git ! -name staging -exec rm -rf {} +
+            cp -r dist/. site/; env=prod
+          fi
           cd site
           git add -A
           if git diff --cached --quiet; then echo "nothing to deploy" | tee ../deploy.log; exit 0; fi
-          git commit -qm "Deploy ${src} (${stamp}) — all checks passed"
-          git tag "deploy-${stamp}-${src}"
-          git push origin main "deploy-${stamp}-${src}" 2>&1 | tee ../deploy.log
+          git commit -qm "Deploy ${env} ${src} (${stamp}) — all checks passed"
+          git tag "deploy-${env}-${stamp}-${src}"
+          git push origin main "deploy-${env}-${stamp}-${src}" 2>&1 | tee ../deploy.log
       - name: Report
         if: always()
         shell: bash

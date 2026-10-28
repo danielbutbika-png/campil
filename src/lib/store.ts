@@ -5,6 +5,7 @@ import seed from '../data/seed.json';
 import { uid, todayISO, addDays } from './util';
 import type { Taste } from '../engine/scoring';
 import { SITE_BY_ID } from '../data/sites';
+import { key } from './env';
 
 export interface State {
   version: number;
@@ -71,7 +72,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   importAll: data => set(() => ({ ...pickData(data) })),
   resetAll: () => set(() => initial()),
 }), {
-  name: 'campil-v1', version: 3, storage: createJSONStorage(() => localStorage), partialize: s => pickData(s) as any,
+  name: key('campil-v1'), version: 3, storage: createJSONStorage(() => localStorage), partialize: s => pickData(s) as any,
   // v1 trips stored only family member ids + counts → rebuild an explicit participant list.
   migrate: (p: any) => {
     if (p?.settings) p.settings = { fuelBrands: [], fuelBufferKm: 2, aiModel: 'claude-sonnet-5-5', ...p.settings };

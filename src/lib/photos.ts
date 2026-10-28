@@ -1,5 +1,6 @@
+import { key } from './env';
 // Photos live in IndexedDB (localStorage is too small). Images are downscaled before saving.
-const DB = 'campil-media', STORE = 'photos';
+const DB = key('campil-media'), STORE = 'photos';
 function open(): Promise<IDBDatabase> {
   return new Promise((res, rej) => {
     const r = indexedDB.open(DB, 1);

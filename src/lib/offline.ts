@@ -4,9 +4,10 @@
 // downloads (each download ≤ 3,000 tiles or 50 MB, ≤ 4 parallel requests, attribution kept).
 import type { Trip } from './types';
 import { fetchForecast, cacheForecast } from '../services/weather';
+import { key } from './env';
 
 export const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
-export const OFFLINE_CACHE = 'campil-offline-map';
+export const OFFLINE_CACHE = key('campil-offline-map');
 export const MAP_LIMITS = { tiles: 3000, bytes: 50 * 1024 * 1024, parallel: 4 };
 export const MAP_TERMS_URL = 'https://openfreemap.org';
 

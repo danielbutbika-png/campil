@@ -17,16 +17,17 @@ import { todayISO } from './lib/util';
 import { toast } from './components/ui';
 import { showSystem } from './lib/cloud/notify';
 import { go } from './lib/router';
+import { key, STAGING } from './lib/env';
 
 // End of trip: remind this device once to make the collage and video (they're made and kept on the device only).
 function useTripEndReminder() {
   const trips = useStore(s => s.trips), album = useStore(s => s.album);
   useEffect(() => {
     const today = todayISO();
-    let seen: Record<string, 1> = {}; try { seen = JSON.parse(localStorage.getItem('campil-end-nudge') ?? '{}'); } catch { /* blocked */ }
+    let seen: Record<string, 1> = {}; try { seen = JSON.parse(localStorage.getItem(key('campil-end-nudge')) ?? '{}'); } catch { /* blocked */ }
     for (const t of trips) {
       if (t.end >= today || t.example || seen[t.id] || tripPhotos(album, t.id).length < 2) continue;
-      seen[t.id] = 1; try { localStorage.setItem('campil-end-nudge', JSON.stringify(seen)); } catch { /* blocked */ }
+      seen[t.id] = 1; try { localStorage.setItem(key('campil-end-nudge'), JSON.stringify(seen)); } catch { /* blocked */ }
       const msg = `הטיול "${t.name}" הסתיים — צרו קולאז׳ וסרטון מ-${tripPhotos(album, t.id).length} התמונות`;
       if (document.visibilityState !== 'visible' && 'Notification' in window && Notification.permission === 'granted') showSystem('CampIL', msg, { tag: 'end-' + t.id, url: `./#/trip/${t.id}/album` }).catch(() => {});
       else { toast(msg); if (location.hash === '#/' || !location.hash) go(`/trip/${t.id}/album`); }
@@ -104,6 +105,7 @@ export default function App() {
         <p className="mt-auto text-xs text-muted">נתוני מזג אוויר: Open-Meteo · מפה: © OpenStreetMap, OpenFreeMap</p>
       </aside>
       <div className="min-w-0 flex-1">
+        {STAGING && <div role="note" className="no-print bg-warn px-4 py-1.5 text-center text-sm font-bold text-white safe-t">סביבת בדיקות — נתונים נפרדים מהאפליקציה האמיתית</div>}
         {!online && <div role="status" className="no-print sticky top-0 z-40 flex items-center justify-center gap-2 bg-ink px-4 py-2 text-sm font-bold text-bg safe-t"><WifiOff size={16} />אין חיבור לאינטרנט — הנתונים שלכם שמורים במכשיר, תחזיות ומפות יוצגו מהשמירה האחרונה</div>}
         <main id="main" className="pb-28 lg:pb-10"><Suspense fallback={<div role="status" className="p-8 text-muted">טוען…</div>}>{screen}</Suspense></main>
       </div>

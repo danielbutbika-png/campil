@@ -2,6 +2,7 @@
 // a family's own gear (its people's personal items, its own equipment) is visible only to that family.
 import { useState } from 'react';
 import type { Trip, PackItem, Family, Member } from './types';
+import { key } from './env';
 
 export const FAMILY_COLORS = ['#2f6b3f', '#d66a2a', '#3c6e9f', '#a0522d', '#7a6a9e', '#2c8c99', '#c0392b', '#8a6d3b'];
 
@@ -51,7 +52,7 @@ export const concernsMe = (t: Trip, p: PackItem) => visibleIn(t, p, myFamily(t) 
 /** View id for a member who isn't in any family yet: shared gear only. */
 export const NONE = '__shared-only';
 
-const KEY = 'campil-family-view';
+const KEY = key('campil-family-view');
 const readView = (id: string) => { try { return JSON.parse(localStorage.getItem(KEY) ?? '{}')[id] as string | undefined; } catch { return undefined; } };
 const saveView = (id: string, v: string) => { try { const o = JSON.parse(localStorage.getItem(KEY) ?? '{}'); o[id] = v; localStorage.setItem(KEY, JSON.stringify(o)); } catch { /* storage blocked */ } };
 
