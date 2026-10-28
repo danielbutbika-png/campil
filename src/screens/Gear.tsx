@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Camera, Package, Car, Boxes, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Plus, Search, Camera, Package, Car, Boxes, ChevronDown, AlertTriangle, Trash2, Wrench, Scale, Ruler, Handshake } from 'lucide-react';
 import { useStore, nextTrip } from '../lib/store';
 import type { GearItem, Box, CategoryId, GearStatus } from '../lib/types';
 import { CATEGORIES, STATUS_LABEL, CONDITION_LABEL } from '../data/catalog';
@@ -9,7 +9,8 @@ import { Button, Sheet, Badge, Blaze, Toggle, Empty, cx, toast } from '../compon
 import { href } from '../lib/router';
 import { planLoad, ZONE_HE } from '../engine/loading';
 import { VehiclePicker } from '../components/VehiclePicker';
-import { uid } from '../lib/util';
+import { uid, todayISO, fmtDate } from '../lib/util';
+import { unitLiters, checkState, needsCheck, tripsUsing, warehouseStats } from '../engine/warehouse';
 import { myPacking } from '../lib/families';
 
 const STATUS_TONE: Record<GearStatus, any> = { have: 'ok', home: 'info', check: 'warn', buy: 'danger', per_trip: 'muted' };
@@ -31,7 +32,11 @@ function Inventory() {
   const { inventory, boxes } = useStore();
   const [q, setQ] = useState(''); const [cat, setCat] = useState<CategoryId | 'all'>('all'); const [status, setStatus] = useState<GearStatus | 'all'>('all');
   const [edit, setEdit] = useState<GearItem | null>(null);
-  const list = inventory.filter(g => (cat === 'all' || g.category === cat) && (status === 'all' || g.status === status) && (!q || g.name.toLowerCase().includes(q.toLowerCase()) || g.notes?.includes(q)));
+  const [extra, setExtra] = useState<'none' | 'due' | 'unsized' | 'borrowed'>('none');
+  const today = todayISO(); const trips = useStore(s => s.trips);
+  const ws = warehouseStats(inventory, today);
+  const extraOk = (g: GearItem) => extra === 'none' || (extra === 'due' ? needsCheck(g, today) : extra === 'unsized' ? unitLiters(g) == null || g.weightKg == null : !!g.borrowedFrom?.trim());
+  const list = inventory.filter(g => (cat === 'all' || g.category === cat) && (status === 'all' || g.status === status) && extraOk(g) && (!q || g.name.toLowerCase().includes(q.toLowerCase()) || g.notes?.includes(q) || g.borrowedFrom?.includes(q)));
   const counts = (s: GearStatus) => inventory.filter(g => g.status === s).length;
   const byCat = CATEGORIES.map(c => ({ c, items: list.filter(g => g.category === c.id) })).filter(x => x.items.length);
   return (
@@ -47,15 +52,23 @@ function Inventory() {
         <select aria-label="קטגוריה" className="field w-auto" value={cat} onChange={e => setCat(e.target.value as any)}><option value="all">כל הקטגוריות</option>{CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
         <Button icon={<Plus size={18} />} onClick={() => setEdit({ id: uid('g'), name: '', category: cat === 'all' ? 'misc' : cat, qty: 1, status: 'have', available: true, condition: 'good' })}>פריט חדש</Button>
       </div>
-      <p className="text-sm text-muted">המאגר נטען מקובץ הציוד המשפחתי. מזינים פעם אחת — והרשימה של כל טיול נבנית ממנו.</p>
+      <section aria-labelledby="wh-h" className="space-y-2 rounded-xl2 border border-line bg-surface p-4">
+        <h2 id="wh-h" className="font-bold">המחסן במספרים</h2>
+        <p className="num text-sm">{ws.units} יחידות ב-{ws.items} פריטים · משקל ידוע <b>{ws.weightKg} ק״ג</b> ({ws.weighed} מתוך {ws.items} נשקלו) · נפח ידוע <b>{ws.liters} ל׳</b> ({ws.sized} מתוך {ws.items} נמדדו)</p>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="סינון מחסן">
+          {([['due', `לבדיקה (${ws.due})`, Wrench], ['unsized', `חסרים מידות או משקל (${ws.items - Math.min(ws.sized, ws.weighed)})`, Ruler], ['borrowed', `מושאלים (${ws.borrowed})`, Handshake]] as const).map(([k, l, I]) => (
+            <button key={k} type="button" aria-pressed={extra === k} onClick={() => setExtra(extra === k ? 'none' : k)} className={cx('flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-bold', extra === k ? 'border-forest bg-forest text-onforest' : 'border-line bg-raised')}><I size={15} />{l}</button>))}
+        </div>
+        <p className="text-xs text-muted">הסכומים כוללים רק מה שהזנתם — פריט בלי משקל או מידות לא נספר, והאפליקציה לא מנחשת.</p>
+      </section>
       {byCat.map(({ c, items }) => (
         <section key={c.id} className="rounded-xl2 border border-line bg-surface">
           <h2 className="flex items-center gap-2 border-b border-line px-4 py-3 font-bold"><Blaze color={c.blaze} />{c.name}<span className="num ms-auto text-sm text-muted">{items.length}</span></h2>
           <ul className="divide-y divide-line">{items.map(g => (
             <li key={g.id}><button onClick={() => setEdit(g)} className="flex w-full items-center gap-3 px-4 py-2.5 text-right hover:bg-raised/50">
               {g.photoId ? <Photo id={g.photoId} className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-raised text-muted"><Package size={18} /></span>}
-              <span className="min-w-0 flex-1"><span className={cx('block font-semibold', g.available === false && 'text-muted line-through')}>{g.name}</span><span className="block truncate text-xs text-muted">{[boxes.find(b => b.id === g.boxId)?.name ?? (g.big ? 'ציוד גדול' : null), g.spot, g.homeLocation].filter(Boolean).join(' · ')}</span></span>
-              <span className="num text-sm font-bold">×{g.qty}</span><Badge tone={STATUS_TONE[g.status]}>{STATUS_LABEL[g.status]}</Badge>
+              <span className="min-w-0 flex-1"><span className={cx('block font-semibold', g.available === false && 'text-muted line-through')}>{g.name}</span><span className="block truncate text-xs text-muted">{[boxes.find(b => b.id === g.boxId)?.name ?? (g.big ? 'ציוד גדול' : null), g.spot, g.homeLocation, g.weightKg != null && `${g.weightKg} ק״ג`, g.dims && `${g.dims.join('×')} ס״מ`, g.borrowedFrom?.trim() && `מושאל מ${g.borrowedFrom.trim()}`, tripsUsing(g.id, trips, today)[0] && `בטיול: ${tripsUsing(g.id, trips, today)[0].name || 'הקרוב'}`].filter(Boolean).join(' · ')}</span></span>
+              <span className="num text-sm font-bold">×{g.qty}</span>{g.status !== 'check' && needsCheck(g, today) && <Badge tone="warn">לבדיקה</Badge>}<Badge tone={STATUS_TONE[g.status]}>{STATUS_LABEL[g.status]}</Badge>
             </button></li>))}</ul>
         </section>
       ))}
@@ -91,14 +104,41 @@ function ItemEditor({ g, onClose }: { g: GearItem; onClose: () => void }) {
         <div><label className="label" htmlFor="gb">ארגז / תיק</label><select id="gb" className="field" value={d.boxId ?? ''} onChange={e => set({ boxId: e.target.value || null })}><option value="">ללא (ציוד נפרד)</option>{boxes.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
         <div><label className="label" htmlFor="gsp">מיקום בתוך הארגז</label><input id="gsp" className="field" value={d.spot ?? ''} onChange={e => set({ spot: e.target.value })} /></div>
         <div><label className="label" htmlFor="gh">מיקום אחסון בבית</label><input id="gh" className="field" placeholder="למשל: מחסן, מדף עליון" value={d.homeLocation ?? ''} onChange={e => set({ homeLocation: e.target.value })} /></div>
-        <div><label className="label" htmlFor="gvl">נפח ליחידה (ליטר, לא חובה)</label><input id="gvl" type="number" min={0} className="field" placeholder="לחישוב העמסה לרכב" value={d.volumeL ?? ''} onChange={e => set({ volumeL: e.target.value ? +e.target.value : undefined })} /></div>
         <div><label className="label" htmlFor="gno">הערות</label><input id="gno" className="field" value={d.notes ?? ''} onChange={e => set({ notes: e.target.value })} /></div>
       </div>
+      <Warehouse d={d} set={set} />
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Toggle checked={d.available !== false} onChange={v => set({ available: v })} label="זמין לטיולים" desc="כבוי = לא ייכנס לרשימות" />
         <Toggle checked={!!d.charge} onChange={v => set({ charge: v })} label="דורש טעינה לפני יציאה" />
       </div>
     </Sheet>
+  );
+}
+
+const num = (v: string) => (v === '' ? undefined : Math.max(0, +v));
+/** Sizes, weight, ownership and periodic checks — what the family enters; nothing is estimated. */
+function Warehouse({ d, set }: { d: GearItem; set: (p: Partial<GearItem>) => void }) {
+  const today = todayISO(); const trips = useStore(s => s.trips);
+  const dims = d.dims ?? [0, 0, 0];
+  const setDim = (i: number, v: string) => { const n = [...dims] as [number, number, number]; n[i] = num(v) ?? 0; set({ dims: n.some(x => x > 0) ? n : undefined }); };
+  const liters = unitLiters(d); const cs = checkState(d, today); const using = tripsUsing(d.id, trips, today);
+  return (
+    <section aria-labelledby="whe-h" className="mt-4 space-y-3 rounded-xl2 border border-line p-4">
+      <h3 id="whe-h" className="flex items-center gap-2 font-bold"><Scale size={17} className="text-moss" />מחסן: מידות, משקל, בעלות ובדיקות</h3>
+      <fieldset><legend className="label">מידות ליחידה כשהיא ארוזה (ס״מ)</legend>
+        <div className="grid grid-cols-3 gap-2">{['אורך', 'רוחב', 'גובה'].map((l, i) => <input key={l} aria-label={`${l} בס״מ`} type="number" min={0} inputMode="decimal" className="field" placeholder={l} value={dims[i] || ''} onChange={e => setDim(i, e.target.value)} />)}</div>
+      </fieldset>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div><label className="label" htmlFor="gw">משקל ליחידה (ק״ג)</label><input id="gw" type="number" min={0} step="0.1" inputMode="decimal" className="field" value={d.weightKg ?? ''} onChange={e => set({ weightKg: num(e.target.value) })} /></div>
+        <div><label className="label" htmlFor="gvl">נפח ליחידה (ליטר)</label><input id="gvl" type="number" min={0} className="field" placeholder={d.dims && liters ? `לפי המידות: ${liters}` : 'או מלאו מידות'} value={d.volumeL ?? ''} onChange={e => set({ volumeL: num(e.target.value) })} /></div>
+        <div><label className="label" htmlFor="gow">מושאל מ־</label><input id="gow" className="field" placeholder="ריק = שלנו" value={d.borrowedFrom ?? ''} onChange={e => set({ borrowedFrom: e.target.value || undefined })} /></div>
+        <div><label className="label" htmlFor="gus">בשימוש של</label><input id="gus" className="field" placeholder="למשל: משפחתי, אבא" value={d.owner ?? ''} onChange={e => set({ owner: e.target.value || undefined })} /></div>
+        <div><label className="label" htmlFor="gce">בדיקה תקופתית</label><select id="gce" className="field" value={d.checkEveryMonths ?? ''} onChange={e => set({ checkEveryMonths: num(e.target.value) })}><option value="">בלי תזכורת</option>{[3, 6, 12, 24].map(m => <option key={m} value={m}>כל {m === 12 ? 'שנה' : m === 24 ? 'שנתיים' : `${m} חודשים`}</option>)}</select></div>
+        <div><label className="label" htmlFor="glc">נבדק לאחרונה</label><div className="flex gap-2"><input id="glc" type="date" max={today} className="field" value={d.lastChecked ?? ''} onChange={e => set({ lastChecked: e.target.value || undefined })} /><Button size="sm" variant="soft" className="shrink-0 whitespace-nowrap" onClick={() => set({ lastChecked: today, status: d.status === 'check' ? 'have' : d.status })}>נבדק היום</Button></div></div>
+        <p className="self-end text-sm" aria-live="polite">{cs.state === 'due' ? <span className="font-bold text-warn">הגיע זמן בדיקה (מ-{fmtDate(cs.next)})</span> : cs.state === 'never' ? <span className="font-bold text-warn">עוד לא נבדק</span> : cs.state === 'ok' ? <span className="text-muted">הבדיקה הבאה: {fmtDate(cs.next)}</span> : null}</p>
+      </div>
+      <p className="text-sm text-muted">{using.length ? <>משובץ ב: {using.map(t => <a key={t.id} className="font-bold text-moss" href={href(`/trip/${t.id}/gear`)}>{t.name || 'טיול'} ({fmtDate(t.start)}) </a>)}</> : 'לא משובץ בטיול קרוב.'}</p>
+    </section>
   );
 }
 

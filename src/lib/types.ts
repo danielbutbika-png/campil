@@ -26,8 +26,14 @@ export interface Box {
 export interface GearItem {
   id: string; name: string; category: CategoryId; qty: number; status: GearStatus;
   condition?: Condition; boxId?: string | null; spot?: string; homeLocation?: string;
-  notes?: string; owner?: string; charge?: boolean; perTrip?: boolean; big?: boolean;
+  notes?: string; owner?: string /* who uses it, from the family gear file (e.g. 'משפחתי') */; charge?: boolean; perTrip?: boolean; big?: boolean;
   photoId?: string; available?: boolean; volumeL?: number; // per unit, optional
+  // Warehouse (all optional, entered by the family — never estimated by the app):
+  dims?: [number, number, number]; // per unit, cm L×W×H (packed/folded size)
+  weightKg?: number;               // per unit
+  borrowedFrom?: string;           // set only when the item isn't ours (lent by another family / friend)
+  lastChecked?: string;            // ISO date of the last check (tent poles, gas, batteries…)
+  checkEveryMonths?: number;       // how often it should be checked; empty = no reminder
 }
 
 export interface PersonalTemplateItem { name: string; hot: number; cold: number; sub?: string; notes?: string }

@@ -6,6 +6,8 @@ export function toISO(d: Date) {
   return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
 }
 export function parseISO(s: string) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+/** Add calendar months; clamps to the month's last day (31.1 + 1 month = 28/29.2). */
+export function addMonths(s: string, n: number) { const d = parseISO(s); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return toISO(d); }
 export function addDays(s: string, n: number) { const d = parseISO(s); d.setDate(d.getDate() + n); return toISO(d); }
 export function diffDays(a: string, b: string) { return Math.round((parseISO(b).getTime() - parseISO(a).getTime()) / 86400000); }
 export function tripLength(start: string, end: string) {

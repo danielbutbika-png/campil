@@ -2,6 +2,7 @@
 // nothing is guessed. Advice items always say why they apply.
 import type { Box, GearItem, Trip } from '../lib/types';
 import type { VehicleSpec } from '../data/vehicles';
+import { unitLiters } from './warehouse';
 
 export interface LoadRow { name: string; liters: number | null; weightKg?: number; zone: 'floor-back' | 'floor' | 'gaps' | 'door' | 'cabin'; why: string; kind: 'box' | 'bag' | 'item' }
 export interface Advice { id: string; level: 'ok' | 'info' | 'warn' | 'danger'; title: string; body: string }
@@ -41,10 +42,10 @@ export function planLoad(opts: { spec?: VehicleSpec | null; manualLiters?: numbe
     rows.push({ name: b.name, liters: l, weightKg: b.weightKg, zone, why, kind: b.kind });
   }
   for (const g of big) {
-    const vol = g.volumeL ?? null;
+    const vol = unitLiters(g);
     const zone: LoadRow['zone'] = has(g.name, 'צידנית', 'מים') ? 'door' : has(g.name, 'מזרן', 'שולחן', 'כיסא', 'מחצלת') ? 'floor' : 'gaps';
     const why = has(g.name, 'צידנית') ? 'נפתחת בדרך — אחרונה, ליד הדלת' : has(g.name, 'מים') ? 'כבד — על הרצפה ליד הדלת, מקובע' : has(g.name, 'שולחן', 'כיסא') ? 'שטוח ומקופל — על הרצפה או לאורך הדופן' : has(g.name, 'מזרן') ? 'מקופל — מעל הארגזים הקשיחים, מתחת לקו המשענת' : 'ממלא חלל פנוי';
-    rows.push({ name: g.qty > 1 ? `${g.name} ×${g.qty}` : g.name, liters: vol ? vol * g.qty : null, zone, why, kind: 'item' });
+    rows.push({ name: g.qty > 1 ? `${g.name} ×${g.qty}` : g.name, liters: vol ? Math.round(vol * g.qty) : null, weightKg: g.weightKg != null ? Math.round(g.weightKg * g.qty * 10) / 10 : undefined, zone, why, kind: 'item' });
   }
   const order: LoadRow['zone'][] = ['floor-back', 'floor', 'gaps', 'door', 'cabin'];
   rows.sort((a, b) => order.indexOf(a.zone) - order.indexOf(b.zone) || (b.weightKg ?? 0) - (a.weightKg ?? 0) || (b.liters ?? 0) - (a.liters ?? 0));
