@@ -18,6 +18,8 @@ import { flagsFor } from '../engine/weatherRules';
 import { Button, Chip, Segmented, Toggle, Badge, Card, cx, toast } from '../components/ui';
 import { SiteCard, useSiteSheet } from '../components/SiteCard';
 import { go } from '../lib/router';
+import { TripTypePicker } from '../components/TripTypePicker';
+import { impliedBy } from '../engine/tripTypes';
 
 const IsraelMap = lazy(() => import('../components/IsraelMap').then(m => ({ default: m.IsraelMap })));
 
@@ -109,6 +111,9 @@ export default function Wizard() {
 
       {step === 0 && (
         <div className="space-y-6 rise">
+          <div className="space-y-2"><h2 className="font-display text-xl">מה מאפיין את הטיול?</h2><p className="text-sm text-muted">אפשר לבחור כמה — למשל קמפינג משפחתי + מסלול רטוב. לא חובה.</p>
+            <TripTypePicker types={t.types ?? []} answers={t.typeAnswers ?? {}} onChange={(types, typeAnswers) => set({ types, typeAnswers, ...impliedBy(types, t), ...(impliedBy(types, t).kind === 'day' ? { end: t.start } : {}) })} />
+          </div>
           <div className="space-y-2"><h2 className="font-display text-xl">איזה טיול?</h2>
             <Segmented label="סוג הטיול" value={t.kind} onChange={v => set({ kind: v, end: v === 'day' ? t.start : t.end })} options={[{ v: 'camping', label: 'קמפינג', icon: <Tent size={18} /> }, { v: 'day', label: 'טיול יום', icon: <Sun size={18} /> }, { v: 'combined', label: 'משולב', icon: <Layers size={18} /> }]} />
           </div>

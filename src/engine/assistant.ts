@@ -14,6 +14,7 @@ import { coverage } from './partial';
 import { dutySummary } from './duties';
 import { addDays, diffDays, fmtDate } from '../lib/util';
 import { isGroup, myPacking, itemFamily } from '../lib/families';
+import { typeChecks } from './tripTypes';
 
 export type Level = 'danger' | 'warn' | 'todo' | 'info';
 export interface Suggestion {
@@ -103,6 +104,13 @@ export function suggest(x: AssistantInput): Suggestion[] {
       out.push({ id: 'brings', level: 'todo', title: 'ציוד משותף שעוד חסר', why: short.slice(0, 4).map(p => `${p.name}: חסרים ${coverage(p).missing}`).join(' · '), when: Math.max(0, until - 2),
         source: { kind: 'auto', label: '"מי מביא כמה" בטיול' }, action: { label: 'לציוד', to: route('gear') } });
   }
+
+  // 9b · checks the trip's types call for (verify with the official source — the app doesn't decide)
+  const tc = typeChecks(t);
+  if (tc.length && until >= 0 && until <= 7)
+    out.push({ id: 'typechecks', level: 'todo', title: `${tc.length} בדיקות לפי סוג הטיול`, why: tc.slice(0, 3).map(c => c.text).join(' · ') + (tc.length > 3 ? '…' : ''), when: Math.max(0, until - 2),
+      source: tc.find(c => c.source) ? { kind: 'official', label: tc.find(c => c.source)!.source!.label, url: tc.find(c => c.source)!.source!.url } : { kind: 'unknown', label: 'לבדוק אצל המפעיל' },
+      action: { label: 'לרשימת הבדיקות', to: route('overview') } });
 
   // 10 · measured trunk: things that won't fit
   if (x.trunk && until >= 0 && until <= 7) {

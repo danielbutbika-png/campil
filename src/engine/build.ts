@@ -12,7 +12,7 @@ type S = Pick<State, 'members' | 'inventory' | 'template' | 'settings' | 'seedTa
 
 export function packingSignature(t: Trip, flags: WxFlags, s: S) {
   const r = (n?: number) => (n == null ? '' : Math.round(n / 2));
-  return JSON.stringify([t.start, t.end, t.adults, t.children, t.childAges, (t.participants ?? []).map(x => `${x.age}${x.gender}${x.familyId ?? ""}`), (t.families ?? []).length, JSON.stringify(t.diets ?? {}), t.pets, t.kind, t.lodging, t.interests, flags.known, r(flags.minT), r(flags.maxT), flags.rain, flags.wind, flags.uv, s.inventory.length, s.settings.waterLitersPerPersonDay]);
+  return JSON.stringify([t.start, t.end, t.adults, t.children, t.childAges, (t.participants ?? []).map(x => `${x.age}${x.gender}${x.familyId ?? ""}`), (t.families ?? []).length, JSON.stringify(t.diets ?? {}), t.pets, t.kind, t.lodging, t.interests, flags.known, r(flags.minT), r(flags.maxT), flags.rain, flags.wind, flags.uv, s.inventory.length, s.settings.waterLitersPerPersonDay, ...(t.types?.length ? [t.types, t.typeAnswers ?? {}] : [])]);
 }
 
 /** Fill a trip with its generated plan. Existing user edits are preserved where possible. */

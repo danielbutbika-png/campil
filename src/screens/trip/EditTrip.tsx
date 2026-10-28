@@ -8,6 +8,9 @@ import { SITES } from '../../data/sites';
 import { INTEREST_HE } from '../../engine/scoring';
 import { tripLength } from '../../lib/util';
 import { Button, Chip, Sheet, Toggle, Segmented, toast } from '../../components/ui';
+import { TripTypePicker } from '../../components/TripTypePicker';
+import { impliedBy, typeTasks } from '../../engine/tripTypes';
+import { uid } from '../../lib/util';
 
 const INTERESTS = Object.keys(INTEREST_HE) as Interest[];
 
@@ -22,7 +25,7 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
     if (missingInfo(d.participants).length) { setTried(true); return toast('השלימו גיל ומגדר לכל משתתף'); }
     if (d.adults < 1) return toast('צריך לפחות מבוגר אחד');
     if (isGroup(d) && d.families!.some(f => !d.participants.some(p => p.familyId === f.id))) return toast('יש משפחה בלי משתתפים');
-    onSave({ name: d.name, start: d.start, end: d.end, participants: d.participants, families: d.families, adults: d.adults, children: d.children, childAges: d.childAges, memberIds: d.memberIds, pets: d.pets, kind: d.kind, lodging: d.lodging, vehicle: d.vehicle, regionId: d.regionId, siteIds: d.siteIds, interests: d.interests });
+    onSave({ types: d.types, typeAnswers: d.typeAnswers, tasks: withTypeTasks(t, d), name: d.name, start: d.start, end: d.end, participants: d.participants, families: d.families, adults: d.adults, children: d.children, childAges: d.childAges, memberIds: d.memberIds, pets: d.pets, kind: d.kind, lodging: d.lodging, vehicle: d.vehicle, regionId: d.regionId, siteIds: d.siteIds, interests: d.interests });
   };
   const regionSites = SITES.filter(s => !d.regionId || s.region === d.regionId);
   return (
@@ -35,6 +38,7 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
           <p className="num self-end rounded-xl bg-forest/8 px-4 py-2.5 font-bold text-forest">{days} ימים · {nights} לילות</p>
         </div>
         <div><span className="label">משתתפים ומשפחות — גיל ומגדר</span><FamiliesEditor families={d.families} participants={d.participants} household={members} defaultName={famName || 'המשפחה שלי'} showErrors={tried} onChange={(families, ps) => set({ families, participants: normalizeFamilies(families, ps) })} /></div>
+        <div><span className="label">מה מאפיין את הטיול? (אפשר כמה)</span><TripTypePicker types={d.types ?? []} answers={d.typeAnswers ?? {}} onChange={(types, typeAnswers) => set({ types, typeAnswers, ...impliedBy(types, d) })} /></div>
         <Segmented label="סוג הטיול" value={d.kind} onChange={v => set({ kind: v })} options={[{ v: 'camping', label: 'קמפינג' }, { v: 'day', label: 'טיול יום' }, { v: 'combined', label: 'משולב' }]} />
         {d.kind !== 'day' && <Segmented label="לינה" value={d.lodging} onChange={v => set({ lodging: v })} options={[{ v: 'tent', label: 'אוהל' }, { v: 'equipped_site', label: 'חניון מאובזר' }, { v: 'caravan', label: 'קרוואן' }, { v: 'other', label: 'אחר' }]} />}
         <Toggle checked={d.pets} onChange={v => set({ pets: v })} label="חיות מחמד מצטרפות" />
@@ -44,4 +48,12 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
       </div>
     </Sheet>
   );
+}
+
+const WHEN: Record<string, number> = { 'שבוע לפני': -7, 'יום-יומיים לפני': -2, 'ערב לפני': -1, 'בוקר היציאה': 0 };
+/** Tasks of newly selected trip types are added (existing tasks, done or not, are kept). */
+function withTypeTasks(before: Trip, after: Trip) {
+  const have = new Set(before.tasks.map(k => k.text));
+  const add = typeTasks(after).filter(k => !have.has(k.text)).map(k => ({ id: uid('t'), when: k.when, text: k.text, done: false, dueOffsetDays: WHEN[k.when] ?? 0 }));
+  return add.length ? [...before.tasks, ...add].sort((a, b) => a.dueOffsetDays - b.dueOffsetDays) : before.tasks;
 }

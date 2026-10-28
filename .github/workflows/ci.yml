@@ -104,11 +104,10 @@ jobs:
             for f in typecheck unit build rules e2e deploy; do echo; echo "## $f"; echo '```'; tail -n 120 $f.log 2>/dev/null; echo '```'; done
           } > report.md
           git worktree remove --force site 2>/dev/null || true
-          git fetch origin ci-reports:ci-reports 2>/dev/null || true
-          mkdir -p /tmp/r && cp report.md /tmp/r/
           git config user.name "campil-ci"; git config user.email "ci@campil.invalid"
-          if git rev-parse --verify ci-reports >/dev/null 2>&1; then git checkout ci-reports; else git checkout --orphan ci-reports; git rm -rqf . ; fi
-          cp /tmp/r/report.md "latest.md"; cp /tmp/r/report.md "${sha}.md"
+          # a separate worktree, so build outputs and logs in the checkout can't block switching branches
+          if git fetch origin ci-reports 2>/dev/null; then git worktree add -f /tmp/rep FETCH_HEAD; cd /tmp/rep && git checkout -B ci-reports; else git worktree add -f --detach /tmp/rep && cd /tmp/rep && git checkout --orphan ci-reports && git rm -rqf . ; fi
+          cp "$GITHUB_WORKSPACE/report.md" latest.md; cp "$GITHUB_WORKSPACE/report.md" "${sha}.md"
           git add latest.md "${sha}.md"; git commit -qm "CI ${sha}"; git push origin ci-reports
       - name: Fail if any check failed
         if: steps.typecheck.outcome != 'success' || steps.unit.outcome != 'success' || steps.build.outcome != 'success' || steps.rules.outcome != 'success' || steps.e2e.outcome != 'success' || steps.deploy.outcome == 'failure'

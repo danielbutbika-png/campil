@@ -3,6 +3,7 @@ import type { GearItem, Member, PackItem, PersonalTemplateItem, Settings, Trip, 
 import type { WxFlags } from './weatherRules';
 import { tripLength, seasonOf } from '../lib/util';
 import { waterPerPerson } from './drinks';
+import { typeGear, scale } from './tripTypes';
 
 export type WxSource = 'forecast' | 'climate' | 'season';
 export interface PackContext { trip: Trip; members?: Member[]; inventory: GearItem[]; template: PersonalTemplateItem[]; settings: Settings; flags: WxFlags; wxSource: WxSource }
@@ -142,6 +143,13 @@ export function generatePacking(ctx: PackContext): PackItem[] {
   const diets = Object.values(trip.diets ?? {});
   if (diets.some(d => d.kashrut !== 'none')) rule('סט כלים נפרד לחלבי (מחבת, סכו״ם, קרש)', 'kitchen', 1, diets.some(d => d.kashrut === 'mehadrin') ? 'יש משפחות ששומרות כשרות למהדרין' : 'יש משפחות ששומרות כשרות');
   if (diets.some(d => d.style !== 'meat') && diets.some(d => d.style === 'meat')) rule('רשת או משטח נפרד לצלייה צמחונית', 'kitchen', 1, 'יש משפחות צמחוניות/טבעוניות');
+  // 4 · Trip types (Trip Type Engine): gear the selected types call for, scaled to people or to a question's answer
+  for (const g of typeGear(trip)) {
+    const ans = g.qtyFrom ? trip.typeAnswers?.[g.qtyFrom] : undefined;
+    if (typeof ans === 'number') { if (ans > 0) rule(g.name, g.category, ans, `${g.reason} (${ans})`, g.unit); continue; }
+    if (g.perPeople) perFamily(g.name, g.category, ps => scale(g.qty, ps, days, fams?.length ?? 1), ps => `${g.reason} (${scale(g.qty, ps, days, fams?.length ?? 1)})`, g.unit);
+    else { const q = scale(g.qty, allPs, days, fams?.length ?? 1); if (q > 0) rule(g.name, g.category, q, g.reason, g.unit); }
+  }
   return out;
 }
 

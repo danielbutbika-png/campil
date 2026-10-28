@@ -5,6 +5,7 @@ import { planMenu, grillItemsFor, grillIngredients, dishContext, type MenuTrip }
 import type { DayWx } from '../services/weather';
 import { T } from './weatherRules';
 import { tripLength, uid } from '../lib/util';
+import { typeTasks } from './tripTypes';
 
 export function allowedRecipes(diet: DietPrefs) {
   return RECIPES.filter(r => (!diet.vegetarian || r.vegetarian || r.vegan) && (!diet.vegan || r.vegan) && !r.allergens.some(a => diet.allergies.includes(a)));
@@ -93,6 +94,7 @@ export function buildTasks(seed: { when: string; text: string }[], trip: Trip, s
   add('ערב לפני', 'לרענן את התחזית באפליקציה ולעדכן את רשימת הציוד');
   for (const s of seed) add(s.when, s.text);
   if (trip.pets) add('יום-יומיים לפני', 'לבדוק מדיניות חיות מחמד באתרים');
+  for (const k of typeTasks(trip)) add(k.when, k.text);
   add('בוקר היציאה', 'לשתף את תוכנית הטיול עם מישהו שלא מצטרף');
   return t.sort((a, b) => a.dueOffsetDays - b.dueOffsetDays);
 }

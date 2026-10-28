@@ -8,6 +8,9 @@ import { prepareTrip, MAP_TERMS_URL, type Progress } from '../lib/offline';
 import { Button, cx, toast } from './ui';
 import { href } from '../lib/router';
 import { ago } from './Collab';
+import { typeChecks, typeGuides, typesLabel } from '../engine/tripTypes';
+import { GUIDES } from '../data/guides';
+import { Prov } from './Provenance';
 
 /** Connection and sync state of a shared trip, always visible in the trip header. */
 export function SyncBadge({ t }: { t: Trip }) {
@@ -85,6 +88,25 @@ export function OfficialAlerts({ flood }: { flood: boolean }) {
       <ul className="grid gap-2 sm:grid-cols-3">{links.map(([n, u, d]) => (
         <li key={u}><a href={u} target="_blank" rel="noreferrer" className="flex h-full flex-col rounded-xl border border-line p-3 hover:border-moss"><span className="flex items-center gap-1 font-bold">{n}<ExternalLink size={13} /></span><span className="text-xs text-muted">{d}</span></a></li>))}</ul>
       <p className="text-sm font-semibold">חירום: מד״א 101 · משטרה 100 · כבאות והצלה 102</p>
+    </section>
+  );
+}
+
+/** Checks and guides that the trip's types call for — each check points to who to verify with. */
+export function TypeChecks({ t }: { t: Trip }) {
+  const checks = typeChecks(t);
+  const guides = typeGuides(t, GUIDES.map(g => g.id)).map(id => GUIDES.find(g => g.id === id)!);
+  if (!checks.length && !guides.length) return null;
+  return (
+    <section aria-labelledby="tc-h" className="space-y-3 rounded-xl2 border border-line bg-surface p-4">
+      <h2 id="tc-h" className="font-bold">לבדוק לפני היציאה — לפי סוג הטיול</h2>
+      <p className="text-xs text-muted">{typesLabel(t)}. האפליקציה לא קובעת אם מסלול פתוח או בטוח — את זה בודקים אצל הגורם הרשמי.</p>
+      {checks.length > 0 && <ul className="space-y-2">{checks.map(c => (
+        <li key={c.text} className="flex flex-wrap items-start justify-between gap-2 border-b border-line/60 pb-2 text-sm last:border-0">
+          <span className="min-w-0 flex-1">{c.text}</span>
+          {c.source ? <Prov kind="official" source={c.source.label} url={c.source.url} /> : <Prov kind="unknown" source="לבדוק אצל המפעיל" />}
+        </li>))}</ul>}
+      {guides.length > 0 && <div className="flex flex-wrap gap-2">{guides.map(g => <a key={g.id} href={href(`/guide/${g.id}`)} className="rounded-full bg-raised px-3 py-1.5 text-sm font-bold hover:bg-sand">{g.title}</a>)}</div>}
     </section>
   );
 }

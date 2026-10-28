@@ -15,7 +15,7 @@ import { SiteCard, useSiteSheet } from '../../components/SiteCard';
 import { Button, Card, Ring, Section, Badge, Blaze, cx } from '../../components/ui';
 import { RouteFuel, NavButtons } from '../../components/RouteFuel';
 import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
-import { OfficialAlerts } from '../../components/Field';
+import { OfficialAlerts, TypeChecks } from '../../components/Field';
 import { DutyBoard, useShopLines } from '../../components/Duties';
 import { AssistantCard } from '../../components/Assistant';
 import { href } from '../../lib/router';
@@ -50,6 +50,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         <Card className="flex flex-wrap items-center gap-3 border-sunset/40 p-4"><Flag className="text-sunset" /><p className="flex-1 font-semibold">הטיול הסתיים. סכמו אותו כדי שההמלצות הבאות ילמדו ממנו.</p><Button size="sm" onClick={onFinish}>סיכום הטיול</Button></Card>
       )}
       {!ended && <FieldCard t={t} point={wx.point ?? null} />}
+      {!ended && <TypeChecks t={t} />}
       {!ended && <OfficialAlerts flood={sites.some(x => x.floodRisk)} />}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Section title="מזג האוויר ביעד" action={<Button size="sm" variant="soft" icon={<RefreshCw size={15} />} onClick={wx.refetch}>רענון</Button>}>
