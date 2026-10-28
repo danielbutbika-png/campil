@@ -7,7 +7,7 @@ import { REGIONS } from '../../data/regions';
 import { SITES } from '../../data/sites';
 import { INTEREST_HE } from '../../engine/scoring';
 import { tripLength } from '../../lib/util';
-import { Button, Chip, Sheet, Stepper, Toggle, Segmented, toast } from '../../components/ui';
+import { Button, Chip, Sheet, Toggle, Segmented, toast } from '../../components/ui';
 
 const INTERESTS = Object.keys(INTEREST_HE) as Interest[];
 

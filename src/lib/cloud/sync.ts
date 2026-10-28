@@ -7,7 +7,7 @@ import { diffTrip, fromDoc, toDoc, randomId, PALETTE, encodeInvite, DELETE, clea
 import { compressImage, getPhoto, putPhoto, blobToDataURL, dataURLToBlob } from '../photos';
 import { toast } from '../../components/ui';
 import { describeChanges, summarize, showSystem, type Change } from './notify';
-import { concernsMe, isGroup, itemFamily, myFamily } from '../families';
+import { concernsMe, isGroup, itemFamily } from '../families';
 import { readiness } from '../../engine/packing';
 
 export interface TripMeta { owner: string; access: Access; pending: Record<string, Pending>; invite: NonNullable<TripDoc['invite']>; progress: NonNullable<TripDoc['progress']>; familyMode: FamMode }

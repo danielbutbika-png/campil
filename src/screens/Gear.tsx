@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Search, Camera, Package, Car, Boxes, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
 import { useStore, nextTrip } from '../lib/store';
 import type { GearItem, Box, CategoryId, GearStatus } from '../lib/types';
-import { CATEGORIES, CAT_BY_ID, STATUS_LABEL, CONDITION_LABEL } from '../data/catalog';
+import { CATEGORIES, STATUS_LABEL, CONDITION_LABEL } from '../data/catalog';
 import { compressImage, putPhoto } from '../lib/photos';
 import { Photo } from './trip/JournalTab';
-import { Button, Chip, Sheet, Badge, Blaze, Toggle, Empty, cx, toast } from '../components/ui';
+import { Button, Sheet, Badge, Blaze, Toggle, Empty, cx, toast } from '../components/ui';
 import { href } from '../lib/router';
 import { planLoad, ZONE_HE } from '../engine/loading';
 import { VehiclePicker } from '../components/VehiclePicker';

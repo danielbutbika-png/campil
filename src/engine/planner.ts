@@ -1,5 +1,5 @@
 // Meals, shopping list, day schedule and pre-trip tasks.
-import type { DietPrefs, MealSlot, MealType, ScheduleItem, TaskItem, Trip, Site } from '../lib/types';
+import type { DietPrefs, MealSlot, ScheduleItem, TaskItem, Trip, Site } from '../lib/types';
 import { RECIPES, RECIPE_BY_ID, type Recipe } from '../data/recipes';
 import { planMenu, grillItemsFor, grillIngredients, dishContext, type MenuTrip } from './menu';
 import type { DayWx } from '../services/weather';

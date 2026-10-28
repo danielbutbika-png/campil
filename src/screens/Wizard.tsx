@@ -15,7 +15,7 @@ import { rank, INTEREST_HE } from '../engine/scoring';
 import { materialize } from '../engine/build';
 import { useForecast } from '../lib/hooks';
 import { flagsFor } from '../engine/weatherRules';
-import { Button, Chip, Segmented, Stepper, Toggle, Badge, Card, cx, toast } from '../components/ui';
+import { Button, Chip, Segmented, Toggle, Badge, Card, cx, toast } from '../components/ui';
 import { SiteCard, useSiteSheet } from '../components/SiteCard';
 import { go } from '../lib/router';
 

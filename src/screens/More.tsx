@@ -66,7 +66,7 @@ export function Albums() {
     <div className="gutter mx-auto max-w-6xl space-y-6 py-6">
       <h1 className="font-display text-3xl">אלבומי טיולים</h1>
       {!withPhotos.length && <Empty icon={<Images size={36} />} title="עוד אין אלבומים" body="הוסיפו תמונות לאלבום של כל טיול, והן יופיעו כאן." />}
-      {withPhotos.map(({ t, photos, entries }) => (
+      {withPhotos.map(({ t, photos }) => (
         <section key={t.id} className="space-y-3">
           <div className="flex items-end justify-between"><h2 className="font-display text-xl">{t.name}</h2><a href={href(`/trip/${t.id}/album`)} className="text-sm font-bold text-moss">לאלבום המשותף</a></div>
           {photos.length ? <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">{photos.map(({ p, j }) => <a key={p} href={href(`/trip/${t.id}/album`)} title={j.title}><Photo id={p} alt={j.title} className="aspect-square w-full rounded-lg object-cover" /></a>)}</div> : <p className="text-sm text-muted">רשומות טקסט בלבד</p>}

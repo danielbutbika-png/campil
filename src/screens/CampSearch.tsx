@@ -1,12 +1,12 @@
 import { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 import { Search, LocateFixed, Home as HomeI, Tent, Loader2, ExternalLink, Plus, MapPin, Check } from 'lucide-react';
-import { useStore, nextTrip } from '../lib/store';
+import { useStore } from '../lib/store';
 import { useGeolocation } from '../lib/hooks';
 import { REGIONS } from '../data/regions';
 import { searchCamps, applyFacilities, type CampResult, type Center, type Facility } from '../services/camps';
 import { NavButtons } from '../components/RouteFuel';
 import { useSiteSheet } from '../components/SiteCard';
-import { Button, Chip, Badge, Sheet, Toggle, Empty, cx, toast } from '../components/ui';
+import { Button, Chip, Badge, Sheet, Toggle, Empty, toast } from '../components/ui';
 import { fmtRange, todayISO, uid } from '../lib/util';
 import { go } from '../lib/router';
 import { Prov } from '../components/Provenance';
@@ -16,7 +16,7 @@ const FAC: [Facility, string][] = [['toilets', 'שירותים'], ['water', 'מ�
 const tri = (v?: boolean) => (v === true ? 'כן' : v === false ? 'לא' : 'לא ידוע');
 
 export default function CampSearch({ query }: { query: URLSearchParams }) {
-  const { settings, trips } = useStore();
+  const { settings } = useStore();
   const geo = useGeolocation();
   const sheet = useSiteSheet();
   const [q, setQ] = useState(query.get('q') ?? '');

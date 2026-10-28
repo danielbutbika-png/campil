@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Images, Film, LayoutGrid, Share2, Trash2, Download, Loader2, Music, X, Sparkles, Smartphone, Monitor, Check } from 'lucide-react';
+import { ImagePlus, Images, Film, LayoutGrid, Share2, Trash2, Download, Loader2, Music, X, Sparkles, Smartphone, Monitor } from 'lucide-react';
 import type { Trip, AlbumPhoto } from '../../lib/types';
 import { useStore } from '../../lib/store';
 import { addPhotos, tripPhotos, makeCollage, renderVideo, shareFile, downloadFile, videoSupport, videoLength } from '../../lib/album';
 import { deletePhoto } from '../../lib/photos';
 import { useCloud } from '../../lib/cloud/sync';
 import { addDays, fmtDate, shortDay, todayISO, tripLength } from '../../lib/util';
-import { Button, Sheet, Empty, Section, Badge, Chip, cx, toast } from '../../components/ui';
+import { Button, Sheet, Empty, Badge, Chip, toast } from '../../components/ui';
 import { whoAmI } from '../../components/Collab';
 import { Photo } from './JournalTab';
 

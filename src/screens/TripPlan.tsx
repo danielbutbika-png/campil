@@ -10,7 +10,6 @@ import { SITE_BY_ID } from '../data/sites';
 import { Scene } from '../components/Scene';
 import { Button, Badge, Sheet, cx, toast } from '../components/ui';
 import { href, go } from '../lib/router';
-import { shareText, tripSummary } from '../lib/share';
 import type { Trip } from '../lib/types';
 import Overview from './trip/Overview';
 import { ShareSheet, Avatars, LeaveOrDelete } from '../components/Collab';

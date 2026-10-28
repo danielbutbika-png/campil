@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, MapPin, ChevronLeft, Backpack, Images, BookOpen, Tent, Footprints, CalendarDays, AlertTriangle, LocateFixed } from 'lucide-react';
+import { Plus, MapPin, ChevronLeft, Backpack, Images, BookOpen, Tent, CalendarDays, AlertTriangle, LocateFixed } from 'lucide-react';
 import { useStore, nextTrip, blankTrip, tasteOf } from '../lib/store';
 import { useForecast, useTripWeather, tripPoint } from '../lib/hooks';
-import { greeting, fmtRange, fmtDate, seasonOf, SEASON_HE, diffDays, todayISO, tripLength } from '../lib/util';
+import { greeting, fmtRange, seasonOf, SEASON_HE, diffDays, todayISO, tripLength } from '../lib/util';
 import { REGIONS, REGION_BY_ID } from '../data/regions';
 import { SITES } from '../data/sites';
 import { GUIDES } from '../data/guides';
