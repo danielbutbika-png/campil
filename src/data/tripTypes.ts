@@ -32,10 +32,10 @@ const TRAIL = { label: 'החברה להגנת הטבע — שביל ישראל',
 
 export const TRIP_TYPES: TripType[] = [
   // ── לינה ──
-  { id: 'family_camping', name: 'קמפינג משפחתי', group: 'stay', blurb: 'לינה בשטח עם המשפחה', implies: { kind: 'camping', lodging: 'tent', interests: ['camping', 'family'] }, guides: ['first-night', 'wind'] },
+  { id: 'family_camping', name: 'קמפינג משפחתי', group: 'stay', blurb: 'לינה בשטח עם המשפחה', implies: { kind: 'camping', lodging: 'tent', interests: ['camping', 'family'] }, guides: ['first-night', 'wind', 'tautline', 'figure8'] },
   { id: 'group_camping', name: 'קמפינג קבוצתי', group: 'stay', blurb: 'כמה משפחות או חברים יחד', implies: { kind: 'camping' },
     gear: [{ name: 'שולחן מתקפל נוסף לאזור משותף', category: 'misc', qty: 1, why: 'אזור אוכל משותף לכמה משפחות' }],
-    tasks: [{ when: 'שבוע לפני', text: 'לחלק בין המשפחות מי מכין ומי קונה (במטבח שטח ← חלוקה מהירה)' }] },
+    tasks: [{ when: 'שבוע לפני', text: 'לחלק בין המשפחות מי מכין ומי קונה (במטבח שטח ← חלוקה מהירה)' }], guides: ['tautline', 'bowline'] },
   { id: 'car_camping', name: 'קמפינג עם רכב', group: 'stay', blurb: 'חונים ליד מקום הלינה', implies: { kind: 'camping' },
     checks: [{ text: 'לבדוק אצל מפעיל החניון שמותר להגיע ברכב עד מקום הלינה ומה תנאי הדרך' }] },
   { id: 'caravan', name: 'טיול קרוואנים', group: 'stay', blurb: 'לינה בקרוואן', implies: { kind: 'camping', lodging: 'caravan' },

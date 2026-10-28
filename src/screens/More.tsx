@@ -18,7 +18,7 @@ import { wipeDevice } from '../lib/privacy';
 export default function More() {
   const items = [
     { to: '/camps', I: Tent, t: 'חיפוש מקום לקמפינג', s: 'חניונים לפי מקום, אזור או מיקום — עם ניווט' },
-    { to: '/guides', I: BookOpen, t: 'מדריכים וטיפים', s: 'בטיחות, משפחה ומיומנויות שטח' },
+    { to: '/academy', I: BookOpen, t: 'האקדמיה לשטח', s: 'קשרים וחבלים, בטיחות, אוהלים ומיומנויות — עם בדיקת ידע' },
     { to: '/albums', I: Images, t: 'אלבומי טיולים', s: 'כל התמונות והסיפורים' },
     { to: '/settings', I: Cog, t: 'הגדרות', s: 'משפחה, נקודת יציאה, תזונה, גיבוי' },
     { to: '/about', I: Info, t: 'מקורות מידע ואודות', s: 'מאיפה הנתונים ומה לא מאומת' },
@@ -49,7 +49,7 @@ export function GuideView({ id }: { id: string }) {
   if (!g) return <div className="p-8">המדריך לא נמצא</div>;
   return (
     <article className="gutter mx-auto max-w-2xl space-y-5 py-6">
-      <a href={href('/guides')} className="text-sm font-bold text-moss">← כל המדריכים</a>
+      <a href={href('/academy')} className="text-sm font-bold text-moss">← האקדמיה לשטח</a>
       <p className="flex items-center gap-2 text-sm font-bold text-muted"><Blaze color={TONE[g.tone][1]} />{TONE[g.tone][0]}</p>
       <h1 className="font-display text-3xl">{g.title}</h1>
       <p className="text-lg text-muted">{g.blurb}</p>

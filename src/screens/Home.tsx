@@ -104,7 +104,7 @@ export default function Home() {
             { to: '/gear', I: Backpack, t: 'מאגר הציוד', s: `${inventory.length} פריטים${missing ? ` · ${missing} להשלים` : ''}` },
             { to: '/gear/boxes', I: Tent, t: 'ארגזים ואריזה', s: 'מה נמצא איפה' },
             { to: '/albums', I: Images, t: 'אלבומי טיולים', s: photos ? `${photos} תמונות` : 'עוד אין תמונות' },
-            { to: '/guides', I: BookOpen, t: 'מדריכים וטיפים', s: `${GUIDES.length} מדריכים` },
+            { to: '/academy', I: BookOpen, t: 'האקדמיה לשטח', s: 'קשרים, בטיחות ומיומנויות' },
           ].map(q => (
             <a key={q.to} href={href(q.to)} className="group flex flex-col gap-2 rounded-xl2 border border-line bg-surface p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
               <q.I className="text-moss" size={24} /><span className="font-bold">{q.t}</span><span className="text-sm text-muted">{q.s}</span>
@@ -133,7 +133,7 @@ export default function Home() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{trails.slice(0, 3).map(s => <SiteCard key={s.site.id} site={s.site} scored={s} onOpen={() => sheet.open(s.site)} />)}</div>
         </Section>
 
-        <Section title="מדריכים לקמפינג" action={<a href={href('/guides')} className="flex items-center text-sm font-bold text-moss">לכל המדריכים<ChevronLeft size={16} /></a>}>
+        <Section title="מהאקדמיה לשטח" action={<a href={href('/academy')} className="flex items-center text-sm font-bold text-moss">לאקדמיה<ChevronLeft size={16} /></a>}>
           <div className="grid gap-3 md:grid-cols-3">
             {GUIDES.filter(g => g.id !== 'firebase').slice(0, 3).map(g => (
               <a key={g.id} href={href(`/guide/${g.id}`)} className="flex flex-col gap-2 rounded-xl2 border border-line bg-surface p-4 hover:border-moss">

@@ -9,7 +9,7 @@ import { Button, cx, toast } from './ui';
 import { href } from '../lib/router';
 import { ago } from './Collab';
 import { typeChecks, typeGuides, typesLabel } from '../engine/tripTypes';
-import { GUIDES } from '../data/guides';
+import { LESSONS } from '../data/academy';
 import { Prov } from './Provenance';
 
 /** Connection and sync state of a shared trip, always visible in the trip header. */
@@ -95,7 +95,7 @@ export function OfficialAlerts({ flood }: { flood: boolean }) {
 /** Checks and guides that the trip's types call for — each check points to who to verify with. */
 export function TypeChecks({ t }: { t: Trip }) {
   const checks = typeChecks(t);
-  const guides = typeGuides(t, GUIDES.map(g => g.id)).map(id => GUIDES.find(g => g.id === id)!);
+  const guides = typeGuides(t, LESSONS.map(l => l.id)).map(id => LESSONS.find(l => l.id === id)!);
   if (!checks.length && !guides.length) return null;
   return (
     <section aria-labelledby="tc-h" className="space-y-3 rounded-xl2 border border-line bg-surface p-4">
@@ -106,7 +106,7 @@ export function TypeChecks({ t }: { t: Trip }) {
           <span className="min-w-0 flex-1">{c.text}</span>
           {c.source ? <Prov kind="official" source={c.source.label} url={c.source.url} /> : <Prov kind="unknown" source="לבדוק אצל המפעיל" />}
         </li>))}</ul>}
-      {guides.length > 0 && <div className="flex flex-wrap gap-2">{guides.map(g => <a key={g.id} href={href(`/guide/${g.id}`)} className="rounded-full bg-raised px-3 py-1.5 text-sm font-bold hover:bg-sand">{g.title}</a>)}</div>}
+      {guides.length > 0 && <div className="flex flex-wrap gap-2">{guides.map(g => <a key={g.id} href={href(g.to)} className="rounded-full bg-raised px-3 py-1.5 text-sm font-bold hover:bg-sand">{g.title}</a>)}</div>}
     </section>
   );
 }

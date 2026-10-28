@@ -67,3 +67,5 @@ input, select, textarea { font: inherit; color: inherit; }
 .region-label { font: 700 12px/1 Assistant, sans-serif; color: #1d3a29; background: rgba(255,255,255,.88); padding: 4px 8px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.18); white-space: nowrap; }
 .region-label.sel { background: #1d3a29; color: #fff; }
 .labels-far .region-label:not(.sel) { font-size: 0; padding: 0; width: 24px; height: 24px; box-shadow: none; background: radial-gradient(circle, #fff 0 3px, #1d3a29 3.5px 5.5px, transparent 6px); }
+
+@keyframes knot-draw { to { stroke-dashoffset: 0; } }

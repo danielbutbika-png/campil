@@ -4,7 +4,7 @@ import { TRIP_TYPES } from '../data/tripTypes';
 import { generatePacking } from './packing';
 import { buildTasks } from './planner';
 import { flagsFor } from './weatherRules';
-import { GUIDES } from '../data/guides';
+import { LESSONS } from '../data/academy';
 import seed from '../data/seed.json';
 import type { Member, Trip } from '../lib/types';
 
@@ -20,7 +20,7 @@ describe('trip type engine', () => {
   it('the catalog has 30 distinct types, each with a name and blurb, guides that exist', () => {
     expect(TRIP_TYPES).toHaveLength(30);
     expect(new Set(TRIP_TYPES.map(t => t.id)).size).toBe(30);
-    const ids = GUIDES.map(g => g.id);
+    const ids = LESSONS.map(g => g.id);
     for (const t of TRIP_TYPES) { expect(t.name && t.blurb).toBeTruthy(); for (const g of t.guides ?? []) expect(ids).toContain(g); }
   });
   it('safety-related checks always defer to a source or the operator — never state a place is open/safe', () => {

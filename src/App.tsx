@@ -35,20 +35,21 @@ function useTripEndReminder() {
   }, [trips, album]);
 }
 const More = lazy(() => import('./screens/More'));
-const Guides = lazy(() => import('./screens/More').then(m => ({ default: m.Guides })));
 const GuideView = lazy(() => import('./screens/More').then(m => ({ default: m.GuideView })));
 const Albums = lazy(() => import('./screens/More').then(m => ({ default: m.Albums })));
 const Settings = lazy(() => import('./screens/More').then(m => ({ default: m.Settings })));
 const About = lazy(() => import('./screens/More').then(m => ({ default: m.About })));
 
 const MapScreen = lazy(() => import('./screens/MapScreen'));
+const Academy = lazy(() => import('./screens/Academy'));
+const KnotPage = lazy(() => import('./screens/Academy').then(m => ({ default: m.KnotPage })));
 
 const NAV = [
   { to: '/', label: 'בית', I: HomeI, match: (p: string) => p === '/' },
   { to: '/trips', label: 'טיולים', I: Compass, match: (p: string) => p.startsWith('/trip') || p === '/new' },
   { to: '/map', label: 'מפה', I: MapI, match: (p: string) => p.startsWith('/map') || p === '/camps' },
   { to: '/gear', label: 'ציוד', I: Backpack, match: (p: string) => p.startsWith('/gear') },
-  { to: '/more', label: 'עוד', I: MoreHorizontal, match: (p: string) => ['/more', '/guides', '/guide', '/albums', '/settings', '/about'].some(x => p.startsWith(x)) },
+  { to: '/more', label: 'עוד', I: MoreHorizontal, match: (p: string) => ['/more', '/guides', '/guide', '/academy', '/albums', '/settings', '/about'].some(x => p.startsWith(x)) },
 ];
 
 export function Logo({ light }: { light?: boolean }) {
@@ -85,7 +86,8 @@ export default function App() {
   else if (path === '/join') screen = <Join query={query} />;
   else if (path === '/camps') screen = <CampSearch query={query} />;
   else if (path === '/more') screen = <More />;
-  else if (path === '/guides') screen = <Guides />;
+  else if (path === '/academy' || path === '/guides') screen = <Academy />;
+  else if (parts[0] === 'academy' && parts[1] === 'knot') screen = <KnotPage id={parts[2]} />;
   else if (parts[0] === 'guide') screen = <GuideView id={parts[1]} />;
   else if (path === '/albums') screen = <Albums />;
   else if (path === '/settings') screen = <Settings />;
