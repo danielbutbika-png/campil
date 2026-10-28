@@ -1,8 +1,8 @@
 // CampIL service worker. On install it saves every file of this build (list injected at build time by
 // vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
-const BUILD = '129d41789d';
+const BUILD = '249fd8835c';
 const VERSION = 'campil-' + BUILD;
-const PRECACHE = ["./IsraelMap-CZqse_Gp.js","./IsraelMap-KizArRWY.css","./MapScreen-DtKo3YRN.js","./icon-192.png","./icon-512.png","./icon.svg","./index-BcllBAWw.js","./index-Dd3f9Sic.css","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest"];
+const PRECACHE = ["./IsraelMap-BQKV_9CX.js","./IsraelMap-KizArRWY.css","./MapScreen-DvpropHi.js","./icon-192.png","./icon-512.png","./icon.svg","./index-CjwJpqCO.css","./index-ema0sF6i.js","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest"];
 const SHELL = ['./', ...PRECACHE];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && !k.startsWith('campil-rt')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
