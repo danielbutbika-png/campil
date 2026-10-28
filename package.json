@@ -1,0 +1,42 @@
+{
+  "name": "campil",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "regions": "node scripts/build-regions.cjs",
+    "seed": "python3 scripts/import-gear.py",
+    "typecheck": "tsc --noEmit",
+    "test:rules": "npx --yes firebase-tools@13 emulators:exec --only firestore --project demo-campil \"npx vitest run -c vitest.rules.config.ts\""
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.5",
+    "firebase": "^12.19.0",
+    "lucide-react": "^1.61.0",
+    "maplibre-gl": "^5.24.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.76",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@turf/turf": "^7.4.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "playwright-core": "^1.64.1",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^3.4.17",
+    "topojson-client": "^3.1.0",
+    "typescript": "5.5",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9",
+    "world-atlas": "^2.0.2"
+  }
+}

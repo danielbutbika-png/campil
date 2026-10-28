@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Layout: app shell — bottom tab bar on phones, right-side rail (RTL) from 1024px.
+   Palette: deep forest, sand & earth, cream, a sunset accent. Display: Suez One (trail-sign weight). Body: Assistant. */
+:root {
+  --bg: 250 246 238; --surface: 255 253 248; --raised: 243 236 222; --ink: 28 36 30; --muted: 98 104 92; --line: 225 215 196;
+  --forest: 29 58 41; --moss: 52 97 64; --sand: 232 220 196; --earth: 139 107 71; --sunset: 214 106 42; --onforest: 246 241 228;
+  --ok: 47 125 74; --warn: 196 128 22; --danger: 190 52 40; --info: 52 108 150; --shadow: 40 34 20;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: 14 20 16; --surface: 22 31 25; --raised: 31 42 34; --ink: 236 231 218; --muted: 160 164 150; --line: 48 60 50;
+    --forest: 120 176 132; --moss: 104 156 116; --sand: 70 62 48; --earth: 196 160 116; --sunset: 240 140 80; --onforest: 14 20 16;
+    --ok: 104 190 130; --warn: 230 170 70; --danger: 240 110 95; --info: 120 170 215; --shadow: 0 0 0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: 14 20 16; --surface: 22 31 25; --raised: 31 42 34; --ink: 236 231 218; --muted: 160 164 150; --line: 48 60 50;
+  --forest: 120 176 132; --moss: 104 156 116; --sand: 70 62 48; --earth: 196 160 116; --sunset: 240 140 80; --onforest: 14 20 16;
+  --ok: 104 190 130; --warn: 230 170 70; --danger: 240 110 95; --info: 120 170 215; --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+html, body { background: rgb(var(--bg)); color: rgb(var(--ink)); }
+/* Fit every screen to the device width: grid/flex children may shrink below their content
+   (long text, charts scroll inside their own boxes), and nothing can push the page sideways. */
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+:where(.grid) > * { min-width: 0; } /* zero specificity: any explicit min-w-* utility still wins */
+.scroll-x > * { flex-shrink: 0; }
+img, svg, video, canvas { max-width: 100%; }
+body { font-family: Assistant, system-ui, Arial, sans-serif; -webkit-tap-highlight-color: transparent; font-size: 16px; line-height: 1.5; }
+h1, h2, h3 { text-wrap: balance; }
+.font-display { letter-spacing: 0; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid rgb(var(--sunset)); outline-offset: 2px; border-radius: 8px; }
+button, [role='button'] { cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+.safe-b { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+.safe-t { padding-top: env(safe-area-inset-top); }
+.gutter { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.scroll-x { overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.scroll-x::-webkit-scrollbar { display: none; }
+@layer components {
+  .field { @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-ink outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/25; }
+  .label { @apply mb-1 block text-sm font-semibold text-muted; }
+}
+.topo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.09' stroke-width='1.2'%3E%3Cpath d='M-20 60c40-30 80 20 130-5s70-40 130 0'/%3E%3Cpath d='M-20 90c40-30 80 20 130-5s70-40 130 0'/%3E%3Cpath d='M-20 130c50-20 90 25 140 0s70-35 130 5'/%3E%3Cpath d='M-20 170c50-20 90 25 140 0s70-35 130 5'/%3E%3Cpath d='M-20 210c50-20 90 25 140 0s70-35 130 5'/%3E%3Ccircle cx='170' cy='60' r='18'/%3E%3Ccircle cx='170' cy='60' r='34'/%3E%3C/g%3E%3C/svg%3E"); }
+@keyframes rise { from { opacity: .4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .35s ease-out both; }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+.fade { animation: fade .8s ease both; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.maplibregl-ctrl-attrib { font-size: 11px; direction: ltr; }
+.maplibregl-popup-content { border-radius: 14px; font-family: Assistant, sans-serif; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+.region-label { font: 700 12px/1 Assistant, sans-serif; color: #1d3a29; background: rgba(255,255,255,.88); padding: 4px 8px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.18); white-space: nowrap; }
+.region-label.sel { background: #1d3a29; color: #fff; }
+.labels-far .region-label:not(.sel) { font-size: 0; padding: 0; width: 9px; height: 9px; border: 2px solid #1d3a29; }

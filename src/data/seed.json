@@ -1,0 +1,1084 @@
+{
+ "members": [
+  {
+   "id": "m1",
+   "name": "מבוגר/ת 1",
+   "gender": "f",
+   "age": 38,
+   "role": "adult"
+  },
+  {
+   "id": "m2",
+   "name": "מבוגר/ת 2",
+   "gender": "m",
+   "age": 40,
+   "role": "adult"
+  },
+  {
+   "id": "m3",
+   "name": "ילד/ה 1",
+   "gender": "f",
+   "age": 10,
+   "role": "child"
+  },
+  {
+   "id": "m4",
+   "name": "ילד/ה 2",
+   "gender": "m",
+   "age": 6,
+   "role": "child"
+  }
+ ],
+ "boxes": [
+  {
+   "id": "b01",
+   "name": "תיק אוהל והקמה",
+   "color": "#2f5d3a",
+   "category": "tents",
+   "dims": [
+    117,
+    23,
+    25
+   ],
+   "volume": null,
+   "kind": "bag",
+   "purpose": "כל ציוד ההקמה ביחידה אחת",
+   "note": "המידה היא אינדיקציה למארז האוהל"
+  },
+  {
+   "id": "b02",
+   "name": "ארגז חשמל ותאורה",
+   "color": "#d9822b",
+   "category": "power",
+   "dims": [
+    45,
+    35,
+    30
+   ],
+   "volume": "40-45",
+   "kind": "box",
+   "purpose": "חשמל, אוורור, טעינה ותאורה",
+   "note": "בסיס 45×35 כדי לאפשר הערמה"
+  },
+  {
+   "id": "b03",
+   "name": "ארגז מטבח",
+   "color": "#a0522d",
+   "category": "kitchen",
+   "dims": [
+    45,
+    35,
+    35
+   ],
+   "volume": "50-60",
+   "kind": "box",
+   "purpose": "כלי אוכל וציוד מטבח יבש",
+   "note": "ללא מזון קר — הצידנית בנפרד"
+  },
+  {
+   "id": "b04",
+   "name": "ארגז ניקיון והיגיינה",
+   "color": "#3d7ea6",
+   "category": "hygiene",
+   "dims": [
+    45,
+    35,
+    25
+   ],
+   "volume": "30-40",
+   "kind": "box",
+   "purpose": "ניקיון, רחצה, היגיינה ועזרה ראשונה",
+   "note": "העדפה למכסה ננעל"
+  },
+  {
+   "id": "b05",
+   "name": "תיק רך ביגוד ושינה",
+   "color": "#7a6a9e",
+   "category": "clothing",
+   "dims": [
+    65,
+    40,
+    35
+   ],
+   "volume": "80-100",
+   "kind": "bag",
+   "purpose": "ביגוד, נעליים, מצעים וציוד רך",
+   "note": "תיק גמיש עדיף לניצול חללים ברכב"
+  }
+ ],
+ "items": [
+  {
+   "name": "Aztec Big Atlas 8 VENT",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "תא ראשי",
+   "id": "g001"
+  },
+  {
+   "name": "מעטפת / כיסוי חיצוני של האוהל",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "תא ראשי",
+   "id": "g002"
+  },
+  {
+   "name": "יתדות מקוריות",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "נרתיק קשיח/פנימי",
+   "notes": "לספור לפני כל יציאה",
+   "id": "g003"
+  },
+  {
+   "name": "4 יתדות ספייר",
+   "qty": 4,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "נרתיק יתדות",
+   "notes": "מערכת KSP",
+   "id": "g004"
+  },
+  {
+   "name": "פטיש גומי",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "נרתיק יתדות",
+   "notes": "מערכת KSP",
+   "id": "g005"
+  },
+  {
+   "name": "חולץ יתדות",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "נרתיק יתדות",
+   "notes": "מערכת KSP",
+   "id": "g006"
+  },
+  {
+   "name": "חבלי עיגון מקוריים",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "שקית פנימית",
+   "id": "g007"
+  },
+  {
+   "name": "Paracord 4 מ״מ ספייר",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "שקית חבלים",
+   "notes": "לשימושי עיגון כלליים",
+   "id": "g008"
+  },
+  {
+   "name": "מותחנים",
+   "qty": 1,
+   "status": "check",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "שקית חבלים",
+   "notes": "לפי מה שיוזמן/יש",
+   "id": "g009"
+  },
+  {
+   "name": "קרבינות קלות לציוד",
+   "qty": 4,
+   "status": "check",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "שקית חבלים",
+   "notes": "לא לעומסי גוף",
+   "id": "g010"
+  },
+  {
+   "name": "ערכת תיקון קטנה לאוהל",
+   "qty": 1,
+   "status": "check",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "כיס פנימי",
+   "notes": "טלאים/חומר תיקון תואם",
+   "id": "g011"
+  },
+  {
+   "name": "יריעת PE 4×3 מ׳",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "בתיק אם נכנס / צמוד אליו",
+   "notes": "מתחת לאוהל",
+   "id": "g012"
+  },
+  {
+   "name": "Tarp / הצללה",
+   "qty": 1,
+   "status": "have",
+   "category": "tents",
+   "boxId": "b01",
+   "spot": "בתיק נפרד צמוד",
+   "notes": "אם לא נכנס בתיק האוהל",
+   "id": "g013"
+  },
+  {
+   "name": "מאוורר FS-6P - גוף",
+   "qty": 4,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "צד שמאל בארגז",
+   "charge": true,
+   "notes": "להבים מפורקים בזמן אחסון",
+   "id": "g014"
+  },
+  {
+   "name": "סט להבים FS-6P",
+   "qty": 12,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "נרתיק להבים",
+   "charge": false,
+   "notes": "לשמור שטוחים",
+   "id": "g015"
+  },
+  {
+   "name": "שלטים למאווררים",
+   "qty": 4,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "פאוץ׳ קטן",
+   "charge": false,
+   "id": "g016"
+  },
+  {
+   "name": "פנס קמפינג נטען",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "חלק עליון",
+   "charge": true,
+   "id": "g017"
+  },
+  {
+   "name": "פנסים נוספים",
+   "qty": 3,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "חלק עליון",
+   "charge": true,
+   "id": "g018"
+  },
+  {
+   "name": "משאבה חשמלית למזרנים",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "חלק עליון",
+   "charge": true,
+   "notes": "עם כל הפיות",
+   "id": "g019"
+  },
+  {
+   "name": "Baseus 30,000mAh 65W",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "תא סוללות",
+   "charge": true,
+   "notes": "111Wh נומינלי",
+   "id": "g020"
+  },
+  {
+   "name": "Miracase 30,000mAh 22.5W",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "תא סוללות",
+   "charge": true,
+   "notes": "111Wh נומינלי",
+   "id": "g021"
+  },
+  {
+   "name": "Anker 323 10,000mAh",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "תא סוללות",
+   "charge": true,
+   "notes": "גיבוי קטן ונייד",
+   "id": "g022"
+  },
+  {
+   "name": "ארגונית כבלי טעינה",
+   "qty": 1,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "מרכז הארגז",
+   "charge": false,
+   "notes": "הוזמנה מאליאקספרס",
+   "id": "g023"
+  },
+  {
+   "name": "כבלי USB-C למאווררים",
+   "qty": 4,
+   "status": "have",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "ארגונית כבלים",
+   "charge": false,
+   "id": "g024"
+  },
+  {
+   "name": "כבלי טעינה לטלפונים",
+   "qty": 3,
+   "status": "home",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "ארגונית כבלים",
+   "charge": false,
+   "notes": "לפי סוגי המכשירים",
+   "id": "g025"
+  },
+  {
+   "name": "מטען קיר USB-C",
+   "qty": 1,
+   "status": "home",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "ארגונית כבלים",
+   "charge": false,
+   "notes": "אם יש חשמל באתר",
+   "id": "g026"
+  },
+  {
+   "name": "מפצל USB / כבל נוסף",
+   "qty": 1,
+   "status": "home",
+   "category": "power",
+   "boxId": "b02",
+   "spot": "ארגונית כבלים",
+   "charge": false,
+   "notes": "רק אם באמת נדרש",
+   "id": "g027"
+  },
+  {
+   "name": "צלחות רב-פעמיות",
+   "qty": 5,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "notes": "אחת לכל אחד",
+   "id": "g028"
+  },
+  {
+   "name": "קערות",
+   "qty": 5,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g029"
+  },
+  {
+   "name": "כוסות רב-פעמיות",
+   "qty": 5,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g030"
+  },
+  {
+   "name": "סכו״ם",
+   "qty": 5,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "notes": "סט לכל אחד",
+   "id": "g031"
+  },
+  {
+   "name": "סכין מטבח",
+   "qty": 1,
+   "status": "home",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "notes": "לשימוש מבוגר בלבד",
+   "id": "g032"
+  },
+  {
+   "name": "קרש חיתוך",
+   "qty": 1,
+   "status": "home",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g033"
+  },
+  {
+   "name": "כף/מלקחיים/כלי הגשה",
+   "qty": 2,
+   "status": "home",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g034"
+  },
+  {
+   "name": "פותחן בקבוקים/קופסאות",
+   "qty": 1,
+   "status": "home",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g035"
+  },
+  {
+   "name": "קופסאות מזון אטומות",
+   "qty": 4,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "notes": "לשאריות וחטיפים",
+   "id": "g036"
+  },
+  {
+   "name": "שקיות רב-סגר",
+   "qty": 1,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g037"
+  },
+  {
+   "name": "נייר אלומיניום / נייר אפייה",
+   "qty": 1,
+   "status": "check",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g038"
+  },
+  {
+   "name": "מגבת מטבח",
+   "qty": 2,
+   "status": "home",
+   "category": "kitchen",
+   "boxId": "b03",
+   "perTrip": false,
+   "id": "g039"
+  },
+  {
+   "name": "קפה / תה",
+   "qty": 1,
+   "status": "per_trip",
+   "category": "food",
+   "boxId": "b03",
+   "perTrip": true,
+   "id": "g040"
+  },
+  {
+   "name": "סוכר / ממתיק",
+   "qty": 1,
+   "status": "per_trip",
+   "category": "food",
+   "boxId": "b03",
+   "perTrip": true,
+   "id": "g041"
+  },
+  {
+   "name": "תבלינים בסיסיים",
+   "qty": 1,
+   "status": "per_trip",
+   "category": "food",
+   "boxId": "b03",
+   "perTrip": true,
+   "id": "g042"
+  },
+  {
+   "name": "חטיפים / מזון יבש",
+   "qty": 1,
+   "status": "per_trip",
+   "category": "food",
+   "boxId": "b03",
+   "perTrip": true,
+   "id": "g043"
+  },
+  {
+   "name": "מטאטא ידני",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "have",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "תחתית",
+   "notes": "מערכת KSP",
+   "id": "g044"
+  },
+  {
+   "name": "יעה",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "have",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "תחתית",
+   "notes": "מערכת KSP",
+   "id": "g045"
+  },
+  {
+   "name": "שקיות זבל",
+   "qty": 6,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "צד הארגז",
+   "id": "g046"
+  },
+  {
+   "name": "סבון כלים",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "קופסה אטומה",
+   "id": "g047"
+  },
+  {
+   "name": "ספוג כלים",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "קופסה אטומה",
+   "id": "g048"
+  },
+  {
+   "name": "נייר סופג",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g049"
+  },
+  {
+   "name": "מטליות ניקוי",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g050"
+  },
+  {
+   "name": "מגבונים",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g051"
+  },
+  {
+   "name": "אלכוג׳ל / חומר חיטוי ידיים",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g052"
+  },
+  {
+   "name": "נייר טואלט",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g053"
+  },
+  {
+   "name": "סבון רחצה / ג׳ל רחצה",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g054"
+  },
+  {
+   "name": "שמפו",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g055"
+  },
+  {
+   "name": "מרכך שיער",
+   "qty": 1,
+   "owner": "לפי צורך",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g056"
+  },
+  {
+   "name": "מברשות שיניים",
+   "qty": 5,
+   "owner": "כולם",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "notes": "אחת לכל אחד",
+   "id": "g057"
+  },
+  {
+   "name": "משחת שיניים",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g058"
+  },
+  {
+   "name": "מברשת/מסרק שיער",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g059"
+  },
+  {
+   "name": "גומיות/סיכות שיער",
+   "qty": 1,
+   "owner": "בנות משפחה",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "notes": "לפי צורך",
+   "id": "g060"
+  },
+  {
+   "name": "דאודורנט",
+   "qty": 4,
+   "owner": "מבוגרים/ילדים לפי צורך",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "id": "g061"
+  },
+  {
+   "name": "ערכת גילוח",
+   "qty": 1,
+   "owner": "אבא",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "notes": "לפי צורך",
+   "id": "g062"
+  },
+  {
+   "name": "מוצרי היגיינה נשית",
+   "qty": 1,
+   "owner": "אמא לפי צורך",
+   "status": "home",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "תיק רחצה",
+   "notes": "לארוז בהתאם לצורך האישי",
+   "id": "g063"
+  },
+  {
+   "name": "קרם הגנה",
+   "qty": 1,
+   "owner": "כולם",
+   "status": "check",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g064"
+  },
+  {
+   "name": "דוחה חרקים",
+   "qty": 1,
+   "owner": "כולם",
+   "status": "check",
+   "category": "hygiene",
+   "boxId": "b04",
+   "spot": "חלק עליון",
+   "id": "g065"
+  },
+  {
+   "name": "ערכת עזרה ראשונה",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "have",
+   "category": "firstaid",
+   "boxId": "b04",
+   "spot": "חלק עליון ונגיש",
+   "notes": "נרכשה מאליאקספרס",
+   "id": "g066"
+  },
+  {
+   "name": "תרופות אישיות",
+   "qty": 1,
+   "owner": "לפי צורך",
+   "status": "per_trip",
+   "category": "firstaid",
+   "boxId": "b04",
+   "spot": "פאוץ׳ נפרד",
+   "notes": "רק למי שצריך",
+   "id": "g067"
+  },
+  {
+   "name": "שק כביסה לבגדים מלוכלכים",
+   "qty": 1,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "צד הארגז",
+   "id": "g068"
+  },
+  {
+   "name": "שקית לבגדים/נעליים רטובים",
+   "qty": 2,
+   "owner": "משפחתי",
+   "status": "check",
+   "category": "cleaning",
+   "boxId": "b04",
+   "spot": "צד הארגז",
+   "id": "g069"
+  },
+  {
+   "name": "מזרן זוגי",
+   "qty": 2,
+   "status": "have",
+   "category": "sleep",
+   "spot": "נפרד",
+   "big": true,
+   "id": "g070"
+  },
+  {
+   "name": "מזרן יחיד",
+   "qty": 1,
+   "status": "have",
+   "category": "sleep",
+   "spot": "נפרד",
+   "big": true,
+   "id": "g071"
+  },
+  {
+   "name": "מחצלת חיצונית",
+   "qty": 1,
+   "status": "have",
+   "category": "furniture",
+   "spot": "נפרד",
+   "big": true,
+   "id": "g072"
+  },
+  {
+   "name": "קרחומים",
+   "qty": 1,
+   "status": "have",
+   "category": "cooling",
+   "spot": "בצידנית",
+   "notes": "כמות לפי הצידנית",
+   "big": true,
+   "id": "g073"
+  },
+  {
+   "name": "צידנית משפחתית",
+   "qty": 1,
+   "status": "buy",
+   "category": "cooling",
+   "spot": "נפרד",
+   "notes": "יעד 50-60 ל׳",
+   "big": true,
+   "id": "g074"
+  },
+  {
+   "name": "שולחן קמפינג",
+   "qty": 1,
+   "status": "buy",
+   "category": "furniture",
+   "spot": "נפרד",
+   "big": true,
+   "id": "g075"
+  },
+  {
+   "name": "כיסאות קמפינג",
+   "qty": 5,
+   "status": "buy",
+   "category": "furniture",
+   "spot": "נפרד",
+   "notes": "אחד לכל בן משפחה",
+   "big": true,
+   "id": "g076"
+  },
+  {
+   "name": "שישיות מים מינרליים",
+   "qty": 1,
+   "status": "per_trip",
+   "category": "food",
+   "spot": "רצפת תא המטען",
+   "notes": "לשתייה",
+   "big": true,
+   "id": "g077"
+  },
+  {
+   "name": "מכל מים לניקיון",
+   "qty": 1,
+   "status": "check",
+   "category": "cleaning",
+   "spot": "רצפת תא המטען",
+   "notes": "רק לניקיון ושטיפה",
+   "big": true,
+   "id": "g078"
+  },
+  {
+   "name": "כריות",
+   "qty": 5,
+   "status": "home",
+   "category": "sleep",
+   "boxId": "b05",
+   "spot": "תיק רך",
+   "notes": "אחת לכל אחד",
+   "id": "g079"
+  },
+  {
+   "name": "שמיכות",
+   "qty": 5,
+   "status": "home",
+   "category": "sleep",
+   "boxId": "b05",
+   "spot": "תיק רך",
+   "notes": "להתאים לטמפרטורת הלילה",
+   "id": "g080"
+  },
+  {
+   "name": "שמיכה נוספת לישיבה/ערב",
+   "qty": 1,
+   "status": "home",
+   "category": "sleep",
+   "boxId": "b05",
+   "spot": "תיק רך",
+   "id": "g081"
+  }
+ ],
+ "personalTemplate": [
+  {
+   "name": "תחתונים",
+   "hot": 2,
+   "cold": 2,
+   "sub": "ביגוד אישי",
+   "notes": "אחד נוסף מעבר לצורך הצפוי"
+  },
+  {
+   "name": "גרביים",
+   "hot": 2,
+   "cold": 2,
+   "sub": "ביגוד אישי",
+   "notes": "אחד נוסף מעבר לצורך הצפוי"
+  },
+  {
+   "name": "חולצה קצרה",
+   "hot": 2,
+   "cold": 1,
+   "sub": "ביגוד אישי"
+  },
+  {
+   "name": "חולצה ארוכה",
+   "hot": 0,
+   "cold": 2,
+   "sub": "ביגוד אישי"
+  },
+  {
+   "name": "מכנס קצר",
+   "hot": 1,
+   "cold": 0,
+   "sub": "ביגוד אישי"
+  },
+  {
+   "name": "מכנס ארוך",
+   "hot": 1,
+   "cold": 2,
+   "sub": "ביגוד אישי"
+  },
+  {
+   "name": "פיג׳מה",
+   "hot": 1,
+   "cold": 1,
+   "sub": "ביגוד אישי"
+  },
+  {
+   "name": "סווטשירט / פליז",
+   "hot": 1,
+   "cold": 1,
+   "sub": "שכבה חמה",
+   "notes": "גם בקיץ יכול להיות קר בלילה"
+  },
+  {
+   "name": "מעיל קל / גשם",
+   "hot": 0,
+   "cold": 1,
+   "sub": "שכבה חמה",
+   "notes": "לפי תחזית"
+  },
+  {
+   "name": "כובע שמש",
+   "hot": 1,
+   "cold": 1,
+   "sub": "אביזרים"
+  },
+  {
+   "name": "כובע חם",
+   "hot": 0,
+   "cold": 1,
+   "sub": "אביזרים"
+  },
+  {
+   "name": "בגד ים",
+   "hot": 1,
+   "cold": 0,
+   "sub": "אביזרים",
+   "notes": "רק אם רלוונטי ליעד"
+  },
+  {
+   "name": "נעלי הליכה/ספורט",
+   "hot": 1,
+   "cold": 1,
+   "sub": "נעליים",
+   "notes": "זוג סגור"
+  },
+  {
+   "name": "כפכפים / סנדלים",
+   "hot": 1,
+   "cold": 1,
+   "sub": "נעליים",
+   "notes": "למחנה/מקלחת"
+  },
+  {
+   "name": "מגבת אישית",
+   "hot": 1,
+   "cold": 1,
+   "sub": "רחצה"
+  }
+ ],
+ "tasks": [
+  {
+   "when": "יום-יומיים לפני",
+   "text": "לבדוק תחזית מזג אוויר ולהחליט חם/קר"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "לעבור על כל הלשוניות ולסמן חוסרים"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "לטעון 4 מאווררים, פנס קמפינג, פנסים, משאבה ו-3 Power Banks"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "להקפיא קרחומים"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "לבדוק שהאוהל, Tarp והיריעה יבשים ושלמים"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "לבדוק מזרנים וניפוח"
+  },
+  {
+   "when": "יום-יומיים לפני",
+   "text": "להכין מזון יבש, מים מינרליים וציוד מטבח"
+  },
+  {
+   "when": "בוקר היציאה",
+   "text": "להכניס מזון קר + קרחומים לצידנית"
+  },
+  {
+   "when": "בוקר היציאה",
+   "text": "להעמיס תיק אוהל + 3 מזרנים + Tarp + מחצלת"
+  },
+  {
+   "when": "בוקר היציאה",
+   "text": "להעמיס ארגז חשמל, ארגז מטבח וארגז ניקיון/בטיחות"
+  },
+  {
+   "when": "בוקר היציאה",
+   "text": "להעמיס תיק ביגוד ושינה"
+  },
+  {
+   "when": "בוקר היציאה",
+   "text": "להעמיס שולחן + 5 כיסאות + צידנית"
+  },
+  {
+   "when": "רגע לפני",
+   "text": "לוודא טלפונים, ארנק, מפתחות, כתובת/הזמנה ופרטי קשר"
+  },
+  {
+   "when": "בסיום הטיול",
+   "text": "לספור יתדות, חבלים, שלטים וכבלים"
+  },
+  {
+   "when": "בסיום הטיול",
+   "text": "לייבש אוהל/Tarp לפני אחסון אם הם לחים"
+  },
+  {
+   "when": "בסיום הטיול",
+   "text": "לרשום מה היה חסר ולעדכן את הקובץ לטיול הבא"
+  }
+ ]
+}

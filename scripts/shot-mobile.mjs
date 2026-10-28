@@ -1,0 +1,15 @@
+import { chromium } from 'playwright-core';
+const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+await ctx.route(/fonts\.|overpass|osrm|nominatim|firebase|googleapis|gstatic/, r => r.abort());
+await ctx.route(/api\.open-meteo\.com/, async r => { const { default: f } = await import('./overflow-fixture.mjs'); r.fulfill({ json: f() }); });
+const p = await ctx.newPage();
+await p.goto(BASE); await p.waitForTimeout(1500);
+const tid = await p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0].id);
+await p.goto(BASE + `#/trip/${tid}`); await p.waitForTimeout(1500);
+await p.evaluate(() => window.scrollTo(0, 650)); await p.waitForTimeout(300);
+await p.screenshot({ path: `${OUT}/70-overview-fixed.png` });
+await p.goto(BASE + `#/trip/${tid}/gear`); await p.waitForTimeout(1000);
+await p.screenshot({ path: `${OUT}/71-gear-fixed.png` });
+await b.close();

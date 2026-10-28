@@ -1,0 +1,56 @@
+# CI for CampIL source (branch `source`): type check, unit tests, build, Firestore security-rules tests.
+# A short report of every run is committed to the `ci-reports` branch, so results can be read without the GitHub UI.
+name: CI
+on:
+  push: { branches: [source] }
+  workflow_dispatch: {}
+permissions: { contents: write }
+concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci
+      - id: typecheck
+        run: npm run typecheck 2>&1 | tee typecheck.log
+        continue-on-error: true
+      - id: unit
+        run: npx vitest run --reporter=verbose 2>&1 | tee unit.log; exit ${PIPESTATUS[0]}
+        shell: bash
+        continue-on-error: true
+      - id: build
+        run: npx vite build 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+        shell: bash
+        continue-on-error: true
+      - id: rules
+        run: npm run test:rules -- --reporter=verbose 2>&1 | tee rules.log; exit ${PIPESTATUS[0]}
+        shell: bash
+        continue-on-error: true
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          sha=${GITHUB_SHA::7}
+          {
+            echo "# CI ${sha} — $(date -u +%Y-%m-%dT%H:%MZ)"
+            echo "- typecheck: ${{ steps.typecheck.outcome }}"
+            echo "- unit: ${{ steps.unit.outcome }}"
+            echo "- build: ${{ steps.build.outcome }}"
+            echo "- rules: ${{ steps.rules.outcome }}"
+            for f in typecheck unit build rules; do echo; echo "## $f"; echo '```'; tail -n 120 $f.log 2>/dev/null; echo '```'; done
+          } > report.md
+          git fetch origin ci-reports:ci-reports 2>/dev/null || true
+          mkdir -p /tmp/r && cp report.md /tmp/r/
+          git config user.name "campil-ci"; git config user.email "ci@campil.invalid"
+          if git rev-parse --verify ci-reports >/dev/null 2>&1; then git checkout ci-reports; else git checkout --orphan ci-reports; git rm -rqf . ; fi
+          cp /tmp/r/report.md "latest.md"; cp /tmp/r/report.md "${sha}.md"
+          git add latest.md "${sha}.md"; git commit -qm "CI ${sha}"; git push origin ci-reports
+      - name: Fail if any check failed
+        if: steps.typecheck.outcome != 'success' || steps.unit.outcome != 'success' || steps.build.outcome != 'success' || steps.rules.outcome != 'success'
+        run: exit 1
