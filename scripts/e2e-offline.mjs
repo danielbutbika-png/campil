@@ -17,8 +17,9 @@ const swInfo = await p.evaluate(async () => {
   return { controlled: !!navigator.serviceWorker.controller, caches: keys, cachedFiles: n };
 });
 console.log('service worker ready:', JSON.stringify(swInfo));
+const offlog = []; p.on('requestfailed', r => offlog.push('failed ' + r.url().slice(0, 90) + ' ' + (r.failure()?.errorText ?? ''))); p.on('console', m => { if (m.type() === 'error') offlog.push('console ' + m.text().slice(0, 140)); });
 await ctx.setOffline(true);
-await p.goto(BASE + `#/trip/${tid}/gear`); await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," "));
+await p.goto(BASE + `#/trip/${tid}/gear`); await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," ")); if (!(await p.locator('main').count())) { console.log('offline load log:\n' + offlog.slice(0, 20).join('\n')); console.log('html head:', (await p.content()).slice(0, 300)); }
 const banner = await p.getByText('אין חיבור לאינטרנט').count();
 const items = await p.locator('input[type=checkbox][aria-label$="ארוז"]').count();
 await p.locator('input[type=checkbox][aria-label$="ארוז"]').first().check(); await p.waitForTimeout(300);
