@@ -13,8 +13,15 @@ import { readiness } from '../../engine/packing';
 export interface TripMeta { owner: string; access: Access; pending: Record<string, Pending>; invite: NonNullable<TripDoc['invite']>; progress: NonNullable<TripDoc['progress']>; familyMode: FamMode }
 /** 'on': private family lists live in families/{id}; 'legacy': the project still has the old rules, keep everything in the trip document. */
 export type FamMode = 'pending' | 'on' | 'legacy';
-interface CloudState { status: 'off' | 'connecting' | 'on' | 'error'; error?: string; uid?: string; account?: Account; members: Record<string, Record<string, Member>>; meta: Record<string, TripMeta> }
-export const useCloud = create<CloudState>(() => ({ status: 'off', members: {}, meta: {} }));
+interface CloudState { status: 'off' | 'connecting' | 'on' | 'error'; error?: string; pending: number; lastSync?: number; uid?: string; account?: Account; members: Record<string, Record<string, Member>>; meta: Record<string, TripMeta> }
+export const useCloud = create<CloudState>(() => ({ status: 'off', pending: 0, members: {}, meta: {} }));
+/** Count a write until the server confirms it (Firestore keeps it on the device while offline). */
+function track<T>(p: Promise<T>): Promise<T> {
+  useCloud.setState(s => ({ pending: s.pending + 1 }));
+  const done = (ok: boolean) => useCloud.setState(s => ({ pending: Math.max(0, s.pending - 1), ...(ok ? { lastSync: Date.now() } : {}) }));
+  p.then(() => done(true), () => done(false));
+  return p;
+}
 
 let tp: Transport | null = null; let tpKey = '';
 const watchers = new Map<string, () => void>();
@@ -237,11 +244,11 @@ function push(cid: string, base: Trip, t: Trip) {
     const r = readiness(t.packing.filter(p => itemFamily(t, p) === mineFam));
     const prev = mainDocs.get(cid)?.progress?.[mineFam];
     if (!prev || prev.packed !== r.done || prev.total !== r.total) main.push({ path: ['progress', mineFam], value: { packed: r.done, total: r.total, at: Date.now() } });
-    const send = fd!.doc ? tp.patchFamily(cid, mineFam, fam) : tp.createFamily(cid, mineFam, { packing: Object.fromEntries(t.packing.filter(p => itemFamily(t, p) === mineFam).map(p => [p.id, clean(p)])) });
+    const send = track(fd!.doc ? tp.patchFamily(cid, mineFam, fam) : tp.createFamily(cid, mineFam, { packing: Object.fromEntries(t.packing.filter(p => itemFamily(t, p) === mineFam).map(p => [p.id, clean(p)])) }));
     send.catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
   }
   if (split && t.shared?.role === 'owner' && t.packing.some(p => { const f = itemFamily(t, p); return f && f !== mineFam; })) migrate(cid, t).catch(() => {});
-  if (main.length) tp.patch(cid, main).catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
+  if (main.length) track(tp.patch(cid, main)).catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
 }
 
 const metaKey = (p: AlbumPhoto) => JSON.stringify([p.by, p.takenAt, p.caption ?? '', p.collage ?? false]);
@@ -278,7 +285,7 @@ export async function startSync() {
       for (const e of s.journal) {
         const t = s.trips.find(x => x.id === e.tripId); if (!t?.shared) continue;
         const j = JSON.stringify(e); if (lastJ.get(e.id) === j) continue;
-        lastJ.set(e.id, j); pushJournal(e, t.shared.cloudId).catch(() => toast('הרשומה לא סונכרנה'));
+        lastJ.set(e.id, j); track(pushJournal(e, t.shared.cloudId)).catch(() => toast('הרשומה לא סונכרנה'));
       }
       for (const e of prev.journal) if (!s.journal.some(x => x.id === e.id)) { const t = s.trips.find(x => x.id === e.tripId); if (t?.shared && lastJ.has(e.id)) { lastJ.delete(e.id); tp.deleteEntry(t.shared.cloudId, e.id).catch(() => {}); } }
     }
@@ -286,7 +293,7 @@ export async function startSync() {
       for (const p of s.album) {
         const t = s.trips.find(x => x.id === p.tripId); if (!t?.shared) continue;
         const k = metaKey(p); if (lastP.get(p.id) === k) continue;
-        lastP.set(p.id, k); pushPhoto(p, t.shared.cloudId).catch(() => { lastP.delete(p.id); toast('תמונה לא סונכרנה — ננסה שוב'); });
+        lastP.set(p.id, k); track(pushPhoto(p, t.shared.cloudId)).catch(() => { lastP.delete(p.id); toast('תמונה לא סונכרנה — ננסה שוב'); });
       }
       for (const p of prev.album) if (!s.album.some(x => x.id === p.id)) { const t = s.trips.find(x => x.id === p.tripId); if (t?.shared && lastP.has(p.id)) { lastP.delete(p.id); tp.deleteEntry(t.shared.cloudId, p.id).catch(() => {}); } }
     }

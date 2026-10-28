@@ -20,10 +20,11 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  // Map tiles/styles: cache-first with a size cap, so viewed areas work offline.
+  // Map tiles/styles: cache-first — areas saved by "prepare for the field" (campil-offline-map) or viewed before
+  // (campil-rt-map, size-capped) work with no signal.
   if (/openfreemap\.org|unpkg\.com/.test(url.host)) {
     e.respondWith(caches.open('campil-rt-map').then(async c => {
-      const hit = await c.match(req, { ignoreVary: true }); if (hit) return hit;
+      const hit = (await caches.match(req.url, { ignoreVary: true, cacheName: 'campil-offline-map' })) || (await c.match(req, { ignoreVary: true })); if (hit) return hit;
       const r = await fetch(req); if (r.ok) { c.put(req, r.clone()); c.keys().then(k => { if (k.length > 1500) c.delete(k[0]); }); } return r;
     }));
   }

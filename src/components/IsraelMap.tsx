@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { mapStyleAvailable } from '../lib/offline';
 import maplibregl, { type Map as MLMap, type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import regions from '../data/regions.geo.json';
@@ -76,6 +77,8 @@ export function IsraelMap({ selected, onSelect, sites = [], osm = [], onSite, cl
       setReady(true);
     };
     m.on('load', install);
+    // no signal, but the area was saved with "prepare for the field": use the real map from the device
+    if (!navigator.onLine) mapStyleAvailable().then(ok => { if (ok && !fellBack) { setBasemap('ok'); m.setStyle(BASE); m.once('styledata', install); } });
     m.on('error', e => {
       if (fellBack || m.loaded()) return;
       if (String((e as any).error?.message || '').match(/Failed to fetch|NetworkError|style|404|403/i)) { fellBack = true; setBasemap('fallback'); m.setStyle(BLANK); m.once('styledata', install); }

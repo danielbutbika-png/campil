@@ -47,6 +47,10 @@ await A.goto(BASE + `#/trip/${tid}/gear`); await A.waitForTimeout(1200);
 const seenOnA = await A.locator('li', { hasText: '✓ מיכל' }).count();
 console.log(`A sees "${itemName}" packed by מיכל:`, seenOnA > 0);
 await A.screenshot({ path: `${OUT}/63-A-sees-rachel.png` });
+console.log('sync badge says synced:', (await A.getByRole('status').filter({ hasText: 'מסונכרן' }).count()) > 0);
+await A.context().setOffline(true); await A.waitForTimeout(300);
+console.log('sync badge says no signal:', (await A.getByRole('status').filter({ hasText: 'אין קליטה' }).count()) > 0);
+await A.context().setOffline(false); await A.waitForTimeout(300);
 // A completes a task → B sees it live (no reload)
 await B.goto(B.url().replace(/\/gear$/, '/tasks')); await B.waitForTimeout(800);
 await A.goto(BASE + `#/trip/${tid}/tasks`); await A.waitForTimeout(800);

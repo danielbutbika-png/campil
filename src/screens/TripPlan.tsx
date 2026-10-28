@@ -14,6 +14,7 @@ import { shareText, tripSummary } from '../lib/share';
 import type { Trip } from '../lib/types';
 import Overview from './trip/Overview';
 import { ShareSheet, Avatars, LeaveOrDelete } from '../components/Collab';
+import { SyncBadge } from '../components/Field';
 import GearTab from './trip/GearTab';
 import MealsTab from './trip/MealsTab';
 import { ScheduleTab, TasksTab } from './trip/PlanTabs';
@@ -88,7 +89,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
           <div className="pt-8">
             <div className="mb-1 flex flex-wrap gap-2">{t.example && <Badge className="!bg-white/20 !text-white">טיול לדוגמה — אפשר לערוך או למחוק</Badge>}{t.status === 'done' ? <Badge className="!bg-white/20 !text-white">הסתיים</Badge> : until >= 0 && <Badge className="!bg-sunset !text-white">{until === 0 ? 'יוצאים היום' : `בעוד ${until} ימים`}</Badge>}</div>
             <h1 className="font-display text-3xl drop-shadow md:text-5xl">{t.name}</h1>
-            {t.shared && <div className="mt-2"><Avatars t={t} light /></div>}
+            {t.shared && <div className="mt-2 flex flex-wrap items-center gap-2"><Avatars t={t} light /><SyncBadge t={t} /></div>}
             <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-white/90"><span className="flex items-center gap-1"><CalendarDays size={15} />{fmtRange(t.start, t.end)}{nights ? ` · ${nights} לילות` : ' · טיול יום'}</span>{reg && <span className="flex items-center gap-1"><MapPin size={15} />{reg.name}</span>}<span className="flex items-center gap-1"><Users size={15} />{t.adults + t.children} משתתפים</span></p>
           </div>
         </div>

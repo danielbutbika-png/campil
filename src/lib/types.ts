@@ -55,6 +55,8 @@ export interface Trip {
   status: 'planning' | 'done'; packingSig?: string; example?: boolean;
   /** set once the end-of-trip collage was made and shared with everyone */
   albumFinal?: { collageId: string; at: number; by: string };
+  /** this device: what was saved for use with no signal (never synced) */
+  offline?: import('./offline').Prepared;
   shared?: { cloudId: string; role: 'owner' | 'editor'; joinedAt: string; familyId?: string };
   rating?: number; notes?: string;
 }

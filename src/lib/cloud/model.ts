@@ -21,7 +21,7 @@ export interface TripDoc {
 
 export const MAPS = ['packing', 'tasks', 'meals', 'schedule'] as const;
 // Local-only fields that are never shared.
-const LOCAL = new Set(['shared', 'packingSig', 'packingGeneratedAt', 'example', 'id', 'packing', 'tasks', 'meals', 'schedule', 'pantry']);
+const LOCAL = new Set(['shared', 'packingSig', 'packingGeneratedAt', 'example', 'offline', 'id', 'packing', 'tasks', 'meals', 'schedule', 'pantry']);
 
 /** Firestore rejects `undefined`; JSON round-trip drops it. */
 export const clean = <T>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -44,7 +44,7 @@ export function fromDoc(d: TripDoc, local?: Trip): Trip {
     meals: list(d.meals).sort((a, b) => a.day - b.day || (MEAL_ORDER[a.type] ?? 9) - (MEAL_ORDER[b.type] ?? 9)),
     schedule: list(d.schedule).sort((a, b) => a.day - b.day || String(a.time).localeCompare(String(b.time))),
     pantry: { ...(d.pantry ?? {}) },
-    shared: local?.shared, packingSig: local?.packingSig, packingGeneratedAt: local?.packingGeneratedAt,
+    shared: local?.shared, packingSig: local?.packingSig, packingGeneratedAt: local?.packingGeneratedAt, offline: local?.offline,
   } as Trip;
 }
 
