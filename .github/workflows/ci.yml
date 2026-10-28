@@ -2,10 +2,14 @@
 # A short report of every run is committed to the `ci-reports` branch, so results can be read without the GitHub UI.
 name: CI
 on:
-  push: { branches: [source] }
-  workflow_dispatch: {}
-permissions: { contents: write }
-concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+  push:
+    branches: [source]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
