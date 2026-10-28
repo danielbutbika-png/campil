@@ -14,7 +14,7 @@ self.addEventListener('fetch', e => {
   // Same-origin assets & fonts: stale-while-revalidate.
   if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     e.respondWith(caches.open(url.origin === location.origin ? VERSION : 'campil-rt-fonts').then(async c => {
-      const hit = await c.match(req, { ignoreSearch: req.mode === 'navigate' });
+      const hit = await c.match(req, { ignoreSearch: req.mode === 'navigate', ignoreVary: true });
       const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit || (req.mode === 'navigate' ? c.match('./index.html') : undefined));
       return hit || net;
     }));
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
   // Map tiles/styles: cache-first with a size cap, so viewed areas work offline.
   if (/openfreemap\.org|unpkg\.com/.test(url.host)) {
     e.respondWith(caches.open('campil-rt-map').then(async c => {
-      const hit = await c.match(req); if (hit) return hit;
+      const hit = await c.match(req, { ignoreVary: true }); if (hit) return hit;
       const r = await fetch(req); if (r.ok) { c.put(req, r.clone()); c.keys().then(k => { if (k.length > 1500) c.delete(k[0]); }); } return r;
     }));
   }
