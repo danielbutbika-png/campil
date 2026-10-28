@@ -9,7 +9,14 @@ p.on('pageerror', e => errors.push(e.message));
 await p.goto(BASE); await p.waitForTimeout(2500);
 const sw = await p.evaluate(async () => !!(await navigator.serviceWorker?.getRegistration()));
 const tid = await p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0].id);
-await p.evaluate(() => navigator.serviceWorker.ready); await p.waitForTimeout(1500); // one visit to the home screen only
+// one visit to the home screen only: wait until the service worker has installed (precached the build) and controls the page
+const swInfo = await p.evaluate(async () => {
+  await navigator.serviceWorker.ready;
+  for (let i = 0; i < 40 && !navigator.serviceWorker.controller; i++) await new Promise(r => setTimeout(r, 250));
+  const keys = await caches.keys(); let n = 0; for (const k of keys) n += (await (await caches.open(k)).keys()).length;
+  return { controlled: !!navigator.serviceWorker.controller, caches: keys, cachedFiles: n };
+});
+console.log('service worker ready:', JSON.stringify(swInfo));
 await ctx.setOffline(true);
 await p.goto(BASE + `#/trip/${tid}/gear`); await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," "));
 const banner = await p.getByText('אין חיבור לאינטרנט').count();
