@@ -30,7 +30,7 @@ console.log('within 3,000 tiles:', prep.tiles > 100 && prep.tiles <= 3000, '| ti
 console.log('at most 4 parallel requests:', maxInflight <= 4, `(max ${maxInflight})`);
 console.log('official alerts card shown:', (await p.getByRole('heading', { name: 'התרעות רשמיות — לבדוק לפני היציאה' }).count()) > 0);
 // sources: a site's details show their status; a user's own check is stored and labelled
-await p.locator('button[aria-label^="פרטים על"]').first().click(); await p.waitForTimeout(400);
+await p.locator('article button').filter({ hasText: 'פרטים על' }).first().click(); await p.waitForTimeout(400);
 console.log('unknown details labelled:', (await p.getByText('לא ידוע — לבדוק באתר המפעיל').count()) > 0);
 await p.getByRole('button', { name: 'הוספת בדיקה' }).click();
 await p.selectOption('#ck-booking', 'required'); await p.fill('#ck-note', 'פתוח 8:00–17:00 לפי האתר');

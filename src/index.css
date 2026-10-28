@@ -6,8 +6,8 @@
    Palette: deep forest, sand & earth, cream, a sunset accent. Display: Suez One (trail-sign weight). Body: Assistant. */
 :root {
   --bg: 250 246 238; --surface: 255 253 248; --raised: 243 236 222; --ink: 28 36 30; --muted: 98 104 92; --line: 225 215 196;
-  --forest: 29 58 41; --moss: 52 97 64; --sand: 232 220 196; --earth: 139 107 71; --sunset: 214 106 42; --onforest: 246 241 228;
-  --ok: 47 125 74; --warn: 196 128 22; --danger: 190 52 40; --info: 52 108 150; --shadow: 40 34 20;
+  --forest: 29 58 41; --moss: 52 97 64; --sand: 232 220 196; --earth: 139 107 71; --sunset: 168 74 24; --onforest: 246 241 228;
+  --ok: 47 125 74; --warn: 143 88 10; --danger: 190 52 40; --info: 52 108 150; --shadow: 40 34 20;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -66,4 +66,4 @@ input, select, textarea { font: inherit; color: inherit; }
 .print-only { display: none; }
 .region-label { font: 700 12px/1 Assistant, sans-serif; color: #1d3a29; background: rgba(255,255,255,.88); padding: 4px 8px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.18); white-space: nowrap; }
 .region-label.sel { background: #1d3a29; color: #fff; }
-.labels-far .region-label:not(.sel) { font-size: 0; padding: 0; width: 9px; height: 9px; border: 2px solid #1d3a29; }
+.labels-far .region-label:not(.sel) { font-size: 0; padding: 0; width: 24px; height: 24px; box-shadow: none; background: radial-gradient(circle, #fff 0 3px, #1d3a29 3.5px 5.5px, transparent 6px); }

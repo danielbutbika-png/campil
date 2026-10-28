@@ -5,12 +5,12 @@ import { useOnline } from './lib/hooks';
 import { useStore } from './lib/store';
 import { cx } from './components/ui';
 import Home from './screens/Home';
-import Trips from './screens/Trips';
-import Wizard from './screens/Wizard';
-import TripPlan from './screens/TripPlan';
-import Gear from './screens/Gear';
-import CampSearch from './screens/CampSearch';
-import Join from './screens/Join';
+const Trips = lazy(() => import('./screens/Trips'));
+const Wizard = lazy(() => import('./screens/Wizard'));
+const TripPlan = lazy(() => import('./screens/TripPlan'));
+const Gear = lazy(() => import('./screens/Gear'));
+const CampSearch = lazy(() => import('./screens/CampSearch'));
+const Join = lazy(() => import('./screens/Join'));
 import { startSync } from './lib/cloud/sync';
 import { tripPhotos } from './lib/album';
 import { todayISO } from './lib/util';
@@ -33,7 +33,12 @@ function useTripEndReminder() {
     }
   }, [trips, album]);
 }
-import More, { Guides, GuideView, Albums, Settings, About } from './screens/More';
+const More = lazy(() => import('./screens/More'));
+const Guides = lazy(() => import('./screens/More').then(m => ({ default: m.Guides })));
+const GuideView = lazy(() => import('./screens/More').then(m => ({ default: m.GuideView })));
+const Albums = lazy(() => import('./screens/More').then(m => ({ default: m.Albums })));
+const Settings = lazy(() => import('./screens/More').then(m => ({ default: m.Settings })));
+const About = lazy(() => import('./screens/More').then(m => ({ default: m.About })));
 
 const MapScreen = lazy(() => import('./screens/MapScreen'));
 
@@ -49,7 +54,7 @@ export function Logo({ light }: { light?: boolean }) {
   return (
     <span className="flex items-center gap-2" aria-label="CampIL">
       <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden><rect width="64" height="64" rx="16" fill={light ? '#f6f1e4' : 'rgb(var(--forest))'} /><path d="M12 48 L32 16 L52 48 Z" fill="none" stroke={light ? '#1d3a29' : 'rgb(var(--onforest))'} strokeWidth="4.5" strokeLinejoin="round" /><path d="M32 48 L32 30" stroke="#d66a2a" strokeWidth="4.5" strokeLinecap="round" /><circle cx="48" cy="17" r="5" fill="#d66a2a" /></svg>
-      <span className={cx('font-display text-2xl', light ? 'text-white' : 'text-forest')} dir="ltr">Camp<span className="text-sunset">IL</span></span>
+      <span className={cx('font-display text-2xl', light ? 'text-white' : 'text-forest')} dir="ltr">Camp<span className={light ? 'text-[#f08c50]' : 'text-sunset'}>IL</span></span>
     </span>
   );
 }
@@ -63,7 +68,8 @@ export default function App() {
     // A Firebase config baked in at build time (VITE_FIREBASE_CONFIG) connects sharing with no setup on the phone.
     const built = import.meta.env.VITE_FIREBASE_CONFIG as string | undefined;
     const st = useStore.getState();
-    if (built && !st.settings.cloud) { try { st.setSettings({ cloud: { config: JSON.parse(built), myName: st.members.find(m => m.role === 'adult')?.name ?? '' } }); } catch { /* malformed */ } }
+    if (built && !st.settings.cloud && !location.hash.startsWith('#/join')) { // an invite link brings its own config (Join applies it)
+      try { st.setSettings({ cloud: { config: JSON.parse(built), myName: st.members.find(m => m.role === 'adult')?.name ?? '' } }); } catch { /* malformed */ } }
     startSync();
   }, []);
   useEffect(() => { const r = document.documentElement; if (theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme); }, [theme]);
@@ -73,7 +79,7 @@ export default function App() {
   else if (path === '/trips') screen = <Trips />;
   else if (path === '/new') screen = <Wizard />;
   else if (parts[0] === 'trip' && parts[1]) screen = <TripPlan id={parts[1]} tab={parts[2] ?? 'overview'} />;
-  else if (parts[0] === 'map') screen = <Suspense fallback={<div className="p-8 text-muted">טוען מפה…</div>}><MapScreen region={parts[1] as any} /></Suspense>;
+  else if (parts[0] === 'map') screen = <MapScreen region={parts[1] as any} />;
   else if (parts[0] === 'gear') screen = <Gear tab={parts[1] ?? 'inventory'} />;
   else if (path === '/join') screen = <Join query={query} />;
   else if (path === '/camps') screen = <CampSearch query={query} />;
@@ -99,7 +105,7 @@ export default function App() {
       </aside>
       <div className="min-w-0 flex-1">
         {!online && <div role="status" className="no-print sticky top-0 z-40 flex items-center justify-center gap-2 bg-ink px-4 py-2 text-sm font-bold text-bg safe-t"><WifiOff size={16} />אין חיבור לאינטרנט — הנתונים שלכם שמורים במכשיר, תחזיות ומפות יוצגו מהשמירה האחרונה</div>}
-        <main id="main" className="pb-28 lg:pb-10">{screen}</main>
+        <main id="main" className="pb-28 lg:pb-10"><Suspense fallback={<div role="status" className="p-8 text-muted">טוען…</div>}>{screen}</Suspense></main>
       </div>
       {/* Mobile tab bar */}
       <nav aria-label="ניווט ראשי" className="no-print safe-b fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-2 pt-1.5 backdrop-blur lg:hidden">

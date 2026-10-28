@@ -67,10 +67,18 @@ export async function transport(): Promise<Transport> {
   if (!cfg) throw new Error('שיתוף בזמן אמת עוד לא הוגדר');
   const key = JSON.stringify(cfg);
   if (tp && tpKey === key) return tp;
+  // one connection attempt at a time: screens that load later (e.g. the join screen) share the attempt in flight
+  if (connecting && connecting.key === key) return connecting.p;
   useCloud.setState({ status: 'connecting', error: undefined });
-  try { tp = await connect(cfg); tpKey = key; useCloud.setState({ status: 'on', uid: tp.uid, account: tp.account() }); return tp; }
-  catch (e: any) { useCloud.setState({ status: 'error', error: e?.message ?? String(e) }); throw new Error('החיבור ל-Firebase נכשל. בדקו את פרטי ההגדרה ושהופעלו Anonymous Auth ו-Firestore.'); }
+  const p = (async () => {
+    try { const t = await connect(cfg); tp = t; tpKey = key; useCloud.setState({ status: 'on', uid: t.uid, account: t.account() }); return t; }
+    catch (e: any) { useCloud.setState({ status: 'error', error: e?.message ?? String(e) }); throw new Error('החיבור ל-Firebase נכשל. בדקו את פרטי ההגדרה ושהופעלו Anonymous Auth ו-Firestore.'); }
+    finally { if (connecting?.key === key) connecting = null; }
+  })();
+  connecting = { key, p };
+  return p;
 }
+let connecting: { key: string; p: Promise<Transport> } | null = null;
 
 const myName = () => useStore.getState().settings.cloud?.myName || tp?.account().name || 'משתתף';
 /** My member record: Google identity (verified) when signed in, otherwise the typed name. */

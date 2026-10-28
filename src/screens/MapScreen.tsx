@@ -95,6 +95,7 @@ export default function MapScreen({ region }: { region?: RegionId }) {
             <div className="flex flex-wrap gap-2 pt-1">{REGIONS.map(x => <Chip key={x.id} onClick={() => select(x.id)}>{x.short}</Chip>)}</div></div>
         )}
         <div className="gutter space-y-3">
+          <h2 className="font-bold">{r ? `מקומות ב${r.short}` : 'מקומות בכל הארץ'}</h2>
           <div className="scroll-x -mx-4 flex gap-2 px-4">
             {(['all', 'trail', 'campsite', 'attraction', 'beach', 'viewpoint', 'park'] as F[]).map(f => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{f === 'all' ? 'הכול' : SITE_TYPE_LABEL[f as Site['type']]}</Chip>)}
             <Chip active={filter === 'fav'} onClick={() => setFilter('fav')}><Heart size={14} />מועדפים</Chip>

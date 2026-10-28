@@ -20,10 +20,11 @@ export function SiteCard({ site, scored, onOpen, selected, onSelect, compact }: 
   const warn = scored?.warnings[0];
   return (
     <article className={cx('group relative flex flex-col overflow-hidden rounded-xl2 border bg-surface shadow-card transition', selected ? 'border-forest ring-2 ring-forest/40' : 'border-line')}>
-      <button type="button" onClick={onOpen} className="relative block h-28 w-full overflow-hidden text-right" aria-label={`פרטים על ${site.name}`}>
+      <button type="button" onClick={onOpen} className="relative block h-28 w-full overflow-hidden text-right">
         <Scene kind={site.type === 'beach' ? 'sea' : reg.scene} seed={site.name.length + site.lat} className="h-full w-full transition duration-500 group-hover:scale-105" />
         <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-xs font-bold text-white backdrop-blur"><Blaze color={TYPE_BLAZE[site.type]} />{SITE_TYPE_LABEL[site.type]}</span>
         {scored && <span className="num absolute bottom-3 right-3 rounded-full bg-surface/95 px-2.5 py-1 text-xs font-extrabold text-forest shadow">{scored.score}% התאמה</span>}
+        <span className="sr-only">פרטים על {site.name}</span>
       </button>
       <button type="button" onClick={() => toggle(site.id)} aria-pressed={fav} aria-label={fav ? 'הסרה מהמועדפים' : 'הוספה למועדפים'} className="absolute left-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-surface/90 shadow"><Heart size={17} className={fav ? 'fill-sunset text-sunset' : 'text-muted'} /></button>
       <div className="flex flex-1 flex-col gap-2 p-4">
