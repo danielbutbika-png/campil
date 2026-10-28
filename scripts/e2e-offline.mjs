@@ -11,7 +11,7 @@ const sw = await p.evaluate(async () => !!(await navigator.serviceWorker?.getReg
 const tid = await p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0].id);
 await p.goto(BASE + `#/trip/${tid}/gear`); await p.waitForTimeout(1500); // warm caches for this route
 await ctx.setOffline(true);
-await p.reload(); await p.waitForTimeout(2500);
+await p.reload(); await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/off-gear.png` }); console.log("offline url", p.url(), (await p.locator("main").innerText().catch(()=>"(no main)")).slice(0,200).replace(/\n/g," "));
 const banner = await p.getByText('אין חיבור לאינטרנט').count();
 const items = await p.locator('input[type=checkbox][aria-label$="ארוז"]').count();
 await p.locator('input[type=checkbox][aria-label$="ארוז"]').first().check(); await p.waitForTimeout(300);

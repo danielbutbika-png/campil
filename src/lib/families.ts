@@ -17,15 +17,28 @@ export function itemFamily(t: Pick<Trip, 'families' | 'participants'>, p: PackIt
   return null;
 }
 
-/** The family this device belongs to in a trip. */
+/** The family this device belongs to in a trip (null: none yet — sees shared gear only). */
 export function myFamily(t: Pick<Trip, 'families' | 'shared'>): string | null {
   if (!isGroup(t)) return null;
-  const f = t.shared?.familyId;
-  return f && familyById(t, f) ? f : t.families![0].id;
+  if (!t.shared) return t.families![0].id; // planning on my own device: I'm the first family
+  const f = t.shared.familyId;
+  return f && familyById(t, f) ? f : null;
 }
 
-/** Organiser (or anyone on an unshared trip) may look at every family; partners see only their own. */
-export const canSeeAll = (t: Pick<Trip, 'shared'>) => !t.shared || t.shared.role === 'owner';
+/** Only while a trip is still private to this device can one person see every family's list.
+ *  Once shared, each family's private list is readable only by that family — the organiser included. */
+export const canSeeAll = (t: Pick<Trip, 'shared'>) => !t.shared;
+
+/** Which part of the packing list this device (re)generates: null = none. Shared trips split the work:
+ *  the organiser does the shared gear, their own family, and a starting list for families that have none yet;
+ *  every other family's device does its own family. */
+export function regenScope(t: Pick<Trip, 'families' | 'shared'>, seeded: Record<string, unknown> = {}): ((fam: string | null) => boolean) | null {
+  if (!t.shared) return () => true;
+  if (!isGroup(t)) return t.shared.role === 'owner' ? () => true : null;
+  const mine = myFamily(t);
+  if (t.shared.role === 'owner') return f => f === null || f === mine || !(f in seeded);
+  return mine ? f => f === mine : null;
+}
 
 export type View = 'all' | string;
 export const visibleIn = (t: Trip, p: PackItem, view: View) => {
@@ -34,7 +47,9 @@ export const visibleIn = (t: Trip, p: PackItem, view: View) => {
   return f === null || f === view;
 };
 /** Whether this device should hear about changes to this item. */
-export const concernsMe = (t: Trip, p: PackItem) => visibleIn(t, p, myFamily(t) ?? 'all');
+export const concernsMe = (t: Trip, p: PackItem) => visibleIn(t, p, myFamily(t) ?? (t.shared ? NONE : 'all'));
+/** View id for a member who isn't in any family yet: shared gear only. */
+export const NONE = '__shared-only';
 
 const KEY = 'campil-family-view';
 const readView = (id: string) => { try { return JSON.parse(localStorage.getItem(KEY) ?? '{}')[id] as string | undefined; } catch { return undefined; } };
@@ -43,8 +58,8 @@ const saveView = (id: string, v: string) => { try { const o = JSON.parse(localSt
 /** The family filter shown in gear/tasks screens, remembered per trip on this device. */
 export function useFamilyView(t: Trip): [View, (v: View) => void, View[]] {
   const mine = myFamily(t);
-  const options: View[] = !isGroup(t) ? ['all'] : canSeeAll(t) ? [...t.families!.map(f => f.id), 'all'] : [mine!];
-  const [v, setV] = useState<View>(() => { const r = readView(t.id); return r && options.includes(r) ? r : mine ?? 'all'; });
+  const options: View[] = !isGroup(t) ? ['all'] : canSeeAll(t) ? [...t.families!.map(f => f.id), 'all'] : [mine ?? NONE];
+  const [v, setV] = useState<View>(() => { const r = readView(t.id); return r && options.includes(r) ? r : options[0]; });
   const cur = options.includes(v) ? v : options[0];
   return [cur, x => { setV(x); saveView(t.id, x); }, options];
 }

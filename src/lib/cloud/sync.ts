@@ -2,14 +2,17 @@
 import { create } from 'zustand';
 import { useStore } from '../store';
 import type { Trip, JournalEntry, AlbumPhoto } from '../types';
-import { connect, type Transport, type JournalDoc, type PhotoDoc, type Account } from './transport';
-import { diffTrip, fromDoc, toDoc, randomId, PALETTE, encodeInvite, DELETE, type Member, type Pending, type Access, type TripDoc } from './model';
+import { connect, type Transport, type PhotoDoc, type Account, type FamilyDoc } from './transport';
+import { diffTrip, fromDoc, toDoc, randomId, PALETTE, encodeInvite, DELETE, clean, type Member, type Pending, type Access, type TripDoc, type Patch } from './model';
 import { compressImage, getPhoto, putPhoto, blobToDataURL, dataURLToBlob } from '../photos';
 import { toast } from '../../components/ui';
 import { describeChanges, summarize, showSystem, type Change } from './notify';
-import { concernsMe, isGroup } from '../families';
+import { concernsMe, isGroup, itemFamily, myFamily } from '../families';
+import { readiness } from '../../engine/packing';
 
-export interface TripMeta { owner: string; access: Access; pending: Record<string, Pending> }
+export interface TripMeta { owner: string; access: Access; pending: Record<string, Pending>; invite: NonNullable<TripDoc['invite']>; progress: NonNullable<TripDoc['progress']>; familyMode: FamMode }
+/** 'on': private family lists live in families/{id}; 'legacy': the project still has the old rules, keep everything in the trip document. */
+export type FamMode = 'pending' | 'on' | 'legacy';
 interface CloudState { status: 'off' | 'connecting' | 'on' | 'error'; error?: string; uid?: string; account?: Account; members: Record<string, Record<string, Member>>; meta: Record<string, TripMeta> }
 export const useCloud = create<CloudState>(() => ({ status: 'off', members: {}, meta: {} }));
 
@@ -19,6 +22,11 @@ const last = new Map<string, Trip>();
 const lastJ = new Map<string, string>();
 const lastP = new Map<string, string>(); // album photo id → synced metadata
 let started = false;
+// per shared trip: the latest trip document, my family's private document, and whether family documents work
+const mainDocs = new Map<string, TripDoc>();
+const famDocs = new Map<string, { fid: string; doc: FamilyDoc | null; loaded: boolean; off: () => void }>();
+const famMode = new Map<string, FamMode>();
+const migrating = new Set<string>();
 const primed = new Set<string>();          // first snapshot of a trip/journal is a load, not a change
 const queue = new Map<string, Change[]>(); let qTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -76,22 +84,12 @@ function watch(cid: string) {
   const offTrip = t.watchTrip(cid, doc => {
     const local = tripByCloud(cid); if (!local) return;
     if (!doc) { lostAccess(cid, 'השיתוף של "%" הסתיים'); return; }
-    const mine = doc.members?.[t.uid];
-    if (!mine) {
-      if ((doc.access ?? 'link') === 'approved' && doc.owner !== t.uid) { lostAccess(cid, 'הגישה שלך ל"%" הוסרה על ידי המארגן'); return; }
-      t.patch(cid, [{ path: ['members', t.uid], value: selfMember('editor', PALETTE[Object.keys(doc.members ?? {}).length % PALETTE.length]) }]).catch(() => {});
-    }
-    useCloud.setState(s => ({ members: { ...s.members, [cid]: doc.members ?? {} }, meta: { ...s.meta, [cid]: { owner: doc.owner, access: doc.access ?? 'link', pending: doc.pending ?? {} } } }));
-    let next = fromDoc(doc, local);
-    // the organiser may move me to another family
-    if (mine?.familyId && next.shared && next.shared.familyId !== mine.familyId) next = { ...next, shared: { ...next.shared, familyId: mine.familyId } };
-    if (primed.has(cid)) {
-      const ed = doc.editedBy;
-      const editor = ed && ed.uid !== t.uid ? ed.name : null;
-      announce(cid, describeChanges(local, next, editor, p => concernsMe(next, p)).filter(c => !(ed?.uid === t.uid && c.by === null)));
-    } else primed.add(cid);
-    last.set(cid, next);
-    if (JSON.stringify(local) !== JSON.stringify(next)) useStore.setState(s => ({ trips: s.trips.map(x => (x.id === local.id ? next : x)) }));
+    if (!doc.members?.[t.uid] && doc.owner !== t.uid) { lostAccess(cid, 'הגישה שלך ל"%" הוסרה על ידי המארגן'); return; }
+    mainDocs.set(cid, doc);
+    const fam = isGroup({ families: (doc.core as any).families }) ? doc.members[t.uid]?.familyId ?? null : null;
+    follow(cid, fam);
+    if (doc.owner === t.uid) ensureInvites(cid, doc);
+    apply(cid);
   }, (e: any) => { if (e?.code === 'permission-denied') lostAccess(cid, 'הגישה שלך ל"%" הוסרה'); else useCloud.setState({ status: 'error', error: e.message }); });
   const offJ = t.watchJournal(cid, async list => {
     const local = tripByCloud(cid); if (!local) return;
@@ -128,9 +126,123 @@ function watch(cid: string) {
     const ids = new Set(list.filter(r => r.kind !== 'photo').map(r => r.id));
     for (const j of useStore.getState().journal) if (j.tripId === local.id && lastJ.has(j.id) && !ids.has(j.id)) { lastJ.delete(j.id); st.removeEntry(j.id); }
   });
-  watchers.set(cid, () => { offTrip(); offJ(); });
+  watchers.set(cid, () => { offTrip(); offJ(); famDocs.get(cid)?.off(); famDocs.delete(cid); });
 }
-function stop(cid: string) { watchers.get(cid)?.(); watchers.delete(cid); last.delete(cid); primed.delete(cid); primed.delete('j:' + cid); }
+function stop(cid: string) { watchers.get(cid)?.(); watchers.delete(cid); last.delete(cid); mainDocs.delete(cid); famMode.delete(cid); primed.delete(cid); primed.delete('j:' + cid); }
+
+/** Subscribe to my family's private document (or stop, when I have no family in this trip). */
+function follow(cid: string, fid: string | null) {
+  const cur = famDocs.get(cid);
+  if (cur?.fid === fid) return;
+  cur?.off(); famDocs.delete(cid);
+  if (!fid || !tp) { if (!fid) famMode.set(cid, famMode.get(cid) === 'legacy' ? 'legacy' : 'on'); return; }
+  const entry = { fid, doc: null as FamilyDoc | null, loaded: false, off: () => {} };
+  famDocs.set(cid, entry);
+  if (famMode.get(cid) !== 'legacy') famMode.set(cid, 'pending');
+  entry.off = tp.watchFamily(cid, fid, d => { entry.doc = d; entry.loaded = true; if (famMode.get(cid) === 'pending') famMode.set(cid, 'on'); apply(cid); },
+    (e: any) => { if (e?.code === 'permission-denied') { famMode.set(cid, 'legacy'); entry.loaded = true; apply(cid); } });
+}
+
+/** Rebuild the local trip from the trip document + my family's document, announce partners' changes, migrate. */
+function apply(cid: string) {
+  const local = tripByCloud(cid); const doc = mainDocs.get(cid); if (!local || !doc || !tp) return;
+  const fd = famDocs.get(cid);
+  if (fd && !fd.loaded) return; // wait for my family's list, so its items don't flicker away
+  const mine = doc.members?.[tp.uid];
+  const mode = famMode.get(cid) ?? 'on';
+  useCloud.setState(s => ({ members: { ...s.members, [cid]: doc.members ?? {} }, meta: { ...s.meta, [cid]: { owner: doc.owner, access: doc.access ?? 'link', pending: doc.pending ?? {}, invite: doc.invite ?? {}, progress: doc.progress ?? {}, familyMode: mode } } }));
+  const merged: TripDoc = fd?.doc && mode === 'on' ? { ...doc, packing: { ...doc.packing, ...fd.doc.packing } } : doc;
+  let next = fromDoc(merged, local);
+  if (mine?.familyId !== (next.shared?.familyId ?? undefined) && next.shared) next = { ...next, shared: { ...next.shared, familyId: mine?.familyId } };
+  if (primed.has(cid)) {
+    const ed = doc.editedBy;
+    const editor = ed && ed.uid !== tp.uid ? ed.name : null;
+    announce(cid, describeChanges(local, next, editor, p => concernsMe(next, p)).filter(c => !(ed?.uid === tp!.uid && c.by === null)));
+  } else primed.add(cid);
+  last.set(cid, next);
+  if (JSON.stringify(local) !== JSON.stringify(next)) useStore.setState(s => ({ trips: s.trips.map(x => (x.id === local.id ? next : x)) }));
+  if (mode === 'on' && isGroup(next)) migrate(cid, next).catch(() => {});
+}
+
+/** Organiser: make sure every family (or the whole trip) has an invite key. */
+function ensureInvites(cid: string, doc: TripDoc) {
+  const fams: { id: string }[] = (doc.core as any).families ?? [];
+  const inv = doc.invite ?? {}; const patches: Patch[] = [];
+  if (!inv.all) patches.push({ path: ['invite', 'all'], value: randomId(16) });
+  for (const f of fams) if (!inv.fam?.[f.id]) patches.push({ path: ['invite', 'fam', f.id], value: randomId(16) });
+  if (patches.length) tp!.patch(cid, patches).catch(() => {});
+}
+
+/**
+ * Move private family items out of the shared trip document (older trips kept everything there):
+ * my family's items go to my family document; the organiser seeds a starting list for families that have none.
+ * An item is removed from the trip document only after its family copy was written.
+ */
+async function migrate(cid: string, t: Trip) {
+  if (migrating.has(cid) || !tp) return;
+  const doc = mainDocs.get(cid)!; const fd = famDocs.get(cid); const mineFam = fd?.fid ?? null;
+  const isOwner = doc.owner === tp.uid; const seeded = doc.progress ?? {};
+  const inMain = Object.values(doc.packing ?? {}) as any[];
+  const byFam = new Map<string, any[]>();
+  for (const it of inMain) { const f = itemFamily(t, it); if (f) byFam.set(f, [...(byFam.get(f) ?? []), it]); }
+  // items generated locally for families that have no list yet (organiser only)
+  if (isOwner) for (const it of t.packing) { const f = itemFamily(t, it); if (f && f !== mineFam && !(f in seeded) && !doc.packing?.[it.id]) byFam.set(f, [...(byFam.get(f) ?? []), it]); }
+  if (!byFam.size) return;
+  migrating.add(cid);
+  try {
+    for (const [f, items] of byFam) {
+      const asMap = Object.fromEntries(items.map(i => [i.id, clean({ ...i, familyId: f })]));
+      let ok = false;
+      if (f === mineFam && fd?.loaded) {
+        if (fd.doc) { await tp.patchFamily(cid, f, items.map(i => ({ path: ['packing', i.id], value: asMap[i.id] }))); ok = true; }
+        else { await tp.createFamily(cid, f, { packing: asMap }); ok = true; }
+      } else if (isOwner && !(f in seeded)) {
+        await tp.createFamily(cid, f, { packing: asMap }).then(() => (ok = true), () => {});
+      }
+      if (!ok) continue;
+      const r = readiness(items as any);
+      const patches: Patch[] = items.filter(i => doc.packing?.[i.id]).map(i => ({ path: ['packing', i.id], value: DELETE }));
+      patches.push({ path: ['progress', f], value: { packed: r.done, total: r.total, at: Date.now() } });
+      await tp.patch(cid, patches);
+      // the organiser keeps no copy of another family's private list
+      if (f !== mineFam) { const local = tripByCloud(cid); if (local) { const ids = new Set(items.map(i => i.id)); const nt = { ...local, packing: local.packing.filter(p => !ids.has(p.id)) }; last.set(cid, nt); useStore.setState(s => ({ trips: s.trips.map(x => (x.id === local.id ? nt : x)) })); } }
+    }
+  } finally { migrating.delete(cid); }
+}
+
+/** Send local changes: shared items to the trip document, my family's items to my family document. */
+function push(cid: string, base: Trip, t: Trip) {
+  if (!tp) return;
+  const mode = famMode.get(cid) ?? 'on'; const fd = famDocs.get(cid);
+  const split = mode === 'on' && isGroup(t) && !!fd;
+  const mineFam = split ? fd!.fid : null;
+  const famOf = (tr: Trip, id: string) => { const it = tr.packing.find(p => p.id === id); return it ? itemFamily(tr, it) : undefined; };
+  const main: Patch[] = [], fam: Patch[] = [];
+  const moved = new Set<string>();
+  for (const p of diffTrip(base, t)) {
+    if (!split || p.path[0] !== 'packing') { main.push(p); continue; }
+    const id = p.path[1]; const fb = famOf(base, id), fa = famOf(t, id);
+    const target = (f: string | null | undefined) => (f === mineFam ? fam : f == null ? main : null);
+    if (fb !== undefined && fa !== undefined && fb !== fa) {
+      if (moved.has(id)) continue; moved.add(id);
+      const item = clean(t.packing.find(x => x.id === id)!);
+      target(fb)?.push({ path: ['packing', id], value: DELETE });
+      target(fa)?.push({ path: ['packing', id], value: item });
+      continue;
+    }
+    target(fa !== undefined ? fa : fb)?.push(p); // another family's item: not ours to write
+  }
+  if (main.length || fam.length) main.push({ path: ['editedBy'], value: { uid: tp.uid, name: myName(), at: Date.now() } });
+  if (fam.length && mineFam) {
+    const r = readiness(t.packing.filter(p => itemFamily(t, p) === mineFam));
+    const prev = mainDocs.get(cid)?.progress?.[mineFam];
+    if (!prev || prev.packed !== r.done || prev.total !== r.total) main.push({ path: ['progress', mineFam], value: { packed: r.done, total: r.total, at: Date.now() } });
+    const send = fd!.doc ? tp.patchFamily(cid, mineFam, fam) : tp.createFamily(cid, mineFam, { packing: Object.fromEntries(t.packing.filter(p => itemFamily(t, p) === mineFam).map(p => [p.id, clean(p)])) });
+    send.catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
+  }
+  if (split && t.shared?.role === 'owner' && t.packing.some(p => { const f = itemFamily(t, p); return f && f !== mineFam; })) migrate(cid, t).catch(() => {});
+  if (main.length) tp.patch(cid, main).catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
+}
 
 const metaKey = (p: AlbumPhoto) => JSON.stringify([p.by, p.takenAt, p.caption ?? '', p.collage ?? false]);
 async function pushPhoto(p: AlbumPhoto, cid: string) {
@@ -158,10 +270,8 @@ export async function startSync() {
       const cid = t.shared.cloudId;
       if (!watchers.has(cid)) watch(cid);
       const base = last.get(cid); if (!base || base === t) continue;
-      const patches = diffTrip(base, t);
       last.set(cid, t);
-      if (patches.length) patches.push({ path: ['editedBy'], value: { uid: tp.uid, name: myName(), at: Date.now() } });
-      if (patches.length) tp.patch(cid, patches).catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
+      push(cid, base, t);
     }
     for (const cid of [...watchers.keys()]) if (!s.trips.some(t => t.shared?.cloudId === cid)) stop(cid);
     if (s.journal !== prev.journal) {
@@ -193,7 +303,9 @@ export async function shareTrip(tripId: string): Promise<string> {
   const cid = randomId();
   const fam = isGroup(trip) ? trip.families![0].id : undefined;
   const me = { ...selfMember('owner', PALETTE[0]), ...(fam ? { familyId: fam } : {}) };
-  await t.createTrip(cid, toDoc({ ...trip, example: false }, t.uid, me));
+  const invite = { all: randomId(16), fam: Object.fromEntries((trip.families ?? []).map(f => [f.id, randomId(16)])) };
+  // created with the whole list; family items then move to their family documents (see migrate)
+  await t.createTrip(cid, { ...toDoc({ ...trip, example: false }, t.uid, me), invite, progress: {} });
   last.set(cid, trip);
   st.updateTrip(tripId, { shared: { cloudId: cid, role: 'owner', joinedAt: new Date().toISOString(), ...(fam ? { familyId: fam } : {}) }, example: false });
   for (const e of st.journal.filter(j => j.tripId === tripId)) { lastJ.set(e.id, JSON.stringify(e)); await pushJournal(e, cid); }
@@ -205,9 +317,11 @@ export async function shareTrip(tripId: string): Promise<string> {
 /** Invite link; with a family, whoever opens it joins that family. */
 export function inviteLink(cid: string, family?: { id: string; name: string }) {
   const cfg = useStore.getState().settings.cloud!.config;
-  const approved = useCloud.getState().meta[cid]?.access === 'approved';
+  const meta = useCloud.getState().meta[cid];
+  const approved = meta?.access === 'approved';
+  const key = family ? meta?.invite?.fam?.[family.id] : meta?.invite?.all;
   const f = family ? `&f=${encodeURIComponent(family.id)}&fn=${encodeURIComponent(family.name)}` : '';
-  return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}&c=${encodeInvite(cfg)}`;
+  return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}${key && !approved ? `&k=${key}` : ''}&c=${encodeInvite(cfg)}`;
 }
 /** Organiser: move a partner to another family. */
 export async function setMemberFamily(cid: string, uid: string, familyId: string) { const t = await transport(); await t.patch(cid, [{ path: ['members', uid, 'familyId'], value: familyId }]); }
@@ -222,7 +336,7 @@ function addLocal(cid: string, doc: TripDoc, me: Member) {
 }
 
 /** Join through an invite. Open trips: immediate. Approved-only trips: leaves a request and returns null. */
-export async function joinTrip(cid: string, config: Record<string, string>, name: string, approvedOnly = false, familyId?: string): Promise<string | null> {
+export async function joinTrip(cid: string, config: Record<string, string>, name: string, approvedOnly = false, familyId?: string, key?: string): Promise<string | null> {
   const st = useStore.getState();
   st.setSettings({ cloud: { config, myName: name } });
   const existing = tripByCloud(cid); if (existing) { await startSync(); return existing.id; }
@@ -233,14 +347,16 @@ export async function joinTrip(cid: string, config: Record<string, string>, name
     await t.patch(cid, [{ path: ['pending', t.uid], value: JSON.parse(JSON.stringify({ name, email: a.email, photo: a.photo, at: Date.now(), familyId })) }]);
     return checkApproval(cid);
   }
-  const doc = await t.getTrip(cid);
-  if (!doc) throw new Error('הטיול לא נמצא. ייתכן שהקישור שגוי או שהשיתוף בוטל.');
-  if ((doc.access ?? 'link') === 'approved' && !doc.members?.[t.uid]) return joinTrip(cid, config, name, true, familyId);
-  const fams: { id: string }[] = (doc.core as any).families ?? [];
-  const fam = familyId && fams.some(f => f.id === familyId) ? familyId : doc.members?.[t.uid]?.familyId;
-  const me = { ...selfMember('editor', PALETTE[Object.keys(doc.members ?? {}).length % PALETTE.length], doc.members?.[t.uid]), ...(fam ? { familyId: fam } : {}) };
-  await t.patch(cid, [{ path: ['members', t.uid], value: me }]);
-  const id = addLocal(cid, doc, me);
+  let doc: TripDoc | null = await t.getTrip(cid).catch(() => null); // readable only if I'm already a member
+  if (!doc?.members?.[t.uid]) {
+    if (!key) throw new Error('הקישור הזה ישן או חסר בו מפתח הזמנה. בקשו מהמארגן קישור חדש.');
+    const me: Member = { ...selfMember('editor', PALETTE[Math.floor(Math.random() * PALETTE.length)]), ...(familyId ? { familyId } : {}), k: key };
+    try { await t.patch(cid, [{ path: ['members', t.uid], value: clean(me) }]); }
+    catch { throw new Error('הקישור כבר לא בתוקף (ייתכן שהמארגן החליף אותו). בקשו קישור חדש.'); }
+    doc = await t.getTrip(cid).catch(() => null);
+    if (!doc) throw new Error('הטיול לא נמצא. ייתכן שהקישור שגוי או שהשיתוף בוטל.');
+  }
+  const id = addLocal(cid, doc, doc.members[t.uid]);
   await startSync(); watch(cid);
   return id;
 }
@@ -266,7 +382,13 @@ export async function approve(cid: string, uid: string) {
   await t.patch(cid, [{ path: ['members', uid], value: JSON.parse(JSON.stringify({ name: p.name, email: p.email, photo: p.photo, familyId: p.familyId, verified: true, color: PALETTE[n % PALETTE.length], role: 'editor', joinedAt: Date.now() })) }, { path: ['pending', uid], value: DELETE }]);
 }
 export async function deny(cid: string, uid: string) { const t = await transport(); await t.patch(cid, [{ path: ['pending', uid], value: DELETE }]); }
-export async function removeMember(cid: string, uid: string) { const t = await transport(); await t.patch(cid, [{ path: ['members', uid], value: DELETE }]); }
+/** Remove someone and replace the invite key they joined with, so their old link (or a new anonymous id) can't get back in. */
+export async function removeMember(cid: string, uid: string): Promise<string | null> {
+  const t = await transport();
+  const fam = useCloud.getState().members[cid]?.[uid]?.familyId ?? null;
+  await t.patch(cid, [{ path: ['members', uid], value: DELETE }, fam ? { path: ['invite', 'fam', fam], value: randomId(16) } : { path: ['invite', 'all'], value: randomId(16) }]);
+  return fam;
+}
 export async function setAccess(cid: string, access: Access) { const t = await transport(); await t.patch(cid, [{ path: ['access'], value: access }]); }
 
 // ── identity ──

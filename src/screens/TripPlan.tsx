@@ -19,6 +19,9 @@ import MealsTab from './trip/MealsTab';
 import { ScheduleTab, TasksTab } from './trip/PlanTabs';
 import JournalTab from './trip/JournalTab';
 import AlbumTab from './trip/AlbumTab';
+import type { PackItem } from '../lib/types';
+import { regenScope, isGroup, itemFamily } from '../lib/families';
+import { useCloud } from '../lib/cloud/sync';
 import EditTrip from './trip/EditTrip';
 
 const TABS = [['overview', 'סקירה'], ['gear', 'ציוד'], ['meals', 'מטבח שטח'], ['schedule', 'לוח זמנים'], ['tasks', 'משימות'], ['album', 'אלבום'], ['journal', 'יומן']] as const;
@@ -44,11 +47,17 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
   // Keep the packing list in sync with trip details and the latest forecast (user edits are preserved).
   useEffect(() => {
     if (wx.status === 'loading') return;
-    if (t.shared?.role === 'editor') return; // only the trip owner's device regenerates the shared list
+    // Each device regenerates only its part of a shared list (see regenScope): no family overwrites another's.
+    const scope = regenScope(t, t.shared ? useCloud.getState().meta[t.shared.cloudId]?.progress : undefined);
+    if (!scope) return;
     const sig = packingSignature(t, wx.flags, st);
     if (sig === t.packingSig) return;
     const next = materialize(t, st, wx.days, wx.flags, wx.source);
-    st.updateTrip(t.id, { packing: next.packing, packingSig: next.packingSig, packingGeneratedAt: next.packingGeneratedAt });
+    // A partner family's device makes its personal and basic list only: the gear store on this device is the
+    // organiser's in a shared trip (a partner's app starts with a sample store, not their real gear).
+    const gen = t.shared?.role === 'editor' ? next.packing.filter((p: PackItem) => p.source !== 'inventory') : next.packing;
+    const packing = isGroup(t) && t.shared ? [...(t.packing as PackItem[]).filter(p => !scope(itemFamily(t, p))), ...gen.filter(p => scope(itemFamily(t, p)))] : gen;
+    st.updateTrip(t.id, { packing, packingSig: next.packingSig, packingGeneratedAt: next.packingGeneratedAt });
     if (t.packingSig) toast(wx.source === 'forecast' ? 'רשימת הציוד עודכנה לפי התחזית' : 'רשימת הציוד עודכנה');
   }, [wx.status, wx.flags, t.start, t.end, t.adults, t.children, t.kind, t.lodging, t.pets, t.interests, t.participants, st.inventory, st.settings.waterLitersPerPersonDay]);
 

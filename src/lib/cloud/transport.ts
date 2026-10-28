@@ -21,7 +21,12 @@ export interface Transport {
   putEntry(tripId: string, e: SubDoc): Promise<void>;
   deleteEntry(tripId: string, entryId: string): Promise<void>;
   watchJournal(tripId: string, cb: (list: SubDoc[]) => void): () => void;
+  /** One family's private gear (trips/{id}/families/{famId}). `create` fails if it already exists or isn't allowed. */
+  createFamily(tripId: string, famId: string, d: FamilyDoc): Promise<void>;
+  patchFamily(tripId: string, famId: string, patches: Patch[]): Promise<void>;
+  watchFamily(tripId: string, famId: string, cb: (d: FamilyDoc | null) => void, onErr?: (e: any) => void): () => void;
 }
+export interface FamilyDoc { packing: Record<string, any>; updatedAt?: unknown }
 
 export async function connect(config: Record<string, string>): Promise<Transport> {
   return config.projectId === 'local-demo' ? localTransport() : firebaseTransport(config);
@@ -78,6 +83,19 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
     putEntry: (tid, e) => fs.setDoc(fs.doc(db, 'trips', tid, 'journal', e.id), JSON.parse(JSON.stringify(e))),
     deleteEntry: (tid, eid) => fs.deleteDoc(fs.doc(db, 'trips', tid, 'journal', eid)),
     watchJournal: (tid, cb) => fs.onSnapshot(fs.collection(db, 'trips', tid, 'journal'), s => cb(s.docs.map(d => d.data() as SubDoc))),
+    createFamily: async (tid, fid, d) => {
+      // Called only when the family has no list yet. For another family's existing list this is an
+      // update, which the rules refuse — so the organiser can seed a list but never overwrite one.
+      await fs.setDoc(fs.doc(db, 'trips', tid, 'families', fid), { ...JSON.parse(JSON.stringify(d)), updatedAt: fs.serverTimestamp() });
+    },
+    patchFamily: async (tid, fid, patches) => {
+      if (!patches.length) return;
+      const args: unknown[] = [];
+      for (const p of patches) args.push(new fs.FieldPath(...p.path), p.value === DELETE ? fs.deleteField() : p.value);
+      args.push('updatedAt', fs.serverTimestamp());
+      await (fs.updateDoc as any)(fs.doc(db, 'trips', tid, 'families', fid), ...args);
+    },
+    watchFamily: (tid, fid, cb, onErr) => fs.onSnapshot(fs.doc(db, 'trips', tid, 'families', fid), s => cb(s.exists() ? (s.data() as FamilyDoc) : null), e => onErr?.(e)),
   };
 }
 
@@ -122,6 +140,21 @@ function localTransport(): Transport {
     putEntry: (tid, e) => serial(async () => { const k = `${tid}/journal`; const d = (await read(k)) ?? {}; d[e.id] = e; await write(k, d); }),
     deleteEntry: (tid, eid) => serial(async () => { const k = `${tid}/journal`; const d = (await read(k)) ?? {}; delete d[eid]; await write(k, d); }),
     watchJournal: (tid, cb) => watch(`${tid}/journal`, () => { read(`${tid}/journal`).then(d => cb(Object.values(d ?? {}))); }),
+    // The local stand-in has no security rules; `__campilNoFamilies` simulates a project still on the old rules.
+    createFamily: (tid, fid, d) => serial(async () => {
+      if ((window as any).__campilNoFamilies) throw Object.assign(new Error('denied'), { code: 'permission-denied' });
+      const k = `${tid}/families/${fid}`; if (await read(k)) throw Object.assign(new Error('exists'), { code: 'already-exists' });
+      await write(k, JSON.parse(JSON.stringify(d)));
+    }),
+    patchFamily: (tid, fid, patches) => serial(async () => {
+      const k = `${tid}/families/${fid}`;
+      if (relay?.patch) { await relay.patch(k, JSON.stringify(patches.map(p => ({ path: p.path, value: p.value === DELETE ? { __del: 1 } : p.value })))); bus.dispatchEvent(new CustomEvent('c', { detail: k })); return; }
+      const d = await read(k); if (!d) throw Object.assign(new Error('not found'), { code: 'not-found' }); await write(k, applyPatches(d, patches));
+    }),
+    watchFamily: (tid, fid, cb, onErr) => {
+      if ((window as any).__campilNoFamilies) { setTimeout(() => onErr?.(Object.assign(new Error('denied'), { code: 'permission-denied' }))); return () => {}; }
+      return watch(`${tid}/families/${fid}`, () => { read(`${tid}/families/${fid}`).then(cb); });
+    },
   };
 }
 export type { Member };

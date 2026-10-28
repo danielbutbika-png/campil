@@ -13,6 +13,7 @@ async function device(label) {
     for (const p of JSON.parse(ps)) { let o = d; for (const x of p.path.slice(0, -1)) o = o[x] ??= {}; const l = p.path.at(-1); if (p.value && p.value.__del) delete o[l]; else o[l] = p.value; }
     store.set(k, JSON.stringify(d)); for (const pg of pages) pg.evaluate(key => window.dispatchEvent(new CustomEvent('campil-relay', { detail: key })), k).catch(() => {});
   });
+  if (process.env.LEGACY) await ctx.addInitScript(() => { window.__campilNoFamilies = true; });
   await ctx.addInitScript(() => { window.__campilRelay = { read: k => window.__relayRead(k), write: (k, v) => window.__relayWrite(k, v), patch: (k, p) => window.__relayPatch(k, p) }; });
   const p = await ctx.newPage(); pages.push(p);
   p.on('pageerror', e => errors.push(`${label}: ${e.message}`));
@@ -51,7 +52,7 @@ await A.getByRole('button', { name: 'הפעלת עריכה משותפת' }).clic
 await S(A, '84-family-links');
 const wa = await A.getByRole('link', { name: 'שליחה בוואטסאפ למשפחת כהן' }).getAttribute('href');
 const link = decodeURIComponent(wa.split('text=')[1]).match(/https?:\/\/\S+/)[0];
-console.log('family link has f=:', link.includes('&f=fam-'));
+console.log('family link has f= and k=:', link.includes('&f=fam-') && /&k=\w{16}/.test(link));
 await A.keyboard.press('Escape');
 
 const B = await device('יוסי');
@@ -71,6 +72,22 @@ console.log(`items: A(all)=${countA} B=${countB}`);
 console.log('B sees own sleeping bags:', bText.includes('שק שינה / שמיכה'));
 console.log('B sees shared water:', bText.includes('מים לשתייה'));
 console.log('B does NOT see Daniel\'s personal items:', !/אבי ·/.test(bText));
+const docs = Object.fromEntries([...store].map(([k, v]) => [k, JSON.parse(v)]));
+const mainKey = Object.keys(docs).find(k => !k.includes('/')); const main = docs[mainKey];
+const fidB = main.core.families[1].id, fidA = main.core.families[0].id;
+const fb = docs[`${mainKey}/families/${fidB}`], fa = docs[`${mainKey}/families/${fidA}`];
+const mainItems = Object.values(main.packing);
+console.log(process.env.LEGACY ? 'LEGACY mode (old rules):' : 'family documents:', JSON.stringify({ mainItems: mainItems.length, famA: fa ? Object.keys(fa.packing).length : null, famB: fb ? Object.keys(fb.packing).length : null, progress: Object.keys(main.progress ?? {}).length }));
+if (!process.env.LEGACY) {
+  console.log('trip document holds no family-private item:', mainItems.every(i => !i.familyId && !(main.core.participants.find(p => p.id === i.assignee)?.familyId) && i.source !== 'inventory'));
+  const aLocal = await A.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips.find(t => t.shared));
+  console.log('organiser device keeps no copy of family B list:', !aLocal.packing.some(p => p.familyId === aLocal.families[1].id || aLocal.participants.find(x => x.id === p.assignee)?.familyId === aLocal.families[1].id));
+}
+// an old link without a key is refused
+const C = await device('ישן');
+await C.goto(link.replace(/^https?:\/\/[^/]+\/[^#]*/, BASE).replace(/&k=\w+/, '')); await C.waitForTimeout(600);
+await C.fill('#jn', 'ישן'); await C.getByRole('button', { name: 'הצטרפות לטיול' }).click(); await C.waitForTimeout(1200);
+console.log('link without key refused:', (await C.getByText('קישור חדש').count()) > 0);
 console.log('B has no family switcher:', (await B.getByRole('group', { name: 'איזו משפחה להציג' }).count()) === 0);
 
 // A (organiser, own-family view) ticks one shared + one private item while B is in background
@@ -86,8 +103,8 @@ await A.evaluate(() => { const el = document.getElementById('toast'); if (el) el
 await B.getByRole('checkbox', { name: 'שק שינה / שמיכה ארוז' }).check(); await B.waitForTimeout(3500);
 console.log('A toast about B private item (should be empty):', JSON.stringify(await A.locator('#toast').textContent().catch(() => '')));
 // A switches to "all families" view and sees B's tick
-await A.getByRole('button', { name: 'כל המשפחות' }).click(); await A.waitForTimeout(400);
-console.log('A(all) sees B bag packed by יוסי:', (await A.locator('li', { hasText: 'שק שינה / שמיכה' }).filter({ hasText: '✓ יוסי' }).count()) > 0);
+const progB = await A.locator('li', { hasText: 'משפחת כהן' }).filter({ has: A.locator('.num') }).innerText().catch(() => '');
+console.log('organiser sees family B progress only (counts):', progB.replace(/\s+/g, ' '), '| sees B items:', (await A.locator('li', { hasText: 'שק שינה / שמיכה' }).filter({ hasText: '✓ יוסי' }).count()) > 0);
 await S(A, '87-A-all-view');
 console.log('errors:', errors.length ? errors.join('\n') : 'none');
 await b.close();

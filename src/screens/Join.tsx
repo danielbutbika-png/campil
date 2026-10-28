@@ -10,7 +10,7 @@ import { Logo } from '../App';
 
 export default function Join({ query }: { query: URLSearchParams }) {
   const st = useStore();
-  const cid = query.get('t'); const c = query.get('c'); const approvedOnly = query.get('a') === '1'; const famId = query.get('f') ?? undefined; const famName = query.get('fn');
+  const cid = query.get('t'); const c = query.get('c'); const approvedOnly = query.get('a') === '1'; const famId = query.get('f') ?? undefined; const famName = query.get('fn'); const key = query.get('k') ?? undefined;
   const account = useCloud(s => s.account);
   const [name, setName] = useState(st.settings.cloud?.myName ?? '');
   const [busy, setBusy] = useState(false);
@@ -39,7 +39,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
     if (!n) return toast('כתבו את השם שלכם');
     if (approvedOnly && account?.provider !== 'google') return toast('קודם התחברו עם Google');
     setBusy(true); setErr(null);
-    try { const id = await joinTrip(cid, cfg!, n, approvedOnly, famId); if (id) finish(id); else setWaiting(true); }
+    try { const id = await joinTrip(cid, cfg!, n, approvedOnly, famId, key); if (id) finish(id); else setWaiting(true); }
     catch (x: any) { setErr(x.message); }
     setBusy(false);
   };

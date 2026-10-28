@@ -8,6 +8,7 @@ import { Button, Chip, Ring, Sheet, Blaze, Badge, cx, toast } from '../../compon
 import { shareText, packingText } from '../../lib/share';
 import { uid } from '../../lib/util';
 import { stamp, ago } from '../../components/Collab';
+import { useCloud } from '../../lib/cloud/sync';
 import { isGroup, itemFamily, familyById, visibleIn, useFamilyView, myFamily, canSeeAll, type View } from '../../lib/families';
 
 type Group = 'category' | 'box' | 'person' | 'family';
@@ -60,8 +61,10 @@ export default function GearTab({ t }: { t: Trip }) {
             <div className="flex flex-wrap items-center gap-2" role="group" aria-label="איזו משפחה להציג">
               {viewOpts.map(v => { const f = familyById(t, v); return <Chip key={v} active={view === v} onClick={() => setView(v)}>{f ? <><span className="me-1 inline-block h-2.5 w-2.5 rounded-full" style={{ background: f.color }} />{f.name}</> : 'כל המשפחות'}</Chip>; })}
             </div>
-          ) : <p className="flex items-center gap-2 font-bold"><span className="inline-block h-3 w-3 rounded-full" style={{ background: familyById(t, view)?.color }} />{familyById(t, view)?.name}</p>}
-          <p className="text-xs text-muted">{view === 'all' ? 'תצוגת מארגן: כל הציוד של כל המשפחות.' : 'מוצג: הציוד של המשפחה (רק אתם רואים ומסמנים) והציוד המשותף לכולם.'}</p>
+          ) : familyById(t, view) ? <p className="flex items-center gap-2 font-bold"><span className="inline-block h-3 w-3 rounded-full" style={{ background: familyById(t, view)?.color }} />{familyById(t, view)?.name}</p>
+            : <p className="font-bold">עוד לא שויכתם למשפחה</p>}
+          <p className="text-xs text-muted">{view === 'all' ? 'כל הציוד של כל המשפחות — עד שמשתפים את הטיול. אחרי השיתוף כל משפחה רואה רק את הרשימה שלה.' : familyById(t, view) ? 'מוצג: הציוד של המשפחה שלכם — רק אתם רואים ומסמנים אותו — והציוד המשותף לכולם.' : 'בינתיים מוצג רק הציוד המשותף. המארגן יכול לשייך אתכם למשפחה.'}</p>
+          {t.shared && <FamilyProgress t={t} />}
         </div>
       )}
 
@@ -168,6 +171,21 @@ function AddItem({ t, view, open, onClose, onAdd }: { t: Trip; view: View; open:
         <Button type="submit" className="w-full">הוספה</Button>
       </form>
     </Sheet>
+  );
+}
+
+/** Each family's packing progress (counts only — the lists themselves stay private to each family). */
+function FamilyProgress({ t }: { t: Trip }) {
+  const progress = useCloud(s => s.meta[t.shared!.cloudId]?.progress) ?? {};
+  const fams = t.families ?? [];
+  if (!fams.some(f => progress[f.id])) return null;
+  return (
+    <div className="space-y-1.5 border-t border-line pt-2">
+      <p className="text-xs font-bold text-muted">התקדמות המשפחות</p>
+      <ul className="grid gap-1.5 sm:grid-cols-2">{fams.map(f => { const p = progress[f.id]; const pct = p && p.total ? Math.round((p.packed / p.total) * 100) : 0; return (
+        <li key={f.id} className="flex items-center gap-2 text-sm"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: f.color }} /><span className="min-w-0 flex-1 truncate">{f.name}</span>
+          {p ? <><span className="h-1.5 w-16 overflow-hidden rounded-full bg-raised" aria-hidden><span className="block h-full bg-ok" style={{ width: `${pct}%` }} /></span><span className="num text-xs font-bold">{p.packed}/{p.total}</span></> : <span className="text-xs text-muted">עוד לא התחילו</span>}</li>); })}</ul>
+    </div>
   );
 }
 

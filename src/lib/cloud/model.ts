@@ -5,17 +5,21 @@ import type { Trip } from '../types';
 
 export const DELETE = Symbol('delete');
 export type Patch = { path: string[]; value: unknown | typeof DELETE };
-export interface Member { name: string; color: string; role: 'owner' | 'editor'; lastSeen?: number; joinedAt?: number; verified?: boolean; email?: string; photo?: string; familyId?: string }
+export interface Member { name: string; color: string; role: 'owner' | 'editor'; lastSeen?: number; joinedAt?: number; verified?: boolean; email?: string; photo?: string; familyId?: string; k?: string }
 export interface Pending { name: string; email?: string; photo?: string; at: number; familyId?: string }
 export type Access = 'link' | 'approved';
 export interface TripDoc {
   v: 1; owner: string; createdAt: number; updatedAt?: number;
-  members: Record<string, Member>; access?: Access; editedBy?: { uid: string; name: string; at: number }; pending?: Record<string, Pending>;
+  members: Record<string, Member>; access?: Access; editedBy?: { uid: string; name: string; at: number };
+  /** invite keys: `all` for a one-family trip, `fam[familyId]` per family; rotated when someone is removed */
+  invite?: { all?: string; fam?: Record<string, string> };
+  /** per-family packing progress (counts only — the private lists live in families/{id}) */
+  progress?: Record<string, { packed: number; total: number; at: number }>; pending?: Record<string, Pending>;
   core: Record<string, unknown>;
   packing: Record<string, any>; tasks: Record<string, any>; meals: Record<string, any>; schedule: Record<string, any>; pantry: Record<string, boolean>;
 }
 
-const MAPS = ['packing', 'tasks', 'meals', 'schedule'] as const;
+export const MAPS = ['packing', 'tasks', 'meals', 'schedule'] as const;
 // Local-only fields that are never shared.
 const LOCAL = new Set(['shared', 'packingSig', 'packingGeneratedAt', 'example', 'id', 'packing', 'tasks', 'meals', 'schedule', 'pantry']);
 

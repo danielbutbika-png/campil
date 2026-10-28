@@ -1,33 +1,8 @@
+import RULES from '../../firestore.rules?raw';
 export interface Guide { id: string; title: string; blurb: string; minutes: number; tone: 'safety' | 'family' | 'skills'; body: { h?: string; p?: string; list?: string[]; code?: string }[]; links?: { label: string; url: string }[] }
 
-export const FIRESTORE_RULES = `rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /trips/{tripId} {
-      function signedIn() { return request.auth != null; }
-      function isOwner() { return signedIn() && resource.data.owner == request.auth.uid; }
-      function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
-      function openLink() { return resource.data.get('access', 'link') == 'link'; }
-      function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
-      function onlyMine(f) { return request.resource.data.get(f, {}).diff(resource.data.get(f, {})).affectedKeys().hasOnly([request.auth.uid]); }
-      function safeEdit() { return !changed().hasAny(['owner', 'access', 'pending']) && (!changed().hasAny(['members']) || onlyMine('members')); }
-
-      allow get: if isOwner() || isMember() || (signedIn() && openLink());
-      allow list: if false;
-      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
-      allow delete: if isOwner();
-      allow update: if isOwner()
-        || (signedIn() && openLink() && safeEdit())
-        || (isMember() && safeEdit())
-        || (signedIn() && request.auth.token.email is string && changed().hasOnly(['pending', 'updatedAt']) && onlyMine('pending'));
-
-      match /journal/{entryId} {
-        function trip() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
-        allow read, write: if request.auth != null && (trip().owner == request.auth.uid || request.auth.uid in trip().members || trip().get('access', 'link') == 'link');
-      }
-    }
-  }
-}`;
+// Single source: the same file the CI tests and that gets published to Firebase.
+export const FIRESTORE_RULES: string = RULES;
 
 export const GUIDES: Guide[] = [
   { id: 'firebase', title: 'הגדרת עריכה משותפת (Firebase)', blurb: 'הגדרה חד-פעמית של כ-10 דקות, ואחריה כל טיול משותף בלחיצה.', minutes: 10, tone: 'skills',
