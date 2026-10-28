@@ -32,7 +32,7 @@ jobs:
         shell: bash
         continue-on-error: true
       - id: rules
-        run: npm run test:rules -- --reporter=verbose 2>&1 | tee rules.log; exit ${PIPESTATUS[0]}
+        run: npm run test:rules 2>&1 | tee rules.log; exit ${PIPESTATUS[0]}
         shell: bash
         continue-on-error: true
       - name: Report
