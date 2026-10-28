@@ -1,6 +1,9 @@
-// CampIL service worker: app shell is cached on install; runtime caching keeps the app usable offline.
-const VERSION = 'campil-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png'];
+// CampIL service worker. On install it saves every file of this build (list injected at build time by
+// vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
+const BUILD = 'db852e7fac';
+const VERSION = 'campil-' + BUILD;
+const PRECACHE = ["./IsraelMap-HVOOjjIN.js","./IsraelMap-KizArRWY.css","./MapScreen-3kEDkUrA.js","./icon-192.png","./icon-512.png","./icon.svg","./index-BQuk8Vfv.css","./index-OIJL_ooh.js","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest"];
+const SHELL = ['./', ...PRECACHE];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && !k.startsWith('campil-rt')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
@@ -11,7 +14,7 @@ self.addEventListener('fetch', e => {
   // Same-origin assets & fonts: stale-while-revalidate.
   if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     e.respondWith(caches.open(url.origin === location.origin ? VERSION : 'campil-rt-fonts').then(async c => {
-      const hit = await c.match(req, { ignoreSearch: req.mode === 'navigate' });
+      const hit = await c.match(req, { ignoreSearch: req.mode === 'navigate', ignoreVary: true });
       const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit || (req.mode === 'navigate' ? c.match('./index.html') : undefined));
       return hit || net;
     }));
@@ -20,7 +23,7 @@ self.addEventListener('fetch', e => {
   // Map tiles/styles: cache-first with a size cap, so viewed areas work offline.
   if (/openfreemap\.org|unpkg\.com/.test(url.host)) {
     e.respondWith(caches.open('campil-rt-map').then(async c => {
-      const hit = await c.match(req); if (hit) return hit;
+      const hit = await c.match(req, { ignoreVary: true }); if (hit) return hit;
       const r = await fetch(req); if (r.ok) { c.put(req, r.clone()); c.keys().then(k => { if (k.length > 1500) c.delete(k[0]); }); } return r;
     }));
   }
