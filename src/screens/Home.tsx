@@ -18,6 +18,8 @@ import { wmoText } from '../services/weather';
 import type { Trip } from '../lib/types';
 import { Logo } from '../App';
 import { myPacking } from '../lib/families';
+import { homeMode, type HomeMode } from '../lib/homeMode';
+import { ModeSwitch, PrepPanel, FieldPanel } from '../components/HomeModes';
 
 const HERO: { scene: any; caption: string }[] = [
   { scene: 'mountain', caption: 'רמת הגולן' }, { scene: 'desert', caption: 'מדבר יהודה' }, { scene: 'crater', caption: 'מכתש רמון' }, { scene: 'forest', caption: 'הגליל העליון' }, { scene: 'sea', caption: 'חופי הגליל המערבי' },
@@ -35,6 +37,10 @@ export default function Home() {
   }, [onboarded]);
 
   const upcoming = nextTrip(trips);
+  const real = !!upcoming && !upcoming.example;
+  const auto = homeMode(upcoming);
+  const [override, setOverride] = useState<HomeMode | null>(null);
+  const mode: HomeMode = real ? override ?? auto : 'plan';
   const name = members.find(m => m.role === 'adult')?.name;
   const point = upcoming ? tripPoint(upcoming) : null;
   const here = settings.home ?? point ?? { lat: REGION_BY_ID.center.lat, lon: REGION_BY_ID.center.lon, label: 'מרכז הארץ' };
@@ -59,10 +65,11 @@ export default function Home() {
           <div className="flex items-center justify-between lg:hidden"><Logo light /><span className="rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur">{HERO[hi].caption}</span></div>
           <div className="max-w-xl space-y-2 pt-6 md:pt-14">
             <p className="text-lg font-semibold text-white/90">{greeting()}{name ? `, ${name}` : ''}</p>
-            <h1 className="font-display text-4xl leading-tight drop-shadow md:text-6xl">לאן יוצאים הפעם?</h1>
-            <p className="text-white/85">תכנון, ציוד, תחזית ותיעוד — במקום אחד, מותאם למשפחה שלכם.</p>
+            <h1 className="font-display text-4xl leading-tight drop-shadow md:text-6xl">{mode === 'field' ? 'טיול נעים!' : mode === 'prep' ? 'עוד רגע יוצאים' : 'לאן יוצאים הפעם?'}</h1>
+            <p className="text-white/85">{mode === 'field' ? 'מה מתוכנן היום, ניווט, תמונות ומספרי חירום.' : mode === 'prep' ? 'מה נשאר לארוז ולעשות, התחזית, ושמירת הטיול לשימוש בלי קליטה.' : 'תכנון, ציוד, תחזית ותיעוד — במקום אחד, מותאם למשפחה שלכם.'}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          {real && <ModeSwitch mode={mode} auto={auto} onChange={setOverride} />}
+          <div className={cx('flex flex-wrap items-center gap-3', mode !== 'plan' && 'hidden')}>
             <Button variant="accent" size="lg" icon={<Plus size={22} />} onClick={() => go('/new')}>מתכננים טיול חדש</Button>
             <Button size="lg" className="!bg-white/15 backdrop-blur hover:!bg-white/25" icon={<Tent size={20} />} onClick={() => go('/camps')}>מקום לקמפינג</Button>
             {today && (
@@ -80,7 +87,7 @@ export default function Home() {
 
       <div className="gutter mx-auto max-w-6xl space-y-10">
         {/* Upcoming trip */}
-        {upcoming ? <UpcomingTrip t={upcoming} /> : (
+        {mode === 'field' && upcoming ? <FieldPanel t={upcoming} /> : mode === 'prep' && upcoming ? <PrepPanel t={upcoming} /> : upcoming ? <UpcomingTrip t={upcoming} /> : (
           <Card className="flex flex-col items-start gap-3 p-6 md:flex-row md:items-center">
             <Tent className="text-moss" size={36} /><div className="flex-1"><p className="font-display text-xl">אין טיול מתוכנן</p><p className="text-muted">האשף ישאל כמה שאלות ויבנה תוכנית, רשימת ציוד וארוחות.</p></div>
             <Button onClick={() => go('/new')} icon={<Plus size={18} />}>טיול חדש</Button>
@@ -101,6 +108,7 @@ export default function Home() {
           ))}
         </div>
 
+        {mode !== 'field' && <>
         <Section title={`מה טוב ב${SEASON_HE[season]}`} action={<a href={href('/map')} className="flex items-center text-sm font-bold text-moss">למפה<ChevronLeft size={16} /></a>}>
           <div className="scroll-x -mx-4 flex gap-3 px-4 pb-2">
             {seasonal.map((r, i) => (
@@ -131,6 +139,7 @@ export default function Home() {
             ))}
           </div>
         </Section>
+        </>}
         <SourceLine f={fc.data} />
       </div>
       {sheet.el}

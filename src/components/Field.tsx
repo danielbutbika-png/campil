@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { WifiOff, Wifi, CloudUpload, Check, Loader2, Map as MapIcon, CloudSun, Smartphone, ShieldAlert, Download, RefreshCw } from 'lucide-react';
+import { ExternalLink, AlertCircle, WifiOff, Wifi, CloudUpload, Check, Loader2, Map as MapIcon, CloudSun, Smartphone, ShieldAlert, Download, RefreshCw } from 'lucide-react';
 import type { Trip } from '../lib/types';
 import { useStore } from '../lib/store';
 import { useOnline } from '../lib/hooks';
@@ -67,6 +67,24 @@ export function FieldCard({ t, point }: { t: Trip; point: { lat: number; lon: nu
         </div>
       )}
       <p className="text-xs text-muted">סימונים ושינויים בלי קליטה נשמרים במכשיר ונשלחים לשותפים כשהקליטה חוזרת. המפה נשמרת לפי <a className="underline" href={MAP_TERMS_URL} target="_blank" rel="noreferrer">תנאי OpenFreeMap</a> (עד 3,000 אריחים או 50MB).</p>
+    </section>
+  );
+}
+
+/** CampIL doesn't receive official alerts automatically: point to the official sources before leaving. */
+export function OfficialAlerts({ flood }: { flood: boolean }) {
+  const links: [string, string, string][] = [
+    ['השירות המטאורולוגי', 'https://ims.gov.il', 'התרעות מזג אוויר, שיטפונות ועומסי חום'],
+    ['רשות הטבע והגנים', 'https://www.parks.org.il', 'סגירות, הזמנות ושעות פתיחה בשמורות ובגנים'],
+    ['קק״ל', 'https://www.kkl.org.il', 'חניוני יער ואתרי קק״ל'],
+  ];
+  return (
+    <section aria-labelledby="alerts-h" className="space-y-2 rounded-xl2 border border-line bg-surface p-4">
+      <h2 id="alerts-h" className="flex items-center gap-2 font-bold"><AlertCircle size={18} className="text-warn" />התרעות רשמיות — לבדוק לפני היציאה</h2>
+      <p className="text-sm text-muted">CampIL לא מקבלת התרעות רשמיות אוטומטית. ההמלצות כאן מחושבות מהתחזית, ואינן מחליפות את הגופים הרשמיים.{flood ? ' בתוכנית יש אתרים בערוצי נחלים — בדקו התרעות שיטפונות גם לאזור שבמעלה הנחל.' : ''}</p>
+      <ul className="grid gap-2 sm:grid-cols-3">{links.map(([n, u, d]) => (
+        <li key={u}><a href={u} target="_blank" rel="noreferrer" className="flex h-full flex-col rounded-xl border border-line p-3 hover:border-moss"><span className="flex items-center gap-1 font-bold">{n}<ExternalLink size={13} /></span><span className="text-xs text-muted">{d}</span></a></li>))}</ul>
+      <p className="text-sm font-semibold">חירום: מד״א 101 · משטרה 100 · כבאות והצלה 102</p>
     </section>
   );
 }
