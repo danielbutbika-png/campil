@@ -112,6 +112,8 @@ export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolea
 export interface Settings {
   familyName: string; home?: { lat: number; lon: number; label: string };
   vehicle: string; trunkLiters?: number; waterLitersPerPersonDay?: number;
+  /** Trunk interior measured by the family (cm): depth seat-back→tailgate, narrowest width, floor→bottom of rear window. */
+  trunkDims?: { depth: number; width: number; height: number; measuredAt: string };
   diet: DietPrefs; theme: 'system' | 'light' | 'dark';
   vehicleSpec?: import('../data/vehicles').VehicleSpec | null;
   fuelBrands: import('../services/fuel').BrandId[]; fuelBufferKm: number;

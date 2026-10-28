@@ -9,6 +9,7 @@ import { Button, Sheet, Badge, Blaze, Toggle, Empty, cx, toast } from '../compon
 import { href } from '../lib/router';
 import { planLoad, ZONE_HE } from '../engine/loading';
 import { VehiclePicker } from '../components/VehiclePicker';
+import { TrunkPlan } from '../components/TrunkPlan';
 import { uid, todayISO, fmtDate } from '../lib/util';
 import { unitLiters, checkState, needsCheck, tripsUsing, warehouseStats } from '../engine/warehouse';
 import { myPacking } from '../lib/families';
@@ -214,6 +215,7 @@ function CarView() {
   return (
     <div className="space-y-6">
       <section className="space-y-3"><h2 className="font-display text-xl">הרכב</h2><VehiclePicker /></section>
+      <TrunkPlan trip={nt} />
       <section className="space-y-3 rounded-xl2 border border-line bg-surface p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-display text-xl">נפח הציוד מול תא המטען</h2>{nt && <a className="text-sm font-bold text-moss" href={href(`/trip/${nt.id}/gear`)}>לפי: {nt.name}{people ? ` · ${people} נוסעים` : ''}</a>}</div>
         <p className="text-sm text-muted">{plan.capacityWhy}</p>

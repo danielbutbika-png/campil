@@ -1,0 +1,30 @@
+// Visual trunk loading: measure the trunk, place boxes/items by their dimensions, flag what doesn't fit.
+import { chromium } from 'playwright-core';
+const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });
+await ctx.route(/open-meteo|overpass|osrm|nominatim|openfreemap|fonts\./, r => r.abort());
+const p = await ctx.newPage(); const errors = [];
+p.on('pageerror', e => errors.push(e.message));
+await p.goto(BASE); await p.waitForTimeout(1200);
+// give two big items dimensions as the family would in the warehouse: a cooler fits, a long table doesn't
+await p.evaluate(() => { const k = JSON.parse(localStorage.getItem('campil-v1')); for (const g of k.state.inventory) { if (g.name === 'צידנית משפחתית') { g.dims = [55, 35, 40]; g.weightKg = 8; } if (g.name === 'שולחן קמפינג') g.dims = [140, 60, 8]; } localStorage.setItem('campil-v1', JSON.stringify(k)); });
+await p.goto(BASE + '#/gear/car'); await p.reload(); await p.waitForTimeout(1000);
+console.log('asks to measure before drawing:', (await p.getByLabel('עומק (ס״מ)').count()) === 1 && (await p.getByRole('img', { name: /מבט מלמעלה/ }).count()) === 0);
+await p.getByLabel('עומק (ס״מ)').fill('100'); await p.getByLabel('רוחב (ס״מ)').fill('120'); await p.getByLabel('גובה עד החלון (ס״מ)').fill('48');
+await p.getByRole('button', { name: 'שמירת המידות' }).click(); await p.waitForTimeout(500);
+console.log('top and side views drawn:', (await p.getByRole('img', { name: /מבט מלמעלה/ }).count()) === 1 && (await p.getByRole('img', { name: /מבט מהצד/ }).count()) === 1);
+const order = p.getByRole('list', { name: 'סדר העמסה לפי מידות' });
+const n = await order.locator('li').count(); const txt = await order.innerText();
+console.log('boxes placed in loading order:', n >= 5, n);
+console.log('cooler placed by the tailgate:', /צידנית משפחתית[\s\S]{0,40}ליד הדלת/.test(txt));
+const side = await p.getByRole('img', { name: /מבט מהצד/ }).getAttribute('aria-label');
+const h = +side.match(/גובה ההעמסה (\d+)/)[1];
+console.log('nothing above the window line:', h <= 48, h);
+console.log('table flagged as not fitting:', (await p.getByRole('alert').innerText()).includes('שולחן קמפינג'));
+console.log('items without dimensions listed, not guessed:', (await p.getByText(/בלי מידות, ולכן לא בציור/).innerText()).includes('מזרן זוגי'));
+await p.screenshot({ path: `${OUT}/trunk.png`, fullPage: true });
+await p.reload(); await p.waitForTimeout(800);
+console.log('measurements persisted:', (await p.getByText(/תא מטען 100×120×48 ס״מ/).count()) === 1);
+console.log('errors:', errors.length ? errors.join(' | ') : 'none');
+await b.close();
