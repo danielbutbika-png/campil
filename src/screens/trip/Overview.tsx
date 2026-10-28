@@ -16,6 +16,7 @@ import { Button, Card, Ring, Section, Badge, Blaze, cx } from '../../components/
 import { RouteFuel, NavButtons } from '../../components/RouteFuel';
 import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { OfficialAlerts } from '../../components/Field';
+import { DutyBoard, useShopLines } from '../../components/Duties';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
 import { FieldCard } from '../../components/Field';
@@ -31,6 +32,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
   const chosen = useMemo(() => rank(sites, t, wx.flags, st.settings, taste), [sites, wx.flags]);
   const nearby = useMemo(() => wx.point ? rank(SITES.filter(s => !t.siteIds.includes(s.id) && haversineKm(wx.point!, s) < 30), t, wx.flags, st.settings, taste).slice(0, 3) : [], [wx.point, t.siteIds, wx.flags]);
   const openTasks = t.tasks.filter(x => !x.done).slice(0, 4);
+  const shopLines = useShopLines(t);
   const sel = wx.days.find(d => d.date === day) ?? wx.days[0];
   const [osm, setOsm] = useState<{ loading?: boolean; err?: string; data?: OsmPlace[] }>({});
   const loadOsm = async () => {
@@ -78,6 +80,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         </Card>
       </div>
 
+      <DutyBoard t={t} lines={shopLines} compact />
       {t.shared && <Section title="מה קורה בטיול" action={<Avatars t={t} />}><Card className="p-4"><ActivityFeed t={t} /></Card></Section>}
 
       {(recs.length > 0) && <Section title="המלצות הכנה לפי התחזית"><RecCards recs={recs} /></Section>}

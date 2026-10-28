@@ -57,6 +57,8 @@ export interface Trip {
   budget: 'free' | 'low' | 'any';
   packing: PackItem[]; packingGeneratedAt?: string;
   meals: MealSlot[]; pantry: Record<string, boolean>;
+  /** Who does what in a multi-family trip. Keys: `meal:<slotId>` (prepares), `shop:<lineKey>` (buys), `task:<taskId>`. */
+  duties?: Record<string, Duty>;
   schedule: ScheduleItem[]; tasks: TaskItem[];
   status: 'planning' | 'done'; packingSig?: string; example?: boolean;
   /** set once the end-of-trip collage was made and shared with everyone */
@@ -106,6 +108,9 @@ export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: st
 
 /** What a user checked themselves on the operator's site (kept on this device). */
 export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'recommended' | 'none'; access?: 'yes' | 'partial' | 'no'; lodging?: 'yes' | 'no'; note?: string }
+
+/** One responsibility: which family, and whether it's done (meal prepared / item bought / task done). */
+export interface Duty { familyId?: string; done?: boolean; by?: string; at?: number }
 
 export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolean; allergies: string[] }
 

@@ -13,6 +13,9 @@ import { addDays, fmtDate, shortDay, tripLength } from '../../lib/util';
 import { Button, Chip, Sheet, Badge, Section, cx, toast } from '../../components/ui';
 import { shareText } from '../../lib/share';
 import { Prov } from '../../components/Provenance';
+import { FamilyDuty, DutyBoard } from '../../components/Duties';
+import { dutyKey } from '../../engine/duties';
+import { isGroup, myFamily } from '../../lib/families';
 
 const fmtQty = (q: number, unit: string) => unit === 'גר׳' ? (q >= 1000 ? `${(Math.ceil(q / 100) / 10).toLocaleString('he-IL')} ק״ג` : `${Math.ceil(q / 50) * 50} גר׳`) : `${Math.ceil(q - 1e-9)} ${unit}`;
 
@@ -22,6 +25,7 @@ export default function MealsTab({ t }: { t: Trip }) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [grillRecipe, setGrillRecipe] = useState<GrillItem | null>(null);
   const [editDiets, setEditDiets] = useState(false);
+  const [shopView, setShopView] = useState<'all' | 'mine' | 'open'>('all');
   const [draft, setDraft] = useState<Record<string, FamilyDiet> | undefined>(t.diets);
   const { days } = tripLength(t.start, t.end);
   const groups = useMemo(() => dietGroups(t, fallback), [t.participants, t.families, t.diets, fallback]);
@@ -41,10 +45,12 @@ export default function MealsTab({ t }: { t: Trip }) {
     if (!next.length) return toast('צריך לפחות פריט אחד');
     updateTrip(t.id, { grill: { ...choice, [kind]: next } });
   };
-  const sections = SHOP_ORDER.filter(sec => shop.some(s => s.shop === sec));
+  const famOfLine = (k: string) => t.duties?.[dutyKey.shop(k)]?.familyId;
+  const shown = shop.filter(s => !isGroup(t) || shopView === 'all' || (shopView === 'mine' ? famOfLine(s.key) === myFamily(t) : !famOfLine(s.key) && !t.pantry[s.key]));
+  const sections = SHOP_ORDER.filter(sec => shown.some(s => s.shop === sec));
   const menuRecipes = [...new Set(t.meals.flatMap(m => [m.recipeId, m.alt?.recipeId]).filter(Boolean) as string[])].map(id => RECIPE_BY_ID[id]).filter(Boolean);
   const grillChosen = [...(hasMeat ? grillItemsFor('meat', t) : []), ...grillItemsFor('veg', t)].filter((g, i, a) => a.indexOf(g) === i && grill.lines.some(l => l.item.id === g.id));
-  const listText = () => [`🛒 רשימת קניות — ${t.name}`, `${drinks.people} משתתפים · ${drinks.days} ימים`, ...sections.flatMap(sec => { const rows = shop.filter(s => s.shop === sec && !t.pantry[s.key]); return rows.length ? ['', `*${SHOP_LABEL[sec]}*`, ...rows.map(s => `⬜ ${s.label} ${s.name}`)] : []; })].join('\n');
+  const listText = () => [`🛒 רשימת קניות — ${t.name}`, `${drinks.people} משתתפים · ${drinks.days} ימים`, ...sections.flatMap(sec => { const rows = shown.filter(s => s.shop === sec && !t.pantry[s.key]); return rows.length ? ['', `*${SHOP_LABEL[sec]}*`, ...rows.map(s => `⬜ ${s.label} ${s.name}`)] : []; })].join('\n');
   const dishOptions = (type: MealSlot['type'], forAlt: { slot: MealSlot } | null) => {
     const main = forAlt?.slot.recipeId ? RECIPE_BY_ID[forAlt.slot.recipeId] : null;
     const eaters = forAlt ? groups.filter(g => !main || !eats(g.diet, main)) : groups;
@@ -53,6 +59,7 @@ export default function MealsTab({ t }: { t: Trip }) {
 
   return (
     <div className="space-y-10">
+      <DutyBoard t={t} lines={shop} />
       <Section title="מי אוכל מה" action={<Button size="sm" variant="soft" icon={<Pencil size={14} />} onClick={() => { setDraft(t.diets); setEditDiets(true); }}>עריכה</Button>}>
         <div className="grid gap-3 sm:grid-cols-2">
           {groups.map(g => (
@@ -103,6 +110,7 @@ export default function MealsTab({ t }: { t: Trip }) {
                           <option value="">— ללא —</option>{dishOptions(m.type, null).map(({ x, fit, all }) => <option key={x.id} value={x.id}>{x.name}{fit < all ? (fit ? ' (לא לכולם)' : ' (לא מתאים)') : ''}</option>)}
                         </select>
                       </div>
+                      {r && isGroup(t) && <div className="ps-16"><FamilyDuty t={t} k={dutyKey.meal(m.id)} label="מכינים" doneLabel="מוכן" /></div>}
                       {r && <div className="flex flex-wrap items-center gap-2 ps-16 text-xs text-muted"><button className="font-bold text-moss" onClick={() => setRecipe(r)}>מתכון</button><span>{KASHRUT_LABEL[r.kashrut]}</span><span className="flex items-center gap-0.5"><Users size={12} />
                         <input aria-label="מספר סועדים" type="number" min={1} className="num w-12 rounded border border-line bg-surface px-1" value={m.servings} onChange={e => { const n = Math.max(1, +e.target.value); setSlot(m.id, { servings: n, eq: m.eq ? Math.round((m.eq / m.servings) * n * 10) / 10 : undefined }); }} /></span></div>}
                       {m.alt && (
@@ -154,20 +162,23 @@ export default function MealsTab({ t }: { t: Trip }) {
             <p className="text-xs text-muted sm:col-span-2">מי שנוהג לא שותה.{kosher ? ' יין — בהכשר המתאים למשפחות ששומרות כשרות.' : ''}</p>
           </div>}
         </div>
+        {isGroup(t) && <div className="flex flex-wrap gap-2" role="group" aria-label="איזו רשימה להציג">
+          {([['all', 'כל הרשימה'], ['mine', 'מה שאנחנו קונים'], ['open', 'עוד לא נקבע מי קונה']] as const).map(([k, l]) => <Chip key={k} active={shopView === k} onClick={() => setShopView(k)}>{l}</Chip>)}
+        </div>}
         <div className="grid gap-4 md:grid-cols-2">
           {sections.map(sec => (
             <section key={sec} className="rounded-xl2 border border-line bg-surface">
               <h3 className="border-b border-line px-4 py-3 font-bold">{SHOP_LABEL[sec]}</h3>
-              <ul className="divide-y divide-line">{shop.filter(s => s.shop === sec).map(s => (
-                <li key={s.key}><label className="flex cursor-pointer items-center gap-3 px-4 py-2.5">
+              <ul className="divide-y divide-line">{shown.filter(s => s.shop === sec).map(s => (
+                <li key={s.key}><label className="flex cursor-pointer items-center gap-3 px-4 pt-2.5 pb-1">
                   <input type="checkbox" className="h-5 w-5 shrink-0 accent-[rgb(var(--forest))]" checked={!!t.pantry[s.key]} onChange={e => updateTrip(t.id, x => ({ pantry: { ...x.pantry, [s.key]: e.target.checked } }))} />
                   <span className={cx('min-w-0 flex-1', t.pantry[s.key] && 'text-muted line-through')}>{s.name}<span className="block truncate text-xs text-muted">{s.recipes.join(', ')}</span></span>
                   <span className="num shrink-0 font-bold">{s.unit === 'יח׳' ? `× ${s.label}` : s.label}</span>{t.pantry[s.key] && <Badge>יש</Badge>}
-                </label></li>))}</ul>
+                </label>{isGroup(t) && !t.pantry[s.key] && <div className="px-4 pb-2.5 ps-12"><FamilyDuty t={t} k={dutyKey.shop(s.key)} label={`קונים ${s.name}`} doneLabel="נקנה" /></div>}</li>))}</ul>
             </section>
           ))}
         </div>
-        {!shop.length && <p className="text-muted">אין מנות בתפריט עדיין.</p>}
+        {!shop.length ? <p className="text-muted">אין מנות בתפריט עדיין.</p> : !shown.length && <p className="text-muted">אין פריטים בתצוגה הזו.</p>}
       </Section>
 
       <Sheet open={!!recipe} onClose={() => setRecipe(null)} title={recipe?.name ?? ''}>

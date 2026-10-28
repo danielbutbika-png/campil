@@ -17,11 +17,12 @@ export interface TripDoc {
   progress?: Record<string, { packed: number; total: number; at: number }>; pending?: Record<string, Pending>;
   core: Record<string, unknown>;
   packing: Record<string, any>; tasks: Record<string, any>; meals: Record<string, any>; schedule: Record<string, any>; pantry: Record<string, boolean>;
+  duties?: Record<string, any>;
 }
 
 export const MAPS = ['packing', 'tasks', 'meals', 'schedule'] as const;
 // Local-only fields that are never shared.
-const LOCAL = new Set(['shared', 'packingSig', 'packingGeneratedAt', 'example', 'offline', 'id', 'packing', 'tasks', 'meals', 'schedule', 'pantry']);
+const LOCAL = new Set(['shared', 'packingSig', 'packingGeneratedAt', 'example', 'offline', 'id', 'packing', 'tasks', 'meals', 'schedule', 'pantry', 'duties']);
 
 /** Firestore rejects `undefined`; JSON round-trip drops it. */
 export const clean = <T>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -31,7 +32,7 @@ export function coreOf(t: Trip) { const c: Record<string, unknown> = {}; for (co
 
 export function toDoc(t: Trip, owner: string, me: Member): TripDoc {
   const m = (arr: any[]) => Object.fromEntries(arr.map((x, i) => [x.id, clean({ ...x, ord: x.ord ?? i })]));
-  return { v: 1, owner, createdAt: Date.now(), access: 'link', pending: {}, members: { [owner]: me }, core: coreOf(t), packing: m(t.packing), tasks: m(t.tasks), meals: m(t.meals), schedule: m(t.schedule), pantry: { ...t.pantry } };
+  return { v: 1, owner, createdAt: Date.now(), access: 'link', pending: {}, members: { [owner]: me }, core: coreOf(t), packing: m(t.packing), tasks: m(t.tasks), meals: m(t.meals), schedule: m(t.schedule), pantry: { ...t.pantry }, duties: clean({ ...(t.duties ?? {}) }) };
 }
 
 const MEAL_ORDER = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 } as Record<string, number>;
@@ -44,6 +45,7 @@ export function fromDoc(d: TripDoc, local?: Trip): Trip {
     meals: list(d.meals).sort((a, b) => a.day - b.day || (MEAL_ORDER[a.type] ?? 9) - (MEAL_ORDER[b.type] ?? 9)),
     schedule: list(d.schedule).sort((a, b) => a.day - b.day || String(a.time).localeCompare(String(b.time))),
     pantry: { ...(d.pantry ?? {}) },
+    duties: { ...(d.duties ?? {}) },
     shared: local?.shared, packingSig: local?.packingSig, packingGeneratedAt: local?.packingGeneratedAt, offline: local?.offline,
   } as Trip;
 }
@@ -83,6 +85,12 @@ export function diffTrip(prev: Trip, next: Trip): Patch[] {
     const nv = next.pantry?.[k];
     if (nv === undefined) out.push({ path: ['pantry', k], value: DELETE });
     else if (prev.pantry?.[k] !== nv) out.push({ path: ['pantry', k], value: nv });
+  }
+  // one key per responsibility, so families taking different duties at once don't collide
+  for (const k of new Set([...Object.keys(prev.duties ?? {}), ...Object.keys(next.duties ?? {})])) {
+    const nv = next.duties?.[k];
+    if (nv === undefined) out.push({ path: ['duties', k], value: DELETE });
+    else if (!same(prev.duties?.[k], nv)) out.push({ path: ['duties', k], value: clean(nv) });
   }
   return out;
 }

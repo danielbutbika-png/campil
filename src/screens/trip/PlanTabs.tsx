@@ -8,6 +8,8 @@ import { SITE_BY_ID } from '../../data/sites';
 import { addDays, fmtDate, shortDay, tripLength, uid } from '../../lib/util';
 import { Button, Sheet, Badge, cx, toast } from '../../components/ui';
 import { stamp, ago } from '../../components/Collab';
+import { FamilyDuty } from '../../components/Duties';
+import { dutyKey } from '../../engine/duties';
 
 const KIND_I = { drive: Car, camp: Tent, meal: Utensils, activity: Footprints, rest: Coffee, pack: Package };
 const KIND_HE = { drive: 'נסיעה', camp: 'מחנה', meal: 'ארוחה', activity: 'פעילות', rest: 'מנוחה', pack: 'אריזה' };
@@ -90,6 +92,7 @@ export function TasksTab({ t }: { t: Trip }) {
             <li key={k.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
               <input type="checkbox" aria-label={k.text} className="h-5 w-5 accent-[rgb(var(--forest))]" checked={k.done} onChange={() => { const s = stamp(); set(k.id, { done: !k.done, doneBy: s.by, doneAt: s.at }); }} />
               <span className="min-w-0 flex-1"><span className={cx(k.done && 'text-muted line-through')}>{k.text}</span>{k.done && k.doneBy && t.shared && <span className="block text-xs font-bold text-ok">✓ {k.doneBy} · {ago(k.doneAt)}</span>}</span>
+              <FamilyDuty t={t} k={dutyKey.task(k.id)} label="משפחה אחראית" doneLabel="" />
               <select aria-label="אחראי" className="rounded-lg border border-line bg-surface px-2 py-1 text-sm" value={k.assignee ?? ''} onChange={e => set(k.id, { assignee: e.target.value || undefined })}><option value="">אחראי</option>{members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
               <button aria-label="מחיקת משימה" className="text-muted hover:text-danger" onClick={() => updateTrip(t.id, x => ({ tasks: x.tasks.filter(y => y.id !== k.id) }))}><Trash2 size={16} /></button>
             </li>))}</ul>

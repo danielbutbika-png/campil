@@ -35,6 +35,7 @@ export function describeChanges(prev: Trip, next: Trip, editor: string | null, k
   if (!same(prev.meals, next.meals)) out.push({ by: editor, text: 'עדכן/ה את התפריט' });
   if (!same(prev.schedule, next.schedule)) out.push({ by: editor, text: 'עדכן/ה את הלו״ז' });
   if (!same(prev.pantry, next.pantry)) out.push({ by: editor, text: 'עדכן/ה את רשימת הקניות' });
+  if (!same(prev.duties ?? {}, next.duties ?? {})) out.push({ by: editor, text: 'עדכן/ה את חלוקת האחריות' });
   if (prev.start !== next.start || prev.end !== next.end) out.push({ by: editor, text: 'שינה/תה את תאריכי הטיול' });
   if (prev.name !== next.name) out.push({ by: editor, text: `שינה/תה את שם הטיול ל"${next.name}"` });
   if (!same(prev.siteIds, next.siteIds) || prev.regionId !== next.regionId) out.push({ by: editor, text: 'עדכן/ה את היעדים' });

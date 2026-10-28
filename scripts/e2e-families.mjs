@@ -129,5 +129,27 @@ if (!process.env.LEGACY) {
   console.log('family B sees the shares:', (await B.locator('li', { hasText: 'מים לשתייה' }).first().innerText()).includes('מכוסה'));
   await S(A, '88-A-partial');
 }
+
+// responsibility between families: quick split, each family sees its share, "bought" syncs to everyone
+if (!process.env.LEGACY) {
+  await A.goto(BASE + `#/trip/${tid}/meals`); await A.waitForTimeout(1200);
+  const board = A.getByRole('region', { name: 'מי אחראי על מה' });
+  console.log('duty board shown with both families:', (await board.locator('tbody tr').count()) === 2);
+  await board.getByRole('button', { name: /חלוקה מהירה/ }).click(); await A.waitForTimeout(1500);
+  const after = await board.innerText();
+  console.log('quick split assigned everything:', after.includes('חולקו בין המשפחות'));
+  const bUrl = B.url().replace(/#\/trip\/([^/]+).*/, '#/trip/$1/meals');
+  await B.goto(bUrl); await B.waitForTimeout(1500);
+  await B.getByRole('button', { name: 'מה שאנחנו קונים' }).click(); await B.waitForTimeout(300);
+  const mine = B.getByRole('checkbox', { name: 'נקנה' });
+  const n = await mine.count();
+  console.log('family B has its own shopping share:', n > 0, n);
+  await mine.first().check(); await B.waitForTimeout(2500);
+  const rowB = await A.getByRole('region', { name: 'מי אחראי על מה' }).locator('tbody tr', { hasText: 'משפחת כהן' }).innerText();
+  console.log('organiser sees family B bought 1:', /\b1\/\d+/.test(rowB), rowB.replace(/\s+/g, ' '));
+  const d3 = JSON.parse(store.get(mainKey));
+  console.log('duties stored per key:', Object.keys(d3.duties ?? {}).length > 3 && Object.values(d3.duties).some(x => x.done && x.familyId === fidB));
+  await S(A, '89-A-duties'); await S(B, '90-B-mine');
+}
 console.log('errors:', errors.length ? errors.join('\n') : 'none');
 await b.close();
