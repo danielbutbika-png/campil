@@ -1,8 +1,8 @@
 // CampIL service worker. On install it saves every file of this build (list injected at build time by
 // vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
-const BUILD = '249fd8835c';
+const BUILD = 'e379cd38c8';
 const VERSION = 'campil-' + BUILD;
-const PRECACHE = ["./IsraelMap-BQKV_9CX.js","./IsraelMap-KizArRWY.css","./MapScreen-DvpropHi.js","./icon-192.png","./icon-512.png","./icon.svg","./index-CjwJpqCO.css","./index-ema0sF6i.js","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest"];
+const PRECACHE = ["./CampSearch-BWJBn5Br.js","./Collab-BIDUYq4j.js","./DietEditor-BEVWaVPE.js","./Gear-0S_cH7Eg.js","./IsraelMap-BzrKOCl7.js","./IsraelMapGL-I7xQak_6.js","./IsraelMapGL-KizArRWY.css","./Join-BkgeBIvR.js","./JournalTab-BcFLiNS8.js","./MapScreen-G9mURKbZ.js","./More-Cv_zGUqy.js","./RouteFuel-ClhbpwQy.js","./TripPlan-C3BbgXdT.js","./Trips-n8Xwzr4g.js","./VehiclePicker-DqsZYGvT.js","./Wizard-G8kNXHR9.js","./car-Dj69-GLx.js","./check-B1S8uzeP.js","./copy-BaMI2W_e.js","./fuel-CjwRYtR8.js","./icon-192.png","./icon-512.png","./icon.svg","./index-DBieL3C2.css","./index-DP37k1xp.js","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest","./offline-DQEJo9iq.js","./osm-dRGSVYye.js","./package-Cw6kHiHo.js","./search-Bi6lpL2E.js","./settings-2-Fw9kbPHQ.js","./smartphone-DouKAKL7.js","./star-ChWyMh68.js"];
 const SHELL = ['./', ...PRECACHE];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && !k.startsWith('campil-rt')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
