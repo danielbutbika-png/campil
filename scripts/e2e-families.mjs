@@ -107,5 +107,27 @@ const progB = await A.locator('li', { hasText: 'משפחת כהן' }).filter({ h
 console.log('organiser sees family B progress:', /\d+\/\d+/.test(progB), progB.replace(/\s+/g, ' '));
 console.log('organiser does not see family B items:', (await A.locator('li', { hasText: 'שק שינה / שמיכה' }).filter({ hasText: '✓ יוסי' }).count()) === 0);
 await S(A, '87-A-all-view');
+
+// partial quantities: each family brings part of a shared item; partly packed items
+if (!process.env.LEGACY) {
+  const openWater = async P => { await P.getByRole('button', { name: 'למה מים לשתייה ברשימה' }).click(); await P.waitForTimeout(400); };
+  await openWater(A);
+  const qtyW = +(await A.getByRole('dialog').getByText(/מתוך \d+/).first().innerText()).match(/מתוך (\d+)/)[1];
+  const mineA = A.getByRole('dialog').getByRole('spinbutton', { name: /^כמה .* מביאים$/ });
+  console.log('organiser can edit only own family share:', (await mineA.count()) === 1);
+  await mineA.fill('5'); await A.waitForTimeout(300);
+  await A.getByRole('dialog').getByRole('spinbutton', { name: 'יחידות ארוזות' }).fill('3'); await A.waitForTimeout(300);
+  await A.keyboard.press('Escape'); await A.waitForTimeout(1500);
+  await openWater(B);
+  await B.getByRole('dialog').getByRole('button', { name: 'את כל השאר' }).click(); await B.waitForTimeout(300);
+  await B.keyboard.press('Escape'); await B.waitForTimeout(2000);
+  const d2 = JSON.parse(store.get(mainKey)); const w = Object.values(d2.packing).find(i => i.name === 'מים לשתייה');
+  const sum = Object.values(w.brings ?? {}).reduce((n, x) => n + x, 0);
+  console.log('both family shares stored separately:', JSON.stringify(w.brings), Object.keys(w.brings ?? {}).length === 2 && w.brings[fidA] === 5 && sum === qtyW);
+  const rowA = await A.locator('li', { hasText: 'מים לשתייה' }).first().innerText();
+  console.log('organiser row shows covered + partial packing:', rowA.includes('מכוסה') && rowA.includes(`ארוזים 3/${qtyW}`));
+  console.log('family B sees the shares:', (await B.locator('li', { hasText: 'מים לשתייה' }).first().innerText()).includes('מכוסה'));
+  await S(A, '88-A-partial');
+}
 console.log('errors:', errors.length ? errors.join('\n') : 'none');
 await b.close();

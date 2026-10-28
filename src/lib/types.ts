@@ -74,6 +74,10 @@ export interface PackItem {
   removed?: boolean; packedBy?: string; packedAt?: number; ord?: number;
   /** Owning family: an id, '' = shared with everyone, undefined = derived (see lib/families). */
   familyId?: string;
+  /** Shared items in a multi-family trip: how many units each family brings (familyId → units). */
+  brings?: Record<string, number>;
+  /** Partly packed: units packed so far (0 < packedQty < qty). Fully packed uses `packed`. */
+  packedQty?: number;
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';

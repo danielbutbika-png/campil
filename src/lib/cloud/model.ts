@@ -67,6 +67,13 @@ export function diffTrip(prev: Trip, next: Trip): Patch[] {
       for (const f of new Set([...Object.keys(old), ...Object.keys(item)])) {
         if (f === 'ord') continue;
         if (!(f in item) || item[f] === undefined) { if (old[f] !== undefined) out.push({ path: [key, id, f], value: DELETE }); }
+        else if (f === 'brings' && old[f] && typeof item[f] === 'object') {
+          // per-family keys, so two families updating their share at the same time don't overwrite each other
+          for (const k of new Set([...Object.keys(old[f]), ...Object.keys(item[f])])) {
+            if (!(k in item[f])) out.push({ path: [key, id, f, k], value: DELETE });
+            else if (old[f][k] !== item[f][k]) out.push({ path: [key, id, f, k], value: item[f][k] });
+          }
+        }
         else if (!same(old[f], item[f])) out.push({ path: [key, id, f], value: clean(item[f]) });
       }
     }

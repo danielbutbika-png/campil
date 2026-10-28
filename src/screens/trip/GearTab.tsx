@@ -12,6 +12,7 @@ import { useCloud } from '../../lib/cloud/sync';
 import { isGroup, itemFamily, familyById, visibleIn, useFamilyView, myFamily, canSeeAll, type View } from '../../lib/families';
 import { Prov } from '../../components/Provenance';
 import { WATER_SOURCE } from '../../engine/drinks';
+import { coverage, setShare, packedUnits, packUnits } from '../../engine/partial';
 
 type Group = 'category' | 'box' | 'person' | 'family';
 
@@ -89,9 +90,10 @@ export default function GearTab({ t }: { t: Trip }) {
               <ul className="divide-y divide-line">
                 {g.items.map(p => (
                   <li key={p.id} className={cx('flex items-center gap-3 px-4 py-2.5', p.packed && 'bg-ok/5')}>
-                    <input type="checkbox" aria-label={`${p.name} ארוז`} className="h-5 w-5 shrink-0 accent-[rgb(var(--forest))]" checked={p.packed} onChange={() => { const s = stamp(); updatePack(t.id, p.id, { packed: !p.packed, packedBy: s.by, packedAt: s.at }); }} />
+                    <input type="checkbox" aria-label={`${p.name} ארוז`} className="h-5 w-5 shrink-0 accent-[rgb(var(--forest))]" checked={p.packed} onChange={() => { const s = stamp(); updatePack(t.id, p.id, { packed: !p.packed, packedQty: undefined, packedBy: s.by, packedAt: s.at }); }} />
                     <div className="min-w-0 flex-1">
-                      <p className={cx('font-semibold', p.packed && 'text-muted line-through')}>{p.name}{p.missing && <Badge tone="danger" className="ms-2">חסר</Badge>}</p>
+                      <p className={cx('font-semibold', p.packed && 'text-muted line-through')}>{p.name}{p.missing && <Badge tone="danger" className="ms-2">חסר</Badge>}{!p.packed && (p.packedQty ?? 0) > 0 && <Badge tone="info" className="ms-2">ארוזים {packedUnits(p)}/{p.qty}</Badge>}</p>
+                      {isGroup(t) && itemFamily(t, p) === null && p.brings && <ShareLine t={t} p={p} />}
                       <p className="truncate text-xs text-muted">{p.packed && p.packedBy && t.shared ? <span className="font-bold text-ok">✓ {p.packedBy} · {ago(p.packedAt)} · </span> : null}{group2 && group !== 'family' && <FamTag t={t} p={p} />}{group !== 'person' && p.assignee ? `${members.find(m => m.id === p.assignee)?.name} · ` : ''}{p.reason}</p>
                     </div>
                     <button className="no-print text-muted hover:text-ink" aria-label={`למה ${p.name} ברשימה`} onClick={() => setWhy(p)}><Info size={17} /></button>
@@ -146,6 +148,8 @@ function ItemSheet({ t, item, onClose }: { t: Trip; item: PackItem | null; onClo
           <div><label className="label" htmlFor="as">שיוך למשתתף</label><select id="as" className="field" value={live.assignee ?? ''} onChange={e => up({ assignee: e.target.value || undefined, familyId: undefined })}><option value="">ללא שיוך</option>{members.filter(m => !isGroup(t) || canSeeAll(t) || m.familyId === myFamily(t)).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
           <div><label className="label" htmlFor="bx">ארגז / תיק</label><select id="bx" className="field" value={live.boxId ?? ''} onChange={e => up({ boxId: e.target.value || null })}><option value="">ללא ארגז</option>{boxes.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
         </div>
+        <PartialPack t={t} p={live} up={up} />
+        {isGroup(t) && itemFamily(t, live) === null && <WhoBrings t={t} p={live} up={up} />}
         <label className="flex items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={!!live.missing} onChange={e => up({ missing: e.target.checked })} />סימון כחסר (צריך לקנות / להשלים)</label>
       </div>
     </Sheet>
@@ -194,4 +198,58 @@ function FamilyProgress({ t }: { t: Trip }) {
 function FamTag({ t, p }: { t: Trip; p: PackItem }) {
   const f = familyById(t, itemFamily(t, p));
   return f ? <span className="font-bold" style={{ color: f.color }}>{f.name} · </span> : <span className="font-bold text-moss">משותף · </span>;
+}
+
+function Count({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex items-center rounded-full bg-raised" role="group" aria-label={label}>
+      <button type="button" aria-label={`${label}: פחות`} className="h-10 w-10 text-lg font-bold disabled:opacity-40" disabled={value <= 0} onClick={() => onChange(value - 1)}>−</button>
+      <input aria-label={label} type="number" inputMode="numeric" min={0} max={max} className="num w-12 bg-transparent text-center font-bold" value={value} onChange={e => onChange(+e.target.value || 0)} />
+      <button type="button" aria-label={`${label}: יותר`} className="h-10 w-10 text-lg font-bold disabled:opacity-40" disabled={value >= max} onClick={() => onChange(value + 1)}>+</button>
+    </div>
+  );
+}
+
+/** Pack part of an item: "packed 5 of 10" — completes the item when all units are in. */
+function PartialPack({ p, up }: { t: Trip; p: PackItem; up: (x: Partial<PackItem>) => void }) {
+  if (p.qty < 2) return null;
+  const n = packedUnits(p);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3">
+      <div><p className="font-bold">כמה כבר ארוז?</p><p className="num text-sm text-muted">{n} מתוך {p.qty}{n && n < p.qty ? ` · נשארו ${p.qty - n}` : ''}</p></div>
+      <Count label="יחידות ארוזות" value={n} max={p.qty} onChange={v => { const s = stamp(); up({ ...packUnits(p, v), packedBy: s.by, packedAt: s.at }); }} />
+    </div>
+  );
+}
+
+/** Shared item in a multi-family trip: each family says how many units it brings; the rest shows as missing. */
+function WhoBrings({ t, p, up }: { t: Trip; p: PackItem; up: (x: Partial<PackItem>) => void }) {
+  const c = coverage(p); const mine = myFamily(t); const all = canSeeAll(t);
+  return (
+    <section aria-labelledby="wb-h" className="space-y-2 rounded-xl border border-line p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 id="wb-h" className="font-bold">מי מביא כמה</h3>
+        <p className={cx('num text-sm font-bold', c.covered ? 'text-ok' : 'text-warn')} aria-live="polite">{c.covered ? `מכוסה: ${c.brought} מתוך ${c.need}` : `${c.brought} מתוך ${c.need} · חסרים ${c.missing}`}</p>
+      </div>
+      <ul className="space-y-2">{t.families!.map(f => {
+        const v = p.brings?.[f.id] ?? 0; const edit = all || f.id === mine;
+        const max = v + c.missing;
+        return (
+          <li key={f.id} className="flex flex-wrap items-center justify-between gap-2">
+            <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: f.color }} />{f.name}{f.id === mine && <span className="text-xs text-muted">(אתם)</span>}</span>
+            {edit ? <span className="flex items-center gap-2">
+              {c.missing > 0 && <Button size="sm" variant="soft" onClick={() => up({ brings: setShare(p, f.id, max) })}>את כל השאר</Button>}
+              <Count label={`כמה ${f.name} מביאים`} value={v} max={max} onChange={n => up({ brings: setShare(p, f.id, n) })} />
+            </span> : <span className="num font-bold">{v || '—'}</span>}
+          </li>);
+      })}</ul>
+      <p className="text-xs text-muted">כל משפחה מעדכנת את החלק שלה; השינוי מגיע לכולם.</p>
+    </section>
+  );
+}
+
+function ShareLine({ t, p }: { t: Trip; p: PackItem }) {
+  const c = coverage(p);
+  const parts = t.families!.filter(f => p.brings?.[f.id]).map(f => `${f.name} ${p.brings![f.id]}`);
+  return <p className={cx('num text-xs font-bold', c.covered ? 'text-ok' : 'text-warn')}>{parts.join(' · ')}{c.covered ? ' · מכוסה' : ` · חסרים ${c.missing}`}</p>;
 }
