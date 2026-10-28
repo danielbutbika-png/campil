@@ -12,7 +12,7 @@ export interface TripDoc {
   v: 1; owner: string; createdAt: number; updatedAt?: number;
   members: Record<string, Member>; access?: Access; editedBy?: { uid: string; name: string; at: number };
   /** invite keys: `all` for a one-family trip, `fam[familyId]` per family; rotated when someone is removed */
-  invite?: { all?: string; fam?: Record<string, string> };
+  invite?: { all?: string; fam?: Record<string, string>; until?: number };
   /** per-family packing progress (counts only — the private lists live in families/{id}) */
   progress?: Record<string, { packed: number; total: number; at: number }>; pending?: Record<string, Pending>;
   core: Record<string, unknown>;

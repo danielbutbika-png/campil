@@ -81,6 +81,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         </Card>
       </div>
 
+      {t.lessonsFrom && t.lessons && !ended && <Card className="space-y-1 border-info/40 p-4"><p className="font-bold">לקחים מ{t.lessonsFrom}</p><p className="whitespace-pre-line text-sm">{t.lessons}</p></Card>}
       {!ended && <AssistantCard t={t} />}
       <DutyBoard t={t} lines={shopLines} compact />
       {t.shared && <Section title="מה קורה בטיול" action={<Avatars t={t} />}><Card className="p-4"><ActivityFeed t={t} /></Card></Section>}

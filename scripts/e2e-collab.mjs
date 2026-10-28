@@ -31,6 +31,14 @@ await A.getByRole('button', { name: 'שיתוף הטיול' }).click(); await A.
 await A.getByRole('button', { name: 'הפעלת עריכה משותפת' }).click(); await A.waitForTimeout(1200);
 const link = await A.locator('input[aria-label="קישור הזמנה"]').inputValue();
 console.log('invite link ok:', link.includes('#/join?t='));
+await A.getByLabel('תוקף הקישורים:').selectOption({ label: '7 ימים מהיום' }); await A.waitForTimeout(800);
+const linkE = await A.locator('input[aria-label="קישור הזמנה"]').inputValue();
+const e = +(linkE.match(/&e=(\d+)/)?.[1] ?? 0);
+console.log('expiry set → link carries its date:', e > Date.now() + 6 * 864e5 && e < Date.now() + 8 * 864e5);
+const X = await device('פג');
+await X.goto(linkE.replace(/^https?:\/\/[^/]+\/[^#]*/, BASE).replace(/&e=\d+/, '&e=1000')); await X.waitForTimeout(600);
+console.log('expired link shows a clear message:', (await X.getByText('פג תוקף קישור ההזמנה').count()) === 1);
+await A.getByLabel('תוקף הקישורים:').selectOption({ label: 'ללא הגבלת זמן' }); await A.waitForTimeout(600);
 await A.screenshot({ path: `${OUT}/61-share-sheet.png` });
 await A.keyboard.press('Escape');
 

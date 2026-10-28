@@ -13,6 +13,7 @@ import { Photo } from './trip/JournalTab';
 import { Button, Card, Segmented, Sheet, Toggle, Blaze, Empty, Badge, toast } from '../components/ui';
 import { href } from '../lib/router';
 import type { Member } from '../lib/types';
+import { wipeDevice } from '../lib/privacy';
 
 export default function More() {
   const items = [
@@ -145,14 +146,16 @@ export function Settings() {
           <p className="text-sm">הנתונים נשמרים במכשיר הזה (מצב אורח). כדי להעביר למכשיר אחר או לשמור גיבוי — ייצאו קובץ ושחזרו אותו במכשיר השני. הקובץ כולל את התמונות.</p>
           <div className="flex flex-wrap gap-2"><Button variant="soft" icon={<Download size={16} />} onClick={exportAll}>ייצוא גיבוי</Button><Button variant="soft" icon={<Upload size={16} />} onClick={() => file.current?.click()}>שחזור מגיבוי</Button><input ref={file} type="file" accept="application/json,.json" className="sr-only" onChange={e => importAll(e.target.files?.[0])} /></div>
         </Card>
-        <Button variant="danger" icon={<RotateCcw size={16} />} onClick={() => setReset(true)}>איפוס לנתוני ההתחלה</Button>
+        <Button variant="danger" icon={<RotateCcw size={16} />} onClick={() => setReset(true)}>איפוס או מחיקת הנתונים</Button>
       </section>
       <section className="space-y-2"><h2 className="flex items-center gap-2 font-display text-xl"><Smartphone size={20} />התקנה כאפליקציה</h2>
         <p className="text-sm text-muted">באייפון: Safari ← שיתוף ← "הוספה למסך הבית". באנדרואיד: Chrome ← תפריט ← "התקנת אפליקציה". לאחר ההתקנה CampIL נפתחת במסך מלא ועובדת גם בלי קליטה.</p>
       </section>
       {m && <MemberSheet m={m} onClose={() => setM(null)} />}
-      <Sheet open={reset} onClose={() => setReset(false)} title="לאפס את כל הנתונים?" footer={<><Button variant="danger" onClick={() => { st.resetAll(); setReset(false); toast('האפליקציה אופסה'); }}>איפוס</Button><Button variant="ghost" onClick={() => setReset(false)}>ביטול</Button></>}>
-        <p>כל הטיולים, היומן והשינויים במאגר הציוד יימחקו, והמאגר יחזור לקובץ הציוד המקורי. מומלץ לייצא גיבוי קודם.</p>
+      <Sheet open={reset} onClose={() => setReset(false)} title="לאפס את כל הנתונים?" footer={<><Button variant="danger" onClick={() => { st.resetAll(); setReset(false); toast('האפליקציה אופסה'); }}>איפוס</Button><Button variant="danger" onClick={async () => { await wipeDevice(); location.replace(location.pathname); }}>מחיקה מלאה מהמכשיר</Button><Button variant="ghost" onClick={() => setReset(false)}>ביטול</Button></>}>
+        <p><b>איפוס:</b> כל הטיולים, היומן והשינויים במאגר הציוד יימחקו, והמאגר יחזור לקובץ הציוד המקורי.</p>
+        <p className="mt-2"><b>מחיקה מלאה מהמכשיר:</b> בנוסף — כל התמונות, המפות שנשמרו לשטח, ההתחברות לשיתוף וההגדרות.</p>
+        <p className="mt-2 text-sm text-muted">טיולים משותפים נשמרים גם אצל השותפים ובשרת השיתוף. כדי להסיר אתכם מהם — "יציאה מהטיול" בחלון השיתוף לפני המחיקה (המארגן יכול למחוק את הטיול כולו). מומלץ לייצא גיבוי קודם.</p>
       </Sheet>
     </div>
   );

@@ -47,5 +47,12 @@ console.log('3 weeks before → planning:', await heading('לאן יוצאים �
 await p.getByRole('radio', { name: /^בשטח/ }).click(); await p.waitForTimeout(300);
 console.log('field preview before the trip is labelled:', (await p.getByText(/תצוגה מקדימה/).count()) > 0);
 
+// after the trip: the trip ended 2 days ago
+await setTrip(iso(-4), iso(-2)); await p.reload(); await p.waitForTimeout(1500);
+console.log('just back → after-trip mode:', await heading('ברוכים השבים!'), '| panel:', await heading(/^אחרי /));
+await p.getByLabel('מה לשפר בפעם הבאה?').fill('לצאת שעה מוקדם יותר'); await p.getByLabel('מה לשפר בפעם הבאה?').blur(); await p.waitForTimeout(300);
+await p.getByRole('button', { name: 'לתכנן שוב את אותו טיול' }).click(); await p.waitForTimeout(1200);
+console.log('duplicate opens with last time\'s lessons:', p.url().includes('#/trip/') && (await p.getByText('לצאת שעה מוקדם יותר').count()) > 0);
+await p.screenshot({ path: `${OUT}/home-after-dup.png`, fullPage: true });
 console.log('errors:', errors.length ? errors.join(' | ') : 'none');
 await b.close();

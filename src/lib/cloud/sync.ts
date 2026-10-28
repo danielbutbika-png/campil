@@ -336,7 +336,8 @@ export function inviteLink(cid: string, family?: { id: string; name: string }) {
   const approved = meta?.access === 'approved';
   const key = family ? meta?.invite?.fam?.[family.id] : meta?.invite?.all;
   const f = family ? `&f=${encodeURIComponent(family.id)}&fn=${encodeURIComponent(family.name)}` : '';
-  return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}${key && !approved ? `&k=${key}` : ''}&c=${encodeInvite(cfg)}`;
+  const exp = meta?.invite?.until && !approved ? `&e=${meta.invite.until}` : '';
+  return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}${key && !approved ? `&k=${key}` : ''}${exp}&c=${encodeInvite(cfg)}`;
 }
 /** Organiser: move a partner to another family. */
 export async function setMemberFamily(cid: string, uid: string, familyId: string) { const t = await transport(); await t.patch(cid, [{ path: ['members', uid, 'familyId'], value: familyId }]); }
@@ -367,7 +368,7 @@ export async function joinTrip(cid: string, config: Record<string, string>, name
     if (!key) throw new Error('הקישור הזה ישן או חסר בו מפתח הזמנה. בקשו מהמארגן קישור חדש.');
     const me: Member = { ...selfMember('editor', PALETTE[Math.floor(Math.random() * PALETTE.length)]), ...(familyId ? { familyId } : {}), k: key };
     try { await t.patch(cid, [{ path: ['members', t.uid], value: clean(me) }]); }
-    catch { throw new Error('הקישור כבר לא בתוקף (ייתכן שהמארגן החליף אותו). בקשו קישור חדש.'); }
+    catch { throw new Error('הקישור כבר לא בתוקף — פג תוקפו, או שהמארגן החליף אותו. בקשו קישור חדש.'); }
     doc = await t.getTrip(cid).catch(() => null);
     if (!doc) throw new Error('הטיול לא נמצא. ייתכן שהקישור שגוי או שהשיתוף בוטל.');
   }
@@ -404,6 +405,8 @@ export async function removeMember(cid: string, uid: string): Promise<string | n
   await t.patch(cid, [{ path: ['members', uid], value: DELETE }, fam ? { path: ['invite', 'fam', fam], value: randomId(16) } : { path: ['invite', 'all'], value: randomId(16) }]);
   return fam;
 }
+/** Organiser: links stop admitting new people after `until` (ms); null = no expiry. Enforced by the security rules. */
+export async function setInviteExpiry(cid: string, until: number | null) { const t = await transport(); await t.patch(cid, [{ path: ['invite', 'until'], value: until ?? DELETE }]); }
 export async function setAccess(cid: string, access: Access) { const t = await transport(); await t.patch(cid, [{ path: ['access'], value: access }]); }
 
 // ── identity ──

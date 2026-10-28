@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Users, Copy, Share2, Check, Link2, Loader2, Radio, LogOut, Trash2, Settings2, BadgeCheck, ShieldCheck, Bell, BellOff, Globe, UserMinus, X as XIcon } from 'lucide-react';
 import type { Trip } from '../lib/types';
 import { useStore } from '../lib/store';
-import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, setMemberFamily } from '../lib/cloud/sync';
+import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, setMemberFamily, setInviteExpiry } from '../lib/cloud/sync';
 import { isGroup, familyById } from '../lib/families';
 import type { Member } from '../lib/cloud/model';
 import { parseFirebaseConfig } from '../lib/cloud/model';
@@ -59,7 +59,7 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
   const pending = Object.entries(meta?.pending ?? {});
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(t.shared && cloud ? inviteLink(t.shared.cloudId) : null);
-  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access]);
+  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access, meta?.invite?.until, meta?.invite?.all]);
   useEffect(() => { if (open && cloud) import('../lib/cloud/sync').then(m => m.transport()).catch(() => {}); }, [open, !!cloud]);
   const act = (f: () => Promise<unknown>, ok: string) => f().then(() => toast(ok)).catch(e => toast(e.message));
   const start = async () => { setBusy(true); try { setLink(await shareTrip(t.id)); toast('הטיול משותף — שלחו את הקישור'); } catch (e: any) { toast(e.message); } setBusy(false); };
@@ -100,6 +100,7 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
                         <I size={18} className="mt-0.5 shrink-0 text-moss" /><span><span className="block text-sm font-bold">{l}</span><span className="block text-xs text-muted">{d}</span></span>
                       </button>))}
                   </div>
+                  {meta.access === 'link' && <LinkExpiry t={t} until={meta.invite?.until} />}
                   {meta.access === 'approved' && <p className="text-xs text-muted">שימו לב: מי שכבר משתתף נשאר משתתף. אפשר להסיר אנשים מהרשימה למטה. הקישור התעדכן — שלחו את החדש.</p>}
                 </div>
               )}
@@ -276,3 +277,19 @@ export function AccountRow({ compact }: { compact?: boolean }) {
   );
 }
 export const GoogleG = () => (<svg width="15" height="15" viewBox="0 0 48 48" aria-hidden><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>);
+
+/** Organiser: how long invite links admit new people. Enforced by the security rules, shown on the join screen. */
+function LinkExpiry({ t, until }: { t: Trip; until?: number }) {
+  const endOfTrip = new Date(`${t.end}T23:59:59`).getTime();
+  const opts: [string, number | null][] = [['ללא הגבלת זמן', null], ['7 ימים מהיום', Date.now() + 7 * 864e5], ['30 ימים מהיום', Date.now() + 30 * 864e5], ['עד סוף הטיול', endOfTrip]];
+  const label = until ? (until < Date.now() ? 'פג תוקף' : `בתוקף עד ${new Date(until).toLocaleDateString('he-IL')}`) : 'ללא הגבלת זמן';
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <label htmlFor="lx" className="font-bold">תוקף הקישורים:</label>
+      <select id="lx" className="field w-auto py-1.5 text-sm" value="" onChange={e => { const v = opts[+e.target.value]; if (!v) return; setInviteExpiry(t.shared!.cloudId, v[1]).then(() => toast(v[1] ? 'הקישורים יפסיקו לקבל מצטרפים חדשים במועד שנבחר — שלחו את הקישור המעודכן' : 'הקישורים בלי הגבלת זמן'), e2 => toast(e2.message)); }}>
+        <option value="">{label} — שינוי</option>{opts.map(([l], i) => <option key={l} value={i}>{l}</option>)}
+      </select>
+      <span className="text-xs text-muted">מי שכבר הצטרף לא מושפע.</span>
+    </div>
+  );
+}

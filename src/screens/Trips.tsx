@@ -2,23 +2,20 @@ import { Plus, CalendarDays, MapPin, Star, Compass, Copy } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { readiness } from '../engine/packing';
 import { REGION_BY_ID } from '../data/regions';
-import { fmtRange, todayISO, tripLength, uid, addDays, diffDays } from '../lib/util';
+import { fmtRange, todayISO, tripLength } from '../lib/util';
 import { Scene } from '../components/Scene';
 import { Button, Badge, Empty, Ring, toast } from '../components/ui';
 import { href, go } from '../lib/router';
 import type { Trip } from '../lib/types';
 import { myPacking } from '../lib/families';
+import { duplicateTrip } from '../lib/tripOps';
 
 export default function Trips() {
   const { trips, addTrip } = useStore();
   const today = todayISO();
   const upcoming = trips.filter(t => t.status === 'planning' && t.end >= today).sort((a, b) => a.start.localeCompare(b.start));
   const past = trips.filter(t => t.status === 'done' || t.end < today).sort((a, b) => b.start.localeCompare(a.start));
-  const duplicate = (t: Trip) => {
-    const len = diffDays(t.start, t.end); const start = addDays(today, 14);
-    const n: Trip = { ...t, id: uid('trip-'), name: `${t.name} (עותק)`, createdAt: new Date().toISOString(), start, end: addDays(start, len), status: 'planning', rating: undefined, notes: undefined, example: false, packing: t.packing.map(p => ({ ...p, packed: false })), tasks: t.tasks.map(k => ({ ...k, done: false })), packingSig: undefined };
-    addTrip(n); toast('נוצר עותק — עדכנו תאריכים'); go(`/trip/${n.id}`);
-  };
+  const duplicate = (t: Trip) => { const n = duplicateTrip(t, today); addTrip(n); toast('נוצר עותק — עדכנו תאריכים'); go(`/trip/${n.id}`); };
   return (
     <div className="gutter mx-auto max-w-6xl space-y-8 py-6">
       <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl">הטיולים שלי</h1><Button variant="accent" icon={<Plus size={18} />} onClick={() => go('/new')}>טיול חדש</Button></header>

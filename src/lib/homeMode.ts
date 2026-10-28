@@ -3,8 +3,8 @@
 import type { Trip } from './types';
 import { diffDays, todayISO } from './util';
 
-export type HomeMode = 'plan' | 'prep' | 'field';
-export const HOME_MODE_HE: Record<HomeMode, string> = { plan: 'תכנון', prep: 'הכנות', field: 'בשטח' };
+export type HomeMode = 'plan' | 'prep' | 'field' | 'after';
+export const HOME_MODE_HE: Record<HomeMode, string> = { plan: 'תכנון', prep: 'הכנות', field: 'בשטח', after: 'אחרי הטיול' };
 export const PREP_WINDOW_DAYS = 7;
 
 /** Automatic mode for the nearest trip. Example trips never switch the home screen. */

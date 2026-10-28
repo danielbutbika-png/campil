@@ -7,6 +7,7 @@ rules_version = '2';
 //
 // Roles: owner (organiser) · member (joined; optionally bound to one family) · pending (asked to join a closed trip).
 // Joining needs the current invite key from the link; removing someone rotates that key, so old links stop working.
+// The organiser may also set an expiry (invite.until) after which links no longer admit new people.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /trips/{tripId} {
@@ -23,12 +24,14 @@ service cloud.firestore {
       // invite key for the family (or the whole trip) the joiner claims
       function keyFor(fam) { return fam == null ? resource.data.get('invite', {}).get('all', '') : resource.data.get('invite', {}).get('fam', {}).get(fam, ''); }
       function validKey(m) { return m.get('k', '') is string && m.get('k', '') != '' && m.get('k', '') == keyFor(m.get('familyId', null)); }
+      // optional expiry set by the organiser (ms since epoch); links stop admitting new people after it
+      function notExpired() { return !('until' in resource.data.get('invite', {})) || request.time.toMillis() < resource.data.invite.until; }
 
       // A new member adds only their own entry, as an editor, with the current key of the family they join.
       function joinsWithKey() {
         return signedIn() && !isMember() && resource.data.get('access', 'link') == 'link'
           && changed().hasOnly(['members', 'updatedAt']) && onlyMine('members')
-          && newMe().get('role', '') == 'editor' && validKey(newMe());
+          && newMe().get('role', '') == 'editor' && validKey(newMe()) && notExpired();
       }
       // A member updates their own entry (name, last seen…) but can't change their family, role or key.
       function ownEntryOk() {

@@ -11,6 +11,7 @@ import { Logo } from '../App';
 export default function Join({ query }: { query: URLSearchParams }) {
   const st = useStore();
   const cid = query.get('t'); const c = query.get('c'); const approvedOnly = query.get('a') === '1'; const famId = query.get('f') ?? undefined; const famName = query.get('fn'); const key = query.get('k') ?? undefined;
+  const expired = !!query.get('e') && Date.now() > Number(query.get('e'));
   const account = useCloud(s => s.account);
   const [name, setName] = useState(st.settings.cloud?.myName ?? '');
   const [busy, setBusy] = useState(false);
@@ -28,6 +29,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
     return () => clearInterval(i);
   }, [waiting]);
 
+  if (expired) return <div className="gutter py-16 text-center"><p className="font-display text-2xl">פג תוקף קישור ההזמנה</p><p className="text-muted">המארגן הגביל את זמן ההצטרפות. בקשו ממנו קישור חדש.</p></div>;
   if (!cid || !cfg) return <div className="gutter py-16 text-center"><p className="font-display text-2xl">קישור ההזמנה לא תקין</p><p className="text-muted">בקשו משולח הקישור לשלוח אותו שוב.</p></div>;
 
   const fresh = !st.onboarded && !st.trips.length;

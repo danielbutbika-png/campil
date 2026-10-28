@@ -92,6 +92,15 @@ describe('joining with an invite link', () => {
     await assertSucceeds(getDoc(fam(as('N'), 'B')));
     await assertFails(getDoc(fam(as('N'), 'A')));
   });
+  it('cannot join after the organiser\'s link expiry', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await updateDoc(tripRef(ctx.firestore()), 'invite.until', Date.now() - 60_000); });
+    await assertFails(upd(tripRef(as('N')), 'members.N', { role: 'editor', familyId: 'B', k: KEY_B }));
+  });
+  it('joins before the link expiry', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await updateDoc(tripRef(ctx.firestore()), 'invite.until', Date.now() + 86_400_000); });
+    await assertSucceeds(upd(tripRef(as('N')), 'members.N', { role: 'editor', familyId: 'B', k: KEY_B }));
+  });
+  it('a member cannot extend the link expiry', async () => { await assertFails(upd(tripRef(as('MB')), 'invite.until', Date.now() + 1e10)); });
   it('cannot join with a wrong key', async () => { await assertFails(upd(tripRef(as('N')), 'members.N', { role: 'editor', familyId: 'B', k: 'guess' })); });
   it('cannot use family A\'s key to enter family B', async () => { await assertFails(upd(tripRef(as('N')), 'members.N', { role: 'editor', familyId: 'B', k: KEY_A })); });
   it('cannot join as organiser', async () => { await assertFails(upd(tripRef(as('N')), 'members.N', { role: 'owner', familyId: 'B', k: KEY_B })); });

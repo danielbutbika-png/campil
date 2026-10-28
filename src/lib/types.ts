@@ -67,6 +67,8 @@ export interface Trip {
   offline?: import('./offline').Prepared;
   shared?: { cloudId: string; role: 'owner' | 'editor'; joinedAt: string; familyId?: string };
   rating?: number; notes?: string;
+  /** "what to improve next time" — noted after the trip; carried into a duplicated trip */
+  lessons?: string; lessonsFrom?: string;
 }
 
 export interface PackItem {

@@ -1,7 +1,7 @@
 // Home screen panels for the two trip-time modes: "preparing" (the week before) and "in the field" (during the trip).
 // Everything shown here comes from the trip itself, the forecast service, or fixed official sources —
 // nothing about terrain, closures or safety is generated.
-import { Backpack, ListChecks, ShoppingCart, ChevronLeft, CalendarDays, Navigation, Camera, NotebookPen, Clock, AlertTriangle, Phone } from 'lucide-react';
+import { Images, Star, Wrench, Copy, Backpack, ListChecks, ShoppingCart, ChevronLeft, CalendarDays, Navigation, Camera, NotebookPen, Clock, AlertTriangle, Phone } from 'lucide-react';
 import type { Trip } from '../lib/types';
 import { useTripWeather, tripPoint } from '../lib/hooks';
 import { readiness } from '../engine/packing';
@@ -14,17 +14,21 @@ import { tripDay, HOME_MODE_HE, type HomeMode } from '../lib/homeMode';
 import { DayStrip, SourceLine, WxIcon } from './Weather';
 import { FieldCard, OfficialAlerts } from './Field';
 import { AssistantCard } from './Assistant';
-import { Ring, Card, Badge, cx } from './ui';
+import { Ring, Card, Badge, Button, cx, toast } from './ui';
+import { useStore } from '../lib/store';
+import { tripPhotos } from '../lib/album';
+import { duplicateTrip } from '../lib/tripOps';
+import { go } from '../lib/router';
 import { href } from '../lib/router';
 
 const tripName = (t: Trip) => t.name || (t.regionId ? REGION_BY_ID[t.regionId].name : 'הטיול');
 
-export function ModeSwitch({ mode, auto, onChange }: { mode: HomeMode; auto: HomeMode; onChange: (m: HomeMode | null) => void }) {
+export function ModeSwitch({ mode, auto, onChange, modes }: { mode: HomeMode; auto: HomeMode; onChange: (m: HomeMode | null) => void; modes: HomeMode[] }) {
   return (
-    <div role="radiogroup" aria-label="מצב מסך הבית" className="inline-flex rounded-full bg-black/30 p-1 backdrop-blur">
-      {(['plan', 'prep', 'field'] as HomeMode[]).map(m => (
+    <div role="radiogroup" aria-label="מצב מסך הבית" className="inline-flex max-w-full flex-wrap rounded-full bg-black/30 p-1 backdrop-blur">
+      {modes.map(m => (
         <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => onChange(m === auto ? null : m)}
-          className={cx('min-h-9 rounded-full px-4 text-sm font-bold transition', mode === m ? 'bg-white text-forest' : 'text-white/90 hover:bg-white/15')}>
+          className={cx('min-h-9 whitespace-nowrap rounded-full px-3 text-sm font-bold transition sm:px-4', mode === m ? 'bg-white text-forest' : 'text-white/90 hover:bg-white/15')}>
           {HOME_MODE_HE[m]}{m === auto ? <span className="sr-only"> (לפי התאריכים)</span> : null}
         </button>
       ))}
@@ -131,6 +135,44 @@ export function FieldPanel({ t }: { t: Trip }) {
       <a href="tel:101" className="flex items-center justify-center gap-2 rounded-xl2 bg-danger py-3 font-bold text-white"><Phone size={18} />חירום — מד״א 101</a>
       <OfficialAlerts flood={t.siteIds.some(id => SITE_BY_ID[id]?.floodRisk)} />
       <SourceLine f={wx.forecast} />
+    </section>
+  );
+}
+
+/** After the trip: album and video, gear care, lessons for next time, and planning the next one. */
+export function AfterPanel({ t }: { t: Trip }) {
+  const { album, inventory, updateTrip, addTrip } = useStore();
+  const photos = tripPhotos(album, t.id).length;
+  const inTrip = new Set(t.packing.filter(p => !p.removed && p.inventoryId).map(p => p.inventoryId!));
+  const care: string[] = [];
+  if (t.packing.some(p => !p.removed && p.category === 'tents' && p.packed)) care.push('לפתוח ולייבש את האוהל והברזנטים לפני אחסון — ציוד שנארז לח מתעפש');
+  const charge = inventory.filter(g => inTrip.has(g.id) && g.charge).map(g => g.name);
+  if (charge.length) care.push(`לטעון לפני החזרה לארגז: ${charge.slice(0, 4).join(', ')}${charge.length > 4 ? '…' : ''}`);
+  const borrowed = inventory.filter(g => inTrip.has(g.id) && g.borrowedFrom?.trim());
+  for (const g of borrowed) care.push(`להחזיר: ${g.name} ← ${g.borrowedFrom}`);
+  const missing = t.packing.filter(p => !p.removed && p.missing).map(p => p.name);
+  if (missing.length) care.push(`להשלים לפעם הבאה: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`);
+  return (
+    <section aria-labelledby="after-h" className="space-y-4">
+      <Card className="space-y-3 p-5">
+        <h2 id="after-h" className="font-display text-2xl">אחרי {tripName(t)}</h2>
+        <p className="text-sm text-muted">{fmtRange(t.start, t.end)}{t.status === 'done' && t.rating ? ` · דירגתם ${t.rating}/5` : ''}</p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Tile to={`/trip/${t.id}/album`} I={Images} title={photos ? `${photos} תמונות באלבום` : 'אלבום הטיול'} sub={photos > 1 ? 'קולאז׳ וסרטון — נוצרים ונשמרים בטלפון' : 'הוסיפו תמונות מהטיול'} />
+          {t.status !== 'done' && <Tile to={`/trip/${t.id}`} I={Star} title="סיכום ודירוג" sub="מה אהבתם — משפיע על ההמלצות הבאות" />}
+        </div>
+      </Card>
+      {care.length > 0 && (
+        <Card className="space-y-2 p-5">
+          <h3 className="flex items-center gap-2 font-bold"><Wrench size={18} className="text-moss" />טיפול בציוד</h3>
+          <ul className="list-inside list-disc space-y-1 text-sm">{care.map(c => <li key={c}>{c}</li>)}</ul>
+          <a href={href('/gear/inventory')} className="inline-flex items-center text-sm font-bold text-moss">למחסן הציוד<ChevronLeft size={16} /></a>
+        </Card>)}
+      <Card className="space-y-2 p-5">
+        <label htmlFor="lessons" className="font-bold">מה לשפר בפעם הבאה?</label>
+        <textarea id="lessons" className="field min-h-24" placeholder="למשל: להביא עוד שמיכה, לצאת שעה מוקדם יותר, החניון היה רועש" defaultValue={t.lessons ?? ''} onBlur={e => { if (e.target.value !== (t.lessons ?? '')) { updateTrip(t.id, { lessons: e.target.value || undefined }); toast('נשמר — יופיע בטיול הבא שתשכפלו מזה'); } }} />
+        <Button variant="soft" icon={<Copy size={16} />} onClick={() => { const n = duplicateTrip(t, todayISO()); addTrip(n); toast('נוצר טיול חדש מאותה תוכנית — עדכנו תאריכים'); go(`/trip/${n.id}`); }}>לתכנן שוב את אותו טיול</Button>
+      </Card>
     </section>
   );
 }
