@@ -127,6 +127,8 @@ export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolea
 export interface Settings {
   familyName: string; home?: { lat: number; lon: number; label: string };
   vehicle: string; trunkLiters?: number; waterLitersPerPersonDay?: number;
+  /** "What can we cook": ingredients and kitchen gear the family marked as available. */
+  cook?: { ing: string[]; gear: string[] };
   /** Power calculator: batteries and devices the family entered (from their labels). */
   power?: { bats: import('../engine/power').Battery[]; devs: import('../engine/power').Device[]; eff?: [number, number] };
   /** Trunk interior measured by the family (cm): depth seat-back→tailgate, narrowest width, floor→bottom of rear window. */

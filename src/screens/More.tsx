@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Tent, BookOpen, Images, Settings as Cog, Info, ChevronLeft, LocateFixed, Download, Upload, RotateCcw, Plus, Trash2, ExternalLink, Smartphone } from 'lucide-react';
+import { Tent, BookOpen, Images, Settings as Cog, Info, ChevronLeft, LocateFixed, Download, Upload, RotateCcw, Plus, Trash2, ExternalLink, Smartphone, ChefHat } from 'lucide-react';
 import { useStore, pickData } from '../lib/store';
 import { VehiclePicker, AiKeyField } from '../components/VehiclePicker';
 import { FuelBrandChips } from '../components/RouteFuel';
@@ -18,6 +18,7 @@ import { wipeDevice } from '../lib/privacy';
 export default function More() {
   const items = [
     { to: '/camps', I: Tent, t: 'חיפוש מקום לקמפינג', s: 'חניונים לפי מקום, אזור או מיקום — עם ניווט' },
+    { to: '/cook', I: ChefHat, t: 'מה אפשר להכין ממה שיש?', s: 'מתכונים לפי המצרכים והכלים שיש לכם' },
     { to: '/academy', I: BookOpen, t: 'האקדמיה לשטח', s: 'קשרים וחבלים, בטיחות, אוהלים ומיומנויות — עם בדיקת ידע' },
     { to: '/albums', I: Images, t: 'אלבומי טיולים', s: 'כל התמונות והסיפורים' },
     { to: '/settings', I: Cog, t: 'הגדרות', s: 'משפחה, נקודת יציאה, תזונה, גיבוי' },

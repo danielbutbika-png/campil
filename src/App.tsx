@@ -43,6 +43,7 @@ const About = lazy(() => import('./screens/More').then(m => ({ default: m.About 
 const MapScreen = lazy(() => import('./screens/MapScreen'));
 const Academy = lazy(() => import('./screens/Academy'));
 const Explore = lazy(() => import('./screens/Explore'));
+const Cook = lazy(() => import('./screens/Cook'));
 const BoxScreen = lazy(() => import('./screens/BoxScreen'));
 const BoxLabels = lazy(() => import('./screens/BoxScreen').then(m => ({ default: m.BoxLabels })));
 const KnotPage = lazy(() => import('./screens/Academy').then(m => ({ default: m.KnotPage })));
@@ -52,7 +53,7 @@ const NAV = [
   { to: '/trips', label: 'טיולים', I: Compass, match: (p: string) => p.startsWith('/trip') || p === '/new' },
   { to: '/map', label: 'מפה', I: MapI, match: (p: string) => p.startsWith('/map') || p === '/camps' || p === '/explore' },
   { to: '/gear', label: 'ציוד', I: Backpack, match: (p: string) => p.startsWith('/gear') || p.startsWith('/box') },
-  { to: '/more', label: 'עוד', I: MoreHorizontal, match: (p: string) => ['/more', '/guides', '/guide', '/academy', '/albums', '/settings', '/about'].some(x => p.startsWith(x)) },
+  { to: '/more', label: 'עוד', I: MoreHorizontal, match: (p: string) => ['/more', '/guides', '/guide', '/academy', '/cook', '/albums', '/settings', '/about'].some(x => p.startsWith(x)) },
 ];
 
 export function Logo({ light }: { light?: boolean }) {
@@ -91,6 +92,7 @@ export default function App() {
   else if (path === '/join') screen = <Join query={query} />;
   else if (path === '/camps') screen = <CampSearch query={query} />;
   else if (path === '/explore') screen = <Explore />;
+  else if (path === '/cook') screen = <Cook />;
   else if (path === '/more') screen = <More />;
   else if (path === '/academy' || path === '/guides') screen = <Academy />;
   else if (parts[0] === 'academy' && parts[1] === 'knot') screen = <KnotPage id={parts[2]} />;

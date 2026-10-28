@@ -131,7 +131,7 @@ export default function MealsTab({ t }: { t: Trip }) {
       </Section>
 
       <Section title="מתכונים מומלצים">
-        <p className="text-sm text-muted">לפי מה שבתפריט ומה שבחרתם לעלות על האש.</p>
+        <p className="text-sm text-muted">לפי מה שבתפריט ומה שבחרתם לעלות על האש. <a className="font-bold text-moss" href="#/cook">מה אפשר להכין ממה שיש?</a></p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {grillChosen.map(g => (
             <button key={g.id} onClick={() => setGrillRecipe(g)} className="rounded-xl2 border border-line bg-surface p-3 text-right hover:border-moss">
