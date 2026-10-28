@@ -1,4 +1,4 @@
-# CI 12ecd7a — 2026-10-28T16:30Z
+# CI 12ecd7a — 2026-10-28T16:37Z
 - typecheck: success
 - unit: success
 - build: success
@@ -88,16 +88,16 @@
  [32m✓[39m src/engine/duties.test.ts[2m > [22mduties between families[2m > [22msummarises per family and what nobody took
  [32m✓[39m src/engine/duties.test.ts[2m > [22mduties between families[2m > [22mquick split keeps existing choices, splits shopping by section and meals in rotation
  [32m✓[39m src/engine/duties.test.ts[2m > [22mduties between families[2m > [22msyncs each duty as its own key
+ [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mround-trips a trip through the document
+ [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mconcurrent edits on different items both survive
+ [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22memits deletes for removed items and fields
+ [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mparses the Firebase console snippet and round-trips invites
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22mattributes ticks to whoever ticked, other edits to the last editor
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22mreports nothing when the trip did not change
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22msummarizes several changes into one short notification
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mresolves regions locally without network
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mmerges catalogue + OSM, de-duplicates and sorts by distance
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mfalls back to catalogue when OSM is down
- [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mround-trips a trip through the document
- [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mconcurrent edits on different items both survive
- [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22memits deletes for removed items and fields
- [32m✓[39m src/engine/cloud.test.ts[2m > [22mshared trip model[2m > [22mparses the Firebase console snippet and round-trips invites
  [32m✓[39m src/engine/partial.test.ts[2m > [22mpartial quantities[2m > [22msums what families bring and what is missing
  [32m✓[39m src/engine/partial.test.ts[2m > [22mpartial quantities[2m > [22mcaps a family share at what others left, and 0 removes it
  [32m✓[39m src/engine/partial.test.ts[2m > [22mpartial quantities[2m > [22mpacks part of an item and completes when all units are packed
@@ -121,8 +121,8 @@
 
 [2m Test Files [22m [1m[32m18 passed[39m[22m[90m (18)[39m
 [2m      Tests [22m [1m[32m99 passed[39m[22m[90m (99)[39m
-[2m   Start at [22m 16:23:50
-[2m   Duration [22m 2.98s[2m (transform 1.01s, setup 0ms, collect 2.11s, tests 344ms, environment 5ms, prepare 2.29s)[22m
+[2m   Start at [22m 16:31:03
+[2m   Duration [22m 2.93s[2m (transform 913ms, setup 0ms, collect 1.93s, tests 334ms, environment 8ms, prepare 2.20s)[22m
 
 ```
 
@@ -164,77 +164,40 @@ computing gzip size...
 [2mdist/[22m[36mindex-BJBHvH87.js           [39m[1m[2m  488.10 kB[22m[1m[22m[2m │ gzip: 164.57 kB[22m
 [2mdist/[22m[36mindex.esm-1jP3d1p-.js       [39m[1m[2m  663.33 kB[22m[1m[22m[2m │ gzip: 171.92 kB[22m
 [2mdist/[22m[36mIsraelMapGL-jJO_i4W3.js     [39m[1m[2m1,064.91 kB[22m[1m[22m[2m │ gzip: 289.26 kB[22m
-[32m✓ built in 9.86s[39m
-[36mvite v5.4.21 [32mbuilding for staging...[36m[39m
-transforming...
-[32m✓[39m 2126 modules transformed.
-rendering chunks...
-[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin vite:reporter] 
-(!) /home/runner/work/campil/campil/src/lib/cloud/sync.ts is dynamically imported by /home/runner/work/campil/campil/src/components/Collab.tsx, /home/runner/work/campil/campil/src/components/Collab.tsx, /home/runner/work/campil/campil/src/components/Collab.tsx, /home/runner/work/campil/campil/src/components/Collab.tsx but also statically imported by /home/runner/work/campil/campil/src/App.tsx, /home/runner/work/campil/campil/src/components/Collab.tsx, /home/runner/work/campil/campil/src/components/Field.tsx, /home/runner/work/campil/campil/src/screens/Join.tsx, /home/runner/work/campil/campil/src/screens/TripPlan.tsx, /home/runner/work/campil/campil/src/screens/trip/AlbumTab.tsx, /home/runner/work/campil/campil/src/screens/trip/GearTab.tsx, dynamic import will not move module into another chunk.
-[39m
-computing gzip size...
-[2mdist-staging/[22m[32mindex.html                  [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
-[2mdist-staging/[22m[35mindex-61Uc917E.css          [39m[1m[2m   41.93 kB[22m[1m[22m[2m │ gzip:   8.61 kB[22m
-[2mdist-staging/[22m[35mIsraelMapGL-KizArRWY.css    [39m[1m[2m   69.94 kB[22m[1m[22m[2m │ gzip:  10.05 kB[22m
-[2mdist-staging/[22m[36msearch-C_yOCKBc.js          [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
-[2mdist-staging/[22m[36mrotate-ccw-Dod0YXXQ.js      [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
-[2mdist-staging/[22m[36mpackage-Dw_HlrXM.js         [39m[1m[2m    0.58 kB[22m[1m[22m[2m │ gzip:   0.39 kB[22m
-[2mdist-staging/[22m[36mcar-DwyZNCe-.js             [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
-[2mdist-staging/[22m[36mindex.esm-B4Jzzju4.js       [39m[1m[2m    1.35 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
-[2mdist-staging/[22m[36mosm-dRGSVYye.js             [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.95 kB[22m
-[2mdist-staging/[22m[36mTrips-LeKiLxAt.js           [39m[1m[2m    3.02 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
-[2mdist-staging/[22m[36mJoin-DxS8A2LV.js            [39m[1m[2m    4.03 kB[22m[1m[22m[2m │ gzip:   2.03 kB[22m
-[2mdist-staging/[22m[36mRouteFuel-BuBI59qL.js       [39m[1m[2m    5.50 kB[22m[1m[22m[2m │ gzip:   2.59 kB[22m
-[2mdist-staging/[22m[36mJournalTab-B-_6Q0WE.js      [39m[1m[2m    6.80 kB[22m[1m[22m[2m │ gzip:   3.05 kB[22m
-[2mdist-staging/[22m[36mMapScreen-BstZPXyR.js       [39m[1m[2m    7.20 kB[22m[1m[22m[2m │ gzip:   3.08 kB[22m
-[2mdist-staging/[22m[36mIsraelMap-tm9qxsyA.js       [39m[1m[2m    9.51 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
-[2mdist-staging/[22m[36mCampSearch-SHwf735-.js      [39m[1m[2m   10.85 kB[22m[1m[22m[2m │ gzip:   4.93 kB[22m
-[2mdist-staging/[22m[36mTripTypePicker-DPdDcIF-.js  [39m[1m[2m   11.13 kB[22m[1m[22m[2m │ gzip:   3.98 kB[22m
-[2mdist-staging/[22m[36mVehiclePicker-D0Qj8bUg.js   [39m[1m[2m   12.82 kB[22m[1m[22m[2m │ gzip:   5.27 kB[22m
-[2mdist-staging/[22m[36mAcademy-CwK1qh2r.js         [39m[1m[2m   16.46 kB[22m[1m[22m[2m │ gzip:   5.76 kB[22m
-[2mdist-staging/[22m[36mMore-DlGWI_tF.js            [39m[1m[2m   19.53 kB[22m[1m[22m[2m │ gzip:   7.54 kB[22m
-[2mdist-staging/[22m[36mGear-DGKEtBht.js            [39m[1m[2m   35.84 kB[22m[1m[22m[2m │ gzip:  12.00 kB[22m
-[2mdist-staging/[22m[36mindex.esm-CCAWpmwl.js       [39m[1m[2m   48.25 kB[22m[1m[22m[2m │ gzip:  11.34 kB[22m
-[2mdist-staging/[22m[36mWizard-Cylhfx--.js          [39m[1m[2m   70.28 kB[22m[1m[22m[2m │ gzip:  18.65 kB[22m
-[2mdist-staging/[22m[36mTripPlan-DuyQ5g7M.js        [39m[1m[2m   79.94 kB[22m[1m[22m[2m │ gzip:  24.61 kB[22m
-[2mdist-staging/[22m[36mindex.esm-D_Ez9UD8.js       [39m[1m[2m  195.98 kB[22m[1m[22m[2m │ gzip:  38.91 kB[22m
-[2mdist-staging/[22m[36mindex-BEMBwYNM.js           [39m[1m[2m  488.29 kB[22m[1m[22m[2m │ gzip: 164.65 kB[22m
-[2mdist-staging/[22m[36mindex.esm-1jP3d1p-.js       [39m[1m[2m  663.33 kB[22m[1m[22m[2m │ gzip: 171.92 kB[22m
-[2mdist-staging/[22m[36mIsraelMapGL-BOj70XdG.js     [39m[1m[2m1,064.91 kB[22m[1m[22m[2m │ gzip: 289.26 kB[22m
-[32m✓ built in 9.29s[39m
+[32m✓ built in 9.11s[39m
 ```
 
 ## rules
 ```
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2mfamily B cannot change family A
-[22m[39m[2026-10-28T16:24:13.132Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a59 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.353Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20d1 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L71:40 for 'update' @ L71, false for 'update' @ L71
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mfamily B cannot change family A
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2mfamily B cannot delete family A
-[22m[39m[2026-10-28T16:24:13.223Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a5b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.459Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20d3 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L71:40 for 'delete' @ L71, false for 'delete' @ L71
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mfamily B cannot delete family A
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mthe organiser cannot read another family
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2mthe organiser cannot overwrite another family
-[22m[39m[2026-10-28T16:24:13.391Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a5f error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.615Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20d7 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L73:26 for 'create' @ L73, evaluation error at L71:40 for 'update' @ L71, false for 'update' @ L71
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mthe organiser cannot overwrite another family
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mthe organiser can seed a family that has no list yet
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2ma member cannot move themselves to another family
-[22m[39m[2026-10-28T16:24:13.543Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a63 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.761Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20db error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22ma member cannot move themselves to another family
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2mthe organiser cannot move themselves to another family
-[22m[39m[2026-10-28T16:24:13.626Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a65 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.844Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20dd error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22mthe organiser cannot move themselves to another family
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mfamilies are private from each other[2m > [22m[2ma member updates only their own family progress
-[22m[39m[2026-10-28T16:24:13.743Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a68 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:35.963Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20e0 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mfamilies are private from each other[2m > [22ma member updates only their own family progress
@@ -242,84 +205,84 @@ evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mmembers[2m > [22ma member edits shared gear and the plan
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mmembers[2m > [22ma member updates their own last-seen time
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mmembers[2m > [22m[2ma member cannot add someone else
-[22m[39m[2026-10-28T16:24:14.105Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a71 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.294Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20e9 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mmembers[2m > [22ma member cannot add someone else
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mmembers[2m > [22m[2ma member cannot change access, owner or invite keys
-[22m[39m[2026-10-28T16:24:14.184Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a73 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.364Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20eb error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mmembers[2m > [22m[2ma member cannot change access, owner or invite keys
-[22m[39m[2026-10-28T16:24:14.236Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a74 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.409Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20ec error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mmembers[2m > [22m[2ma member cannot change access, owner or invite keys
-[22m[39m[2026-10-28T16:24:14.282Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a75 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.455Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20ed error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mmembers[2m > [22ma member cannot change access, owner or invite keys
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mmembers[2m > [22m[2ma member cannot make themselves organiser
-[22m[39m[2026-10-28T16:24:14.369Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a77 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.534Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20ef error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mmembers[2m > [22ma member cannot make themselves organiser
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mjoins family B with family B's current key, then reads B only
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2mcannot join after the organiser's link expiry
-[22m[39m[2026-10-28T16:24:14.622Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a7e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.793Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20f6 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mcannot join after the organiser's link expiry
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mjoins before the link expiry
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2ma member cannot extend the link expiry
-[22m[39m[2026-10-28T16:24:14.783Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a83 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:36.979Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20fb error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22ma member cannot extend the link expiry
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2mcannot join with a wrong key
-[22m[39m[2026-10-28T16:24:14.862Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a85 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.043Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20fd error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mcannot join with a wrong key
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2mcannot use family A's key to enter family B
-[22m[39m[2026-10-28T16:24:14.928Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a87 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.117Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c20ff error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mcannot use family A's key to enter family B
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2mcannot join as organiser
-[22m[39m[2026-10-28T16:24:15.026Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a89 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.183Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2101 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mcannot join as organiser
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjoining with an invite link[2m > [22m[2mcannot join a closed trip with a key
-[22m[39m[2026-10-28T16:24:15.157Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a8c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.308Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2104 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22mcannot join a closed trip with a key
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjoining with an invite link[2m > [22ma closed trip takes a request from a Google user, and the requester still cannot read
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2mafter removal and key rotation, the removed member loses access and cannot rejoin with the old link
-[22m[39m[2026-10-28T16:24:15.454Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a98 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.630Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2110 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2mafter removal and key rotation, the removed member loses access and cannot rejoin with the old link
-[22m[39m[2026-10-28T16:24:15.486Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a99 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.662Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2111 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mremoving a member[2m > [22mafter removal and key rotation, the removed member loses access and cannot rejoin with the old link
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2monly the organiser can remove members or delete the trip
-[22m[39m[2026-10-28T16:24:15.545Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a9b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.726Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2113 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L66:24 for 'update' @ L66, false for 'update' @ L66
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2monly the organiser can remove members or delete the trip
-[22m[39m[2026-10-28T16:24:15.567Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x591c7a9c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-28T16:31:37.752Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x7f6c2114 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L65:24 for 'delete' @ L65, false for 'delete' @ L65
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mremoving a member[2m > [22monly the organiser can remove members or delete the trip
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m32 passed[39m[22m[90m (32)[39m
-[2m   Start at [22m 16:24:09
-[2m   Duration [22m 5.94s[2m (transform 48ms, setup 0ms, collect 181ms, tests 5.39s, environment 0ms, prepare 183ms)[22m
+[2m   Start at [22m 16:31:30
+[2m   Duration [22m 7.05s[2m (transform 50ms, setup 0ms, collect 178ms, tests 6.50s, environment 0ms, prepare 169ms)[22m
 
 [32m[1m✔ [22m[39m Script exited successfully (code 0)
 [36m[1mi  emulators:[22m[39m Shutting down emulators.
@@ -349,6 +312,6 @@ all browser suites passed
 ## deploy
 ```
 To https://github.com/danielbutbika-png/campil
-   d2fbc0a..cbaefa9  main -> main
- * [new tag]         deploy-staging-20261028-1630-12ecd7a -> deploy-staging-20261028-1630-12ecd7a
+   cbaefa9..b4701fc  main -> main
+ * [new tag]         deploy-prod-20261028-1637-12ecd7a -> deploy-prod-20261028-1637-12ecd7a
 ```
