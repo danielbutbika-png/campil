@@ -18,7 +18,7 @@ import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { OfficialAlerts, TypeChecks } from '../../components/Field';
 import { DutyBoard, useShopLines } from '../../components/Duties';
 import { AssistantCard } from '../../components/Assistant';
-import { GpxCard } from '../../components/GpxCard';
+import { GpxCard, TripPlaces } from '../../components/GpxCard';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
 import { FieldCard } from '../../components/Field';
@@ -96,6 +96,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
           : <p className="flex items-center gap-2 text-muted"><ListChecks size={18} />כל המשימות הושלמו.</p>}
       </Section>
 
+      <TripPlaces t={t} />
       <GpxCard t={t} />
 
       <Section title="האתרים בתוכנית">

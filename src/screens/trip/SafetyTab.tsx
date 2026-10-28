@@ -21,7 +21,8 @@ export function planText(t: Trip, sites: Site[]) {
   const { days } = tripLength(t.start, t.end);
   const lines = [`תוכנית טיול: ${t.name}`, `תאריכים: ${fmtDate(t.start)}${t.end !== t.start ? ` – ${fmtDate(t.end)}` : ''}`, `משתתפים: ${t.adults} מבוגרים${t.children ? `, ${t.children} ילדים` : ''}${t.vehicle ? ` · רכב: ${t.vehicle}` : ''}`];
   if (t.regionId) lines.push(`אזור: ${REGION_BY_ID[t.regionId].name}`);
-  if (sites.length) { lines.push('', 'מקומות:'); for (const s of sites) lines.push(`• ${s.name} — https://maps.google.com/?q=${s.lat},${s.lon}`); }
+  const all = [...sites.map(s => ({ name: s.name, lat: s.lat, lon: s.lon })), ...(t.places ?? [])];
+  if (all.length) { lines.push('', 'מקומות:'); for (const s of all) lines.push(`• ${s.name} — https://maps.google.com/?q=${s.lat},${s.lon}`); }
   if (t.gpx) lines.push('', `מסלול: ${t.gpx.name} (${t.gpx.km} ק״מ)`);
   for (let d = 0; d < days; d++) {
     const items = t.schedule.filter(s => s.day === d).sort((a, b) => a.time.localeCompare(b.time));

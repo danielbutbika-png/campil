@@ -67,6 +67,8 @@ export interface Trip {
   offline?: import('./offline').Prepared;
   shared?: { cloudId: string; role: 'owner' | 'editor'; joinedAt: string; familyId?: string };
   rating?: number; notes?: string;
+  /** Places added from web search (OpenStreetMap / Wikipedia) — community data, not verified. */
+  places?: TripPlace[];
   /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
   gpx?: import('../engine/gpx').GpxTrack | null; safety?: Record<string, boolean>;
   /** Trip Type Engine: the selected types (any combination) and answers to their questions. */
@@ -116,6 +118,8 @@ export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: st
 export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'recommended' | 'none'; access?: 'yes' | 'partial' | 'no'; lodging?: 'yes' | 'no'; note?: string }
 
 /** One responsibility: which family, and whether it's done (meal prepared / item bought / task done). */
+export interface TripPlace { id: string; name: string; lat: number; lon: number; label: string; source: 'osm'; url: string; website?: string; addedAt: string }
+
 export interface Duty { familyId?: string; done?: boolean; by?: string; at?: number }
 
 export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolean; allergies: string[] }

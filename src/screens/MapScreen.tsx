@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { X, Heart, Tent, List, Map as MapI, CloudSun, Fuel } from 'lucide-react';
+import { X, Heart, Tent, List, Map as MapI, CloudSun, Fuel, Search } from 'lucide-react';
 import { IsraelMap } from '../components/IsraelMap';
 import { REGIONS, REGION_BY_ID } from '../data/regions';
 import { SITES, sitesIn, SITE_TYPE_LABEL } from '../data/sites';
@@ -61,6 +61,7 @@ export default function MapScreen({ region }: { region?: RegionId }) {
         <div className="gutter flex items-center gap-2 pt-4 lg:hidden">
           <Button size="sm" variant="soft" icon={mobileList ? <MapI size={16} /> : <List size={16} />} onClick={() => setMobileList(!mobileList)}>{mobileList ? 'הצגת מפה' : 'מסך מלא לרשימה'}</Button>
           <Button size="sm" variant="soft" icon={<Tent size={16} />} onClick={() => go('/camps')}>חיפוש קמפינג</Button>
+          <Button size="sm" variant="soft" icon={<Search size={16} />} onClick={() => go('/explore')}>חיפוש מקומות</Button>
         </div>
         {r ? (
           <div className="space-y-4">

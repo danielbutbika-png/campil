@@ -42,12 +42,13 @@ const About = lazy(() => import('./screens/More').then(m => ({ default: m.About 
 
 const MapScreen = lazy(() => import('./screens/MapScreen'));
 const Academy = lazy(() => import('./screens/Academy'));
+const Explore = lazy(() => import('./screens/Explore'));
 const KnotPage = lazy(() => import('./screens/Academy').then(m => ({ default: m.KnotPage })));
 
 const NAV = [
   { to: '/', label: 'בית', I: HomeI, match: (p: string) => p === '/' },
   { to: '/trips', label: 'טיולים', I: Compass, match: (p: string) => p.startsWith('/trip') || p === '/new' },
-  { to: '/map', label: 'מפה', I: MapI, match: (p: string) => p.startsWith('/map') || p === '/camps' },
+  { to: '/map', label: 'מפה', I: MapI, match: (p: string) => p.startsWith('/map') || p === '/camps' || p === '/explore' },
   { to: '/gear', label: 'ציוד', I: Backpack, match: (p: string) => p.startsWith('/gear') },
   { to: '/more', label: 'עוד', I: MoreHorizontal, match: (p: string) => ['/more', '/guides', '/guide', '/academy', '/albums', '/settings', '/about'].some(x => p.startsWith(x)) },
 ];
@@ -85,6 +86,7 @@ export default function App() {
   else if (parts[0] === 'gear') screen = <Gear tab={parts[1] ?? 'inventory'} />;
   else if (path === '/join') screen = <Join query={query} />;
   else if (path === '/camps') screen = <CampSearch query={query} />;
+  else if (path === '/explore') screen = <Explore />;
   else if (path === '/more') screen = <More />;
   else if (path === '/academy' || path === '/guides') screen = <Academy />;
   else if (parts[0] === 'academy' && parts[1] === 'knot') screen = <KnotPage id={parts[2]} />;
