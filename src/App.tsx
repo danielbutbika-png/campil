@@ -71,9 +71,10 @@ export default function App() {
   const { path, parts, query } = useRoute();
   const online = useOnline();
   const theme = useStore(s => s.settings.theme);
-  const welcomed = useStore(s => s.settings.welcomed);
-  // first launch only; automated browsers skip it unless a test asks for it
-  const showWelcome = !welcomed && path !== '/join' && (!navigator.webdriver || !!(window as any).__campilWelcome);
+  const cloudCfg = useStore(s => s.settings.cloud);
+  // Google sign-in is required. Remembered on the device (googleUid), so the app still opens with no signal.
+  // An invite link opens first (it has its own sign-in); automated browsers skip this unless a test asks for it.
+  const showWelcome = !!cloudCfg && !cloudCfg.googleUid && path !== '/join' && (!navigator.webdriver || !!(window as any).__campilWelcome);
   useTripEndReminder();
   useEffect(() => {
     // A Firebase config baked in at build time (VITE_FIREBASE_CONFIG) connects sharing with no setup on the phone.
@@ -122,7 +123,7 @@ export default function App() {
       <div className="min-w-0 flex-1">
         {STAGING && <div role="note" className="no-print bg-warn px-4 py-1.5 text-center text-sm font-bold text-white safe-t">סביבת בדיקות — נתונים נפרדים מהאפליקציה האמיתית</div>}
         {!online && <div role="status" className="no-print sticky top-0 z-40 flex items-center justify-center gap-2 bg-ink px-4 py-2 text-sm font-bold text-bg safe-t"><WifiOff size={16} />אין חיבור לאינטרנט — הנתונים שלכם שמורים במכשיר, תחזיות ומפות יוצגו מהשמירה האחרונה</div>}
-        {showWelcome && <Welcome onDone={() => useStore.getState().setSettings({ welcomed: true })} />}
+        {showWelcome && <Welcome />}
         <main id="main" className="pb-28 lg:pb-10"><Suspense fallback={<div role="status" className="p-8 text-muted">טוען…</div>}>{screen}</Suspense></main>
       </div>
       {/* Mobile tab bar */}

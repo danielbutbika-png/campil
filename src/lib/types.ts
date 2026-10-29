@@ -138,8 +138,6 @@ export interface Settings {
   /** Trunk interior measured by the family (cm): depth seat-back→tailgate, narrowest width, floor→bottom of rear window. */
   trunkDims?: { depth: number; width: number; height: number; measuredAt: string };
   diet: DietPrefs; theme: 'system' | 'light' | 'dark';
-  /** the first-launch sign-in screen was answered (signed in or skipped) */
-  welcomed?: boolean;
   vehicleSpec?: import('../data/vehicles').VehicleSpec | null;
   fuelBrands: import('../services/fuel').BrandId[]; fuelBufferKm: number;
   aiKey?: string; aiModel?: string;

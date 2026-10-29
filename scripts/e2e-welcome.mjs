@@ -47,12 +47,21 @@ console.log('synced again → green:', (await p.locator('header a[data-sync]').f
 await ctx.setOffline(true); await p.waitForTimeout(400);
 console.log('no network → red ring:', (await p.locator('header a[data-sync]').first().getAttribute('data-sync')) === 'error');
 await ctx.setOffline(false);
-// skipping works and is remembered
+// with no network the app still opens (the account is remembered on the device)
+await ctx.setOffline(true); await p.reload().catch(() => {}); await p.waitForTimeout(1200);
+console.log('offline after signing in: the app opens, no sign-in screen:', (await p.getByRole('dialog', { name: 'ברוכים הבאים ל-CampIL' }).count()) === 0);
+await ctx.setOffline(false); await p.reload(); await p.waitForTimeout(1000);
+// signing out brings the sign-in screen back
+await p.goto(BASE + '#/settings'); await p.waitForTimeout(600);
+await p.getByRole('button', { name: 'התנתקות' }).click(); await p.waitForTimeout(800);
+console.log('after signing out the sign-in screen is back:', (await p.getByRole('dialog', { name: 'ברוכים הבאים ל-CampIL' }).count()) === 1);
+// a fresh device: sign-in is required — no way around it; offline it explains that the first sign-in needs a network
 const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL' });
 await ctx2.addInitScript(() => { window.__campilWelcome = true; });
 await ctx2.route(/open-meteo|fonts\.|overpass|osrm|nominatim|openfreemap/, r => r.abort());
 const q = await ctx2.newPage(); await q.goto(BASE); await q.waitForTimeout(900);
-await q.getByRole('button', { name: 'להמשיך בלי חשבון' }).click(); await q.reload(); await q.waitForTimeout(700);
-console.log('skip → app works and the screen does not come back:', (await q.getByRole('dialog', { name: 'ברוכים הבאים ל-CampIL' }).count()) === 0 && (await q.getByRole('heading', { level: 1 }).count()) > 0);
+console.log('required: no "continue without an account":', (await q.getByText('להמשיך בלי חשבון').count()) === 0 && (await q.getByRole('dialog', { name: 'ברוכים הבאים ל-CampIL' }).count()) === 1);
+await ctx2.setOffline(true); await q.waitForTimeout(300);
+console.log('offline first launch explains it needs a network:', (await q.getByText('ההתחברות הראשונה צריכה רשת').count()) === 1 && await q.getByRole('button', { name: 'התחברות עם Google' }).isDisabled());
 console.log('errors:', errors.length ? errors.join(' | ') : 'none');
 await b.close();

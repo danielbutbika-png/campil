@@ -1,17 +1,19 @@
-// First launch: sign in with Google so trips follow you between phones and your name appears in the app.
-// It can be skipped — everything works on the device without an account.
+// Sign-in is required: until this device has signed in with Google once, this screen covers the app.
+// After that the app opens with no network too (the account is remembered on the device).
 import { useState } from 'react';
 import { Loader2, Cloud, Smartphone, BadgeCheck } from 'lucide-react';
 import { useStore } from '../lib/store';
+import { useOnline } from '../lib/hooks';
 import { GoogleG } from './Collab';
 import { Button } from './ui';
 
-export function Welcome({ onDone }: { onDone: () => void }) {
+export function Welcome() {
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   const cloud = useStore(s => s.settings.cloud);
+  const online = useOnline();
   const google = async () => {
     setBusy(true); setErr('');
-    try { const m = await import('../lib/cloud/sync'); await m.signInGoogle(); onDone(); }
+    try { const m = await import('../lib/cloud/sync'); await m.signInGoogle(); }
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   return (
@@ -19,19 +21,19 @@ export function Welcome({ onDone }: { onDone: () => void }) {
       <div className="safe-b w-full max-w-md space-y-5 pb-4">
         <div className="space-y-2">
           <h1 id="welcome-h" className="font-display text-4xl">ברוכים הבאים ל-CampIL</h1>
-          <p className="text-white/85">התחברו עם חשבון Google כדי שהשם שלכם יופיע באפליקציה, והטיולים המשותפים יגיעו לכל מכשיר שתתחברו ממנו.</p>
+          <p className="text-white/85">כדי להשתמש באפליקציה צריך להתחבר עם חשבון Google — כך השם שלכם מופיע, והטיולים המשותפים מגיעים לכל מכשיר שתתחברו ממנו.</p>
         </div>
         <ul className="space-y-2 text-sm text-white/90">
           <li className="flex items-center gap-2"><Cloud size={17} aria-hidden />טיולים משותפים מסתנכרנים בין הטלפונים שלכם</li>
           <li className="flex items-center gap-2"><BadgeCheck size={17} aria-hidden />שותפים לטיול רואים שזה באמת אתם</li>
           <li className="flex items-center gap-2"><Smartphone size={17} aria-hidden />הציוד, התמונות והטיולים שלא שיתפתם נשארים במכשיר</li>
         </ul>
+        {!online && <p role="status" className="rounded-xl bg-white/15 p-3 text-sm font-semibold">אין חיבור לאינטרנט. ההתחברות הראשונה צריכה רשת — אחריה האפליקציה עובדת גם בלי קליטה.</p>}
         {err && <p role="alert" className="rounded-xl bg-white/15 p-3 text-sm font-semibold">{err}</p>}
         <div className="space-y-2">
-          <Button className="w-full !bg-white !text-ink" disabled={busy || !cloud} icon={busy ? <Loader2 size={16} className="animate-spin" /> : <GoogleG />} onClick={google}>התחברות עם Google</Button>
-          <button type="button" className="w-full py-2 text-sm font-bold text-white/80 underline" onClick={onDone}>להמשיך בלי חשבון</button>
+          <Button className="w-full !bg-white !text-ink" disabled={busy || !cloud || !online} icon={busy ? <Loader2 size={16} className="animate-spin" /> : <GoogleG />} onClick={google}>התחברות עם Google</Button>
         </div>
-        <p className="text-xs text-white/60">אפשר להתחבר או להתנתק בכל רגע בהגדרות.</p>
+        <p className="text-xs text-white/60">נשמר רק השם, האימייל והתמונה מהחשבון. הציוד והטיולים שלא שיתפתם לא עולים לענן.</p>
       </div>
     </div>
   );
