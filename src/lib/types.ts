@@ -69,6 +69,8 @@ export interface Trip {
   rating?: number; notes?: string;
   /** Places added from web search (OpenStreetMap / Wikipedia) — community data, not verified. */
   places?: TripPlace[];
+  /** No meals are planned for this trip (e.g. a short day trip). Drinking water stays in the packing list. */
+  noFood?: boolean;
   /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
   gpx?: import('../engine/gpx').GpxTrack | null; safety?: Record<string, boolean>;
   /** Trip Type Engine: the selected types (any combination) and answers to their questions. */

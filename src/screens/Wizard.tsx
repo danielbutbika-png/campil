@@ -20,6 +20,8 @@ import { SiteCard, useSiteSheet } from '../components/SiteCard';
 import { go } from '../lib/router';
 import { TripTypePicker } from '../components/TripTypePicker';
 import { impliedBy } from '../engine/tripTypes';
+import { DestSearch } from '../components/DestSearch';
+import { SITE_BY_ID } from '../data/sites';
 
 const IsraelMap = lazy(() => import('../components/IsraelMap').then(m => ({ default: m.IsraelMap })));
 
@@ -88,7 +90,8 @@ export default function Wizard() {
   };
   const finish = () => {
     const daysWx = regionFc.data?.days.filter(d => d.date >= t.start && d.date <= t.end) ?? [];
-    const name = t.name.trim() || `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${REGION_BY_ID[t.regionId!].short}`;
+    const first = SITE_BY_ID[t.siteIds[0]]?.name ?? t.places?.[0]?.name;
+    const name = t.name.trim() || (t.kind === 'day' && first ? `טיול יום ל${first}` : `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${REGION_BY_ID[t.regionId!].short}`);
     const done = materialize({ ...t, name }, st, daysWx);
     st.addTrip(done); toast('התוכנית מוכנה'); go(`/trip/${done.id}`);
   };
@@ -117,6 +120,10 @@ export default function Wizard() {
           <div className="space-y-2"><h2 className="font-display text-xl">איזה טיול?</h2>
             <Segmented label="סוג הטיול" value={t.kind} onChange={v => set({ kind: v, end: v === 'day' ? t.start : t.end })} options={[{ v: 'camping', label: 'קמפינג', icon: <Tent size={18} /> }, { v: 'day', label: 'טיול יום', icon: <Sun size={18} /> }, { v: 'combined', label: 'משולב', icon: <Layers size={18} /> }]} />
           </div>
+          {t.kind === 'day' && <div className="space-y-2"><h2 className="font-display text-xl">לאן נוסעים?</h2>
+            <p className="text-sm text-muted">חפשו מקום ולחצו עליו — הוא יתווסף למסלול של היום. אפשר להוסיף כמה.</p>
+            <DestSearch t={t} onChange={set} />
+          </div>}
           {t.kind !== 'day' && <div className="space-y-2"><h2 className="font-display text-xl">איפה ישנים?</h2>
             <Segmented label="סוג לינה" value={t.lodging} onChange={v => set({ lodging: v })} options={[{ v: 'tent', label: 'אוהל פרטי', icon: <Tent size={18} /> }, { v: 'equipped_site', label: 'חניון מאובזר', icon: <MapPin size={18} /> }, { v: 'caravan', label: 'קרוואן', icon: <Caravan size={18} /> }, { v: 'other', label: 'אירוח אחר', icon: <HomeI size={18} /> }]} />
           </div>}
@@ -130,7 +137,7 @@ export default function Wizard() {
             <div><label className="label flex items-center gap-1.5" htmlFor="veh"><Car size={16} />באיזה רכב נוסעים?</label><input id="veh" className="field" placeholder="דגם הרכב" value={t.vehicle} onChange={e => set({ vehicle: e.target.value })} /></div>
             <div className="flex items-end"><div className="w-full"><Toggle checked={t.pets} onChange={v => set({ pets: v })} label="חיות מחמד מצטרפות" desc="נוסיף ציוד ונסמן אתרים לבדיקה" /></div></div>
           </div>
-          <div className="space-y-2"><span className="label">יעד</span>
+          <div className="space-y-2"><span className="label">{t.kind === 'day' ? 'רוצים עוד רעיונות?' : 'יעד'}</span>
             <Segmented label="יעד" value={wantRecs ? 'recs' : 'mine'} onChange={v => setWantRecs(v === 'recs')} options={[{ v: 'recs', label: 'רוצים המלצות', icon: <Sparkles size={18} /> }, { v: 'mine', label: 'כבר בחרנו יעד', icon: <MapPin size={18} /> }]} />
           </div>
         </div>
@@ -168,8 +175,10 @@ export default function Wizard() {
           {errors.participants && <p className="text-sm font-semibold text-danger">{errors.participants}</p>}
           <div className="space-y-3 border-t border-line pt-5">
             <h2 className="flex items-center gap-2 font-display text-xl"><Utensils size={20} />מה אוכלים?</h2>
+            <Segmented label="אוכל בטיול" value={t.noFood ? 'none' : 'food'} onChange={v => set({ noFood: v === 'none' || undefined })} options={[{ v: 'food', label: 'מתכננים אוכל' }, { v: 'none', label: 'בלי אוכל' }]} />
+            {t.noFood ? <p className="text-sm text-muted">לא נבנה תפריט ורשימת קניות, וציוד הבישול לא ייכנס לרשימה. מים לשתייה נשארים ברשימת הציוד. אפשר לשנות אחר כך בלשונית האוכל.</p> : <>
             <p className="text-sm text-muted">{isGroup(t) ? 'לכל משפחה: בשרי, צמחוני או טבעוני, רמת כשרות ואלרגיות. נבנה תפריט משותף אחד — עם חלופה למי שלא אוכל את המנה העיקרית — וכמויות לפי הגילים.' : 'בשרי, צמחוני או טבעוני, רמת כשרות ואלרגיות — לפי זה נבנה תפריט עם כמויות.'}</p>
-            <DietsEditor t={t} fallback={st.settings.diet} onChange={diets => set({ diets })} />
+            <DietsEditor t={t} fallback={st.settings.diet} onChange={diets => set({ diets })} /></>}
           </div>
         </div>
       )}
@@ -198,7 +207,7 @@ export default function Wizard() {
           <Card className="space-y-3 p-5">
             <h2 className="font-display text-2xl">{t.name || `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${t.regionId ? REGION_BY_ID[t.regionId].short : ''}`}</h2>
             <dl className="grid gap-3 sm:grid-cols-2">
-              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.role === 'child' ? 'ילד/ה' : 'מבוגר/ת'}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length ? t.siteIds.map(id => SITES.find(s => s.id === id)?.name).join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
+              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.role === 'child' ? 'ילד/ה' : 'מבוגר/ת'}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', t.noFood ? 'בלי אוכל' : Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length || t.places?.length ? [...t.siteIds.map(id => SITES.find(s => s.id === id)?.name), ...(t.places ?? []).map(p => p.name)].join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
             </dl>
           </Card>
           <p className="text-muted">ניצור עכשיו: תחזית ליעד, המלצות הכנה, רשימת ציוד מהמאגר שלכם, תפריט ורשימת קניות, לוח זמנים ומשימות לפני היציאה. הכול ניתן לעריכה.</p>

@@ -151,6 +151,8 @@ export function generatePacking(ctx: PackContext): PackItem[] {
     if (g.perPeople) perFamily(g.name, g.category, ps => scale(g.qty, ps, days, fams?.length ?? 1), ps => `${g.reason} (${scale(g.qty, ps, days, fams?.length ?? 1)})`, g.unit);
     else { const q = scale(g.qty, allPs, days, fams?.length ?? 1); if (q > 0) rule(g.name, g.category, q, g.reason, g.unit); }
   }
+  // No food on this trip: drop cooking gear and food — but never the drinking water.
+  if (trip.noFood) return out.filter(p => !(p.category === 'kitchen' || (p.category === 'food' && !has(p.name, 'מים', 'בקבוק'))));
   return out;
 }
 

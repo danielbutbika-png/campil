@@ -55,6 +55,12 @@ describe('weather rules', () => {
 describe('packing', () => {
   const inv = (seed.items as GearItem[]).map(g => ({ ...g, available: true }));
   const ctx = (flags = flagsFor([day('2026-11-05', { tMin: 8, tMax: 22 })]), t: Trip = trip) => ({ trip: t, members, inventory: inv, template: seed.personalTemplate as PersonalTemplateItem[], settings, flags, wxSource: 'forecast' as const });
+  it('no-food trip: no cooking gear or food, but drinking water stays', () => {
+    const p = generatePacking(ctx(undefined, { ...trip, noFood: true }));
+    expect(p.some(x => x.category === 'kitchen')).toBe(false);
+    expect(p.some(x => x.name === 'מים לשתייה')).toBe(true);
+    expect(generatePacking(ctx()).some(x => x.category === 'kitchen')).toBe(true);
+  });
   it('scales daily clothing by nights', () => {
     const p = generatePacking(ctx());
     const u = p.find(x => x.name === 'תחתונים' && x.assignee === 'm1')!;
@@ -124,6 +130,13 @@ describe('meals & schedule', () => {
     const list = shoppingList(m);
     expect(list.some(l => l.name === 'ביצים')).toBe(false);
     expect(list.every(l => l.qty > 0)).toBe(true);
+  });
+  it('day trip visits every chosen place; no meals when there is no food', () => {
+    const d = { ...trip, kind: 'day' as const, end: trip.start };
+    const s = buildSchedule(d, [], [{ name: 'א' }, { name: 'ב' }, { name: 'ג' }]);
+    expect(['א', 'ב', 'ג'].every(n => s.some(x => x.title === n))).toBe(true);
+    expect(s.at(-1)!.title).toBe('חזרה הביתה');
+    expect(buildSchedule({ ...d, noFood: true }, [], [{ name: 'א' }]).some(x => x.kind === 'meal')).toBe(false);
   });
   it('schedule moves activities early on hot days', () => {
     const s = buildSchedule(trip, [day('2026-11-06', { tMax: 35 })], []);

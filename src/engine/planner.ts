@@ -44,10 +44,10 @@ export function shoppingList(meals: MealSlot[], t?: MenuTrip, diet?: DietPrefs):
 export const SHOP_ORDER = ['fresh', 'meat', 'cold', 'bakery', 'dry', 'drinks', 'alcohol'];
 export const SHOP_LABEL: Record<string, string> = { fresh: 'ירקות ופירות', meat: 'בשר ועוף', cold: 'מקרר — חלב, ביצים ומוכנים', bakery: 'מאפים ולחם', dry: 'מזווה ויבשים', drinks: 'שתייה', alcohol: 'אלכוהול (18+)' };
 
-export function buildSchedule(trip: Trip, days: DayWx[], sites: Site[]): ScheduleItem[] {
+export function buildSchedule(trip: Trip, days: DayWx[], sites: Pick<Site, 'name'>[]): ScheduleItem[] {
   const { days: n } = tripLength(trip.start, trip.end);
   const out: ScheduleItem[] = [];
-  const add = (day: number, time: string, title: string, kind: ScheduleItem['kind'], note?: string) => out.push({ id: uid('s'), day, time, title, kind, note });
+  const add = (day: number, time: string, title: string, kind: ScheduleItem['kind'], note?: string) => { if (kind === 'meal' && trip.noFood) return; out.push({ id: uid('s'), day, time, title, kind, note }); };
   const acts = [...sites];
   const nextAct = () => acts.shift();
   for (let d = 0; d < n; d++) {
@@ -62,7 +62,11 @@ export function buildSchedule(trip: Trip, days: DayWx[], sites: Site[]): Schedul
       add(d, '13:00', 'ארוחת צהריים', 'meal');
       if (trip.kind !== 'day') add(d, '15:00', 'הגעה והקמת המחנה', 'camp', sunset ? `שקיעה ${sunset} — לסיים להקים לפני החשכה` : 'לסיים להקים לפני החשכה');
       if (trip.kind !== 'day') { add(d, '19:00', 'ארוחת ערב', 'meal'); add(d, '20:30', 'ערב סביב המנגל / סיפורים', 'rest'); }
-      else add(d, '16:00', 'חזרה הביתה', 'drive');
+      else {
+        // A day trip visits everything chosen: the rest after lunch, then home.
+        const rest = acts.splice(0, 3); rest.forEach((x, i) => add(d, `${14 + i}:30`, x.name, 'activity'));
+        add(d, rest.length ? `${15 + rest.length}:00` : '16:00', 'חזרה הביתה', 'drive');
+      }
       continue;
     }
     add(d, '07:30', 'ארוחת בוקר', 'meal');

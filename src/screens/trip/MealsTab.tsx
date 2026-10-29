@@ -6,7 +6,7 @@ import { RECIPES, RECIPE_BY_ID, MEAL_LABEL, KASHRUT_LABEL, type Recipe } from '.
 import { MEATS, VEG, DEFAULT_GRILL, MEAT_G_PER_ADULT, type GrillItem } from '../../data/grill';
 import { planMeals, shoppingList, SHOP_LABEL, SHOP_ORDER } from '../../engine/planner';
 import { drinkPlan, WATER_SOURCE, DRINK_DEFAULTS } from '../../engine/drinks';
-import { Wine, Droplets } from 'lucide-react';
+import { Wine, Droplets, Utensils } from 'lucide-react';
 import { dietGroups, eats, anyKosher, anyMehadrin, grillTotals, grillItemsFor, STYLE_HE, KASHRUT_HE, APPETITE_NOTE } from '../../engine/menu';
 import { DietsEditor } from '../../components/DietEditor';
 import { addDays, fmtDate, shortDay, tripLength } from '../../lib/util';
@@ -57,8 +57,17 @@ export default function MealsTab({ t }: { t: Trip }) {
     return RECIPES.filter(x => x.types.includes(type) || (forAlt && x.id === forAlt.slot.alt?.recipeId)).map(x => ({ x, fit: eaters.filter(g => eats(g.diet, x)).length, all: eaters.length }));
   };
 
+  if (t.noFood) return (
+    <div className="space-y-4 rounded-xl2 border border-line bg-surface p-5">
+      <h2 className="flex items-center gap-2 font-display text-xl"><Utensils size={20} />בלי אוכל בטיול הזה</h2>
+      <p className="text-muted">לא נבנה תפריט ורשימת קניות, וציוד בישול לא נכנס לרשימת הציוד. מים לשתייה נשארים ברשימה.</p>
+      <Button icon={<ChefHat size={16} />} onClick={() => { updateTrip(t.id, x => ({ noFood: undefined, meals: planMeals(x, fallback), pantry: {} })); toast('נבנה תפריט לטיול'); }}>לתכנן אוכל בכל זאת</Button>
+    </div>
+  );
+
   return (
     <div className="space-y-10">
+      <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={() => { if (confirm('להסיר את התפריט ורשימת הקניות מהטיול הזה?')) { updateTrip(t.id, { noFood: true, meals: [], pantry: {} }); toast('הטיול עודכן: בלי אוכל'); } }}>בלי אוכל בטיול הזה</Button></div>
       <DutyBoard t={t} lines={shop} />
       <Section title="מי אוכל מה" action={<Button size="sm" variant="soft" icon={<Pencil size={14} />} onClick={() => { setDraft(t.diets); setEditDiets(true); }}>עריכה</Button>}>
         <div className="grid gap-3 sm:grid-cols-2">
