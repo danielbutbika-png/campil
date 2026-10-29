@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Users, Copy, Share2, Check, Link2, Loader2, Radio, LogOut, Trash2, Settings2, BadgeCheck, ShieldCheck, Bell, BellOff, Globe, UserMinus, X as XIcon } from 'lucide-react';
 import type { Trip } from '../lib/types';
 import { useStore } from '../lib/store';
-import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, setMemberFamily, setInviteExpiry } from '../lib/cloud/sync';
+import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, restoreFromAccount, setMemberFamily, setInviteExpiry } from '../lib/cloud/sync';
 import { isGroup, familyById } from '../lib/families';
 import type { Member } from '../lib/cloud/model';
 import { parseFirebaseConfig } from '../lib/cloud/model';
@@ -267,6 +267,7 @@ export function AccountRow({ compact }: { compact?: boolean }) {
     <div className={cx('flex items-center gap-2 rounded-xl border border-line p-2.5', compact && 'text-sm')}>
       <Avatar m={{ name: account.name ?? '?', color: '#3c6e9f', photo: account.photo }} size={30} ring={false} />
       <span className="min-w-0 flex-1"><span className="flex items-center gap-1 font-semibold">{account.name}<BadgeCheck size={15} className="text-info" /></span><span className="block truncate text-xs text-muted" dir="ltr">{account.email}</span></span>
+      {!compact && <Button size="sm" variant="soft" disabled={busy} onClick={() => { setBusy(true); restoreFromAccount().then(n => { if (!n) toast('כל הטיולים המשותפים מהחשבון כבר במכשיר הזה'); }).catch(e => toast(e.message)).finally(() => setBusy(false)); }}>טעינת הטיולים שלי</Button>}
       <Button size="sm" variant="ghost" disabled={busy} onClick={() => go(signOutGoogle)}>התנתקות</Button>
     </div>
   ) : (

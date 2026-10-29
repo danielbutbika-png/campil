@@ -11,7 +11,12 @@ export interface Account { uid: string; provider: 'anonymous' | 'google'; name?:
 export interface Transport {
   readonly uid: string;
   account(): Account;
-  signInGoogle(): Promise<Account>;
+  /** `beforeSwitch` runs when this Google account already exists elsewhere, so this device is about to change its id:
+   *  it gets the new id while the old one is still signed in (to hand over what the old id owns). */
+  signInGoogle(beforeSwitch?: (newUid: string) => Promise<void>): Promise<Account>;
+  /** Per-user list of shared trips (users/{uid}), readable and writable only by that user — lets another device find them. */
+  indexGet(uid: string): Promise<Record<string, TripIndexEntry>>;
+  indexPut(uid: string, cid: string, e: TripIndexEntry | null): Promise<void>;
   signOut(): Promise<Account>;
   createTrip(id: string, doc: TripDoc): Promise<void>;
   getTrip(id: string): Promise<TripDoc | null>;
@@ -26,6 +31,7 @@ export interface Transport {
   patchFamily(tripId: string, famId: string, patches: Patch[]): Promise<void>;
   watchFamily(tripId: string, famId: string, cb: (d: FamilyDoc | null) => void, onErr?: (e: any) => void): () => void;
 }
+export interface TripIndexEntry { name: string; start?: string; at: number }
 export interface FamilyDoc { packing: Record<string, any>; updatedAt?: unknown }
 
 export async function connect(config: Record<string, string>): Promise<Transport> {
@@ -49,7 +55,7 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
   return {
     get uid() { return a.currentUser!.uid; },
     account: acct,
-    signInGoogle: async () => {
+    signInGoogle: async beforeSwitch => {
       const provider = new auth.GoogleAuthProvider(); provider.setCustomParameters({ prompt: 'select_account' });
       try {
         // Linking keeps this device's id, so trips already joined stay joined.
@@ -57,7 +63,15 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
         await a.currentUser?.getIdToken(true); // fresh token carries the e-mail claim the security rules check
       } catch (e: any) {
         if (e?.code === 'auth/credential-already-in-use' || e?.code === 'auth/email-already-in-use') {
-          const cred = auth.GoogleAuthProvider.credentialFromError(e); if (cred) await auth.signInWithCredential(a, cred); else throw e;
+          const cred = auth.GoogleAuthProvider.credentialFromError(e); if (!cred) throw e;
+          if (beforeSwitch) {
+            // Learn the account's id on a throw-away app instance first, so the old id can hand over its trips.
+            const probe = getApps().find(x => x.name === 'campil-probe') ?? initializeApp(config, 'campil-probe');
+            const pa = auth.initializeAuth(probe, { persistence: auth.inMemoryPersistence });
+            try { const r = await auth.signInWithCredential(pa, cred); await beforeSwitch(r.user.uid); } catch { /* best effort */ } finally { await auth.signOut(pa).catch(() => {}); }
+          }
+          await auth.signInWithCredential(a, cred);
+          await a.currentUser?.getIdToken(true);
         } else if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/operation-not-supported-in-this-environment') {
           throw new Error('החלון של Google נחסם. באייפון, כשהאפליקציה מותקנת למסך הבית, נסו להתחבר מתוך Safari.');
         } else if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') {
@@ -80,6 +94,8 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
       await (fs.updateDoc as any)(ref(id), ...args);
     },
     deleteTrip: id => fs.deleteDoc(ref(id)),
+    indexGet: async uid => { const s = await fs.getDoc(fs.doc(db, 'users', uid)); return (s.exists() ? (s.data() as any).trips : null) ?? {}; },
+    indexPut: (uid, cid, e) => fs.setDoc(fs.doc(db, 'users', uid), { trips: { [cid]: e ?? fs.deleteField() } }, { merge: true }),
     putEntry: (tid, e) => fs.setDoc(fs.doc(db, 'trips', tid, 'journal', e.id), JSON.parse(JSON.stringify(e))),
     deleteEntry: (tid, eid) => fs.deleteDoc(fs.doc(db, 'trips', tid, 'journal', eid)),
     watchJournal: (tid, cb) => fs.onSnapshot(fs.collection(db, 'trips', tid, 'journal'), s => cb(s.docs.map(d => d.data() as SubDoc))),
@@ -126,7 +142,7 @@ function localTransport(): Transport {
   return {
     get uid() { return uid!; },
     account: acct,
-    signInGoogle: async () => { const n = (window as any).__campilFakeGoogle ?? { name: 'משתמש Google', email: 'test@example.com' }; google = { uid: uid!, provider: 'google', ...n }; sessionStorage.setItem('campil-fake-google', JSON.stringify(google)); return google!; },
+    signInGoogle: async beforeSwitch => { const n = (window as any).__campilFakeGoogle ?? { name: 'משתמש Google', email: 'test@example.com' }; const known = await read(`gacct/${n.email}`); if (known && known !== uid) { await beforeSwitch?.(known); uid = known; sessionStorage.setItem('campil-fake-uid', uid!); } else if (!known) await write(`gacct/${n.email}`, uid); google = { uid: uid!, provider: 'google', ...n }; sessionStorage.setItem('campil-fake-google', JSON.stringify(google)); return google!; },
     signOut: async () => { google = null; sessionStorage.removeItem('campil-fake-google'); return acct(); },
     createTrip: (id, d) => serial(() => write(id, d)),
     getTrip: id => read(id),
@@ -137,6 +153,8 @@ function localTransport(): Transport {
       const d = await read(id); if (d) await write(id, { ...applyPatches(d, patches), updatedAt: Date.now() });
     }),
     deleteTrip: id => serial(() => write(id, null)),
+    indexGet: async u => (await read(`users/${u}`))?.trips ?? {},
+    indexPut: (u, cid, e) => serial(async () => { const d = (await read(`users/${u}`)) ?? { trips: {} }; if (e) d.trips[cid] = e; else delete d.trips[cid]; await write(`users/${u}`, d); }),
     putEntry: (tid, e) => serial(async () => { const k = `${tid}/journal`; const d = (await read(k)) ?? {}; d[e.id] = e; await write(k, d); }),
     deleteEntry: (tid, eid) => serial(async () => { const k = `${tid}/journal`; const d = (await read(k)) ?? {}; delete d[eid]; await write(k, d); }),
     watchJournal: (tid, cb) => watch(`${tid}/journal`, () => { read(`${tid}/journal`).then(d => cb(Object.values(d ?? {}))); }),

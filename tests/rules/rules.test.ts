@@ -132,3 +132,36 @@ describe('removing a member', () => {
     await assertSucceeds(deleteDoc(tripRef(as('O'))));
   });
 });
+
+describe('signing in with Google on a second device', () => {
+  it('the organiser hands the trip to their Google id (add it and make it the owner)', async () => {
+    await assertSucceeds(upd(tripRef(as('O')), new FieldPath('members', 'OG'), { name: 'מארגן', role: 'owner', familyId: 'A', color: '#000' }, 'owner', 'OG'));
+    await assertSucceeds(getDoc(tripRef(as('OG'))));
+    await assertSucceeds(upd(tripRef(as('OG')), new FieldPath('members', 'O'), deleteField()));
+  });
+  it('a member re-joins under their Google id with the key they joined with', async () => {
+    await assertSucceeds(upd(tripRef(as('MAG')), new FieldPath('members', 'MAG'), { name: 'א', role: 'editor', familyId: 'A', k: KEY_A, color: '#111' }));
+  });
+  it('a member cannot add another id for someone else', async () => {
+    await assertFails(upd(tripRef(as('MA')), new FieldPath('members', 'X'), { name: 'x', role: 'editor', familyId: 'A', k: KEY_A, color: '#111' }));
+  });
+  it('a member cannot take ownership', async () => { await assertFails(upd(tripRef(as('MA')), 'owner', 'MA')); });
+});
+
+describe('personal trip index (users/{uid})', () => {
+  const idx = (db: any, u: string) => doc(db, 'users', u);
+  it('a person reads and writes their own list', async () => {
+    await assertSucceeds(setDoc(idx(as('MA'), 'MA'), { trips: { [T]: { name: 'טיול', at: 1 } } }, { merge: true }));
+    await assertSucceeds(getDoc(idx(as('MA'), 'MA')));
+  });
+  it("nobody else can read or change someone's list", async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(idx(ctx.firestore(), 'MA'), { trips: {} }); });
+    await assertFails(getDoc(idx(as('MB'), 'MA')));
+    await assertFails(setDoc(idx(as('MB'), 'MA'), { trips: { x: { name: 'x', at: 1 } } }));
+    await assertFails(getDoc(idx(env.unauthenticatedContext().firestore(), 'MA')));
+  });
+  it('listing every user is not allowed', async () => {
+    const { collection, getDocs } = await import('firebase/firestore');
+    await assertFails(getDocs(collection(as('MA'), 'users')));
+  });
+});

@@ -141,7 +141,7 @@ export interface Settings {
   vehicleSpec?: import('../data/vehicles').VehicleSpec | null;
   fuelBrands: import('../services/fuel').BrandId[]; fuelBufferKm: number;
   aiKey?: string; aiModel?: string;
-  cloud?: { config: Record<string, string>; myName: string } | null;
+  cloud?: { config: Record<string, string>; myName: string; /** set while signed in with Google: shared trips are restored from the account at start */ googleUid?: string } | null;
   /** Partner-change notifications; undefined = on. */
   notify?: boolean;
 }

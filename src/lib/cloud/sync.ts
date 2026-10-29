@@ -71,7 +71,12 @@ export async function transport(): Promise<Transport> {
   if (connecting && connecting.key === key) return connecting.p;
   useCloud.setState({ status: 'connecting', error: undefined });
   const p = (async () => {
-    try { const t = await connect(cfg); tp = t; tpKey = key; useCloud.setState({ status: 'on', uid: t.uid, account: t.account() }); return t; }
+    try {
+      const t = await connect(cfg); tp = t; tpKey = key; useCloud.setState({ status: 'on', uid: t.uid, account: t.account() });
+      const c = useStore.getState().settings.cloud; const g = t.account().provider === 'google' ? t.uid : undefined;
+      if (c && c.googleUid !== g) useStore.getState().setSettings({ cloud: { ...c, googleUid: g } });
+      return t;
+    }
     catch (e: any) { useCloud.setState({ status: 'error', error: e?.message ?? String(e) }); throw new Error('החיבור ל-Firebase נכשל. בדקו את פרטי ההגדרה ושהופעלו Anonymous Auth ו-Firestore.'); }
     finally { if (connecting?.key === key) connecting = null; }
   })();
@@ -87,14 +92,16 @@ function selfMember(role: Member['role'], color: string, prev?: Member): Member 
   return { ...(prev ?? {}), name: myName(), color: prev?.color ?? color, role: prev?.role ?? role, joinedAt: prev?.joinedAt ?? Date.now(), lastSeen: Date.now(),
     ...(a.provider === 'google' ? { verified: true, email: a.email, photo: a.photo } : { verified: false }) } as Member;
 }
+let switching = false; // while this device changes its id (Google sign-in): no watchers, no "access removed"
 function lostAccess(cid: string, msg: string) {
+  if (switching) return;
   const local = tripByCloud(cid); if (!local) return;
   useStore.getState().updateTrip(local.id, { shared: undefined }); stop(cid); toast(msg.replace('%', local.name));
 }
 const tripByCloud = (cid: string) => useStore.getState().trips.find(t => t.shared?.cloudId === cid);
 
 function watch(cid: string) {
-  if (watchers.has(cid) || !tp) return;
+  if (watchers.has(cid) || !tp || switching) return;
   const t = tp;
   const offTrip = t.watchTrip(cid, doc => {
     const local = tripByCloud(cid); if (!local) return;
@@ -271,11 +278,15 @@ async function pushJournal(e: JournalEntry, cid: string) {
   await tp!.putEntry(cid, { id: e.id, author: e.author ?? myName(), createdAt: e.createdAt, date: e.date, title: e.title, text: e.text, loc: e.loc ?? null, photos });
 }
 
+let restored = false;
 /** Start syncing every shared trip. Safe to call repeatedly. */
 export async function startSync() {
   const shared = useStore.getState().trips.filter(t => t.shared);
-  if (!useStore.getState().settings.cloud || !shared.length) return;
-  try { await transport(); } catch { return; }
+  const cloud = useStore.getState().settings.cloud;
+  if (!cloud || (!shared.length && !cloud.googleUid)) return;
+  let t0: Transport; try { t0 = await transport(); } catch { return; }
+  if (!restored && t0.account().provider === 'google') { restored = true; indexMine().catch(() => {}); restoreFromAccount().catch(() => {}); }
+  if (!useStore.getState().trips.some(t => t.shared)) return;
   for (const t of shared) watch(t.shared!.cloudId);
   if (started) return; started = true;
   useStore.subscribe((s, prev) => {
@@ -325,6 +336,7 @@ export async function shareTrip(tripId: string): Promise<string> {
   st.updateTrip(tripId, { shared: { cloudId: cid, role: 'owner', joinedAt: new Date().toISOString(), ...(fam ? { familyId: fam } : {}) }, example: false });
   for (const e of st.journal.filter(j => j.tripId === tripId)) { lastJ.set(e.id, JSON.stringify(e)); await pushJournal(e, cid); }
   for (const p of st.album.filter(x => x.tripId === tripId)) { lastP.set(p.id, metaKey(p)); await pushPhoto(p, cid).catch(() => lastP.delete(p.id)); }
+  indexOne(cid, trip);
   await startSync(); watch(cid);
   return inviteLink(cid);
 }
@@ -348,6 +360,7 @@ function addLocal(cid: string, doc: TripDoc, me: Member) {
   const trip = fromDoc({ ...doc, members: { ...doc.members, [tp!.uid]: me } }, { id, shared: { cloudId: cid, role: me.role, joinedAt: new Date().toISOString(), ...(me.familyId ? { familyId: me.familyId } : {}) } } as Trip);
   st.addTrip({ ...trip, id });
   last.set(cid, useStore.getState().trips.find(x => x.id === id)!);
+  indexOne(cid, trip);
   return id;
 }
 
@@ -410,21 +423,75 @@ export async function setInviteExpiry(cid: string, until: number | null) { const
 export async function setAccess(cid: string, access: Access) { const t = await transport(); await t.patch(cid, [{ path: ['access'], value: access }]); }
 
 // ── identity ──
+/** Sign in with Google. If this Google account already exists (another device), this device switches to the
+ *  account's id: trips it organises are handed over first, trips it joined are re-joined with the same invite key. */
 export async function signInGoogle() {
-  const t = await transport();
-  const a = await t.signInGoogle();
+  const t = await transport(); const oldUid = t.uid;
+  const cids = useStore.getState().trips.filter(x => x.shared).map(x => x.shared!.cloudId);
+  const saved = new Map<string, { m: Member; owner: boolean }>();
+  const beforeSwitch = async (newUid: string) => {
+    for (const cid of cids) {
+      const d = await t.getTrip(cid).catch(() => null); const m = d?.members?.[oldUid]; if (!d || !m) continue;
+      const owner = d.owner === oldUid; saved.set(cid, { m, owner });
+      if (owner) await t.patch(cid, [{ path: ['members', newUid], value: clean({ ...m, lastSeen: Date.now() }) }, { path: ['owner'], value: newUid }]).catch(() => {});
+    }
+    switching = true; for (const cid of cids) stop(cid); // the old id is about to lose access; don't report that as removal
+  };
+  let a: Account;
+  try { a = await t.signInGoogle(beforeSwitch); } catch (e) { if (switching) { switching = false; for (const cid of cids) watch(cid); } throw e; }
   const st = useStore.getState();
   if (a.name && (!st.settings.cloud?.myName || st.settings.cloud.myName === 'משתתף')) st.setSettings({ cloud: { ...st.settings.cloud!, myName: a.name } });
+  st.setSettings({ cloud: { ...useStore.getState().settings.cloud!, googleUid: a.uid } });
   useCloud.setState({ account: a, uid: a.uid });
+  if (a.uid !== oldUid) {
+    switching = false; for (const cid of cids) stop(cid); switching = true;
+    for (const [cid, { m, owner }] of saved) {
+      const d = await t.getTrip(cid).catch(() => null);
+      if (!d?.members?.[a.uid] && !owner && m.k) await t.patch(cid, [{ path: ['members', a.uid], value: clean({ ...m, role: 'editor', lastSeen: Date.now() }) }]).catch(() => {});
+      if (owner) await t.patch(cid, [{ path: ['members', oldUid], value: DELETE }]).catch(() => {});
+      const ok = await t.getTrip(cid).catch(() => null);
+      const local = tripByCloud(cid);
+      if (!ok?.members?.[a.uid]) { if (local) { useStore.getState().updateTrip(local.id, { shared: undefined }); toast(`לא הצלחנו להעביר את "${local.name}" לחשבון — בקשו מהמארגן קישור הזמנה חדש`); } continue; }
+      if (local) useStore.getState().updateTrip(local.id, { shared: { ...local.shared!, role: ok.owner === a.uid ? 'owner' : 'editor' } });
+    }
+    switching = false;
+    for (const cid of saved.keys()) if (tripByCloud(cid)) watch(cid);
+  }
+  switching = false;
   for (const cid of watchers.keys()) { const prev = useCloud.getState().members[cid]?.[a.uid]; t.patch(cid, [{ path: ['members', a.uid], value: selfMember(prev?.role ?? 'editor', prev?.color ?? PALETTE[1], prev) }]).catch(() => {}); }
+  await indexMine().catch(() => {});
+  await restoreFromAccount().catch(() => {});
   return a;
 }
-export async function signOutGoogle() { const t = await transport(); const a = await t.signOut(); useCloud.setState({ account: a, uid: a.uid }); return a; }
+
+/** Record this account's shared trips in its private list, so its other devices can find them. */
+async function indexMine() {
+  const t = tp; if (!t || t.account().provider !== 'google') return;
+  const have = await t.indexGet(t.uid).catch(() => ({} as Record<string, unknown>));
+  for (const x of useStore.getState().trips) if (x.shared && !have[x.shared.cloudId]) await t.indexPut(t.uid, x.shared.cloudId, { name: x.name, start: x.start, at: Date.now() });
+}
+const indexOne = (cid: string, x: { name: string; start: string }) => { const t = tp; if (t?.account().provider === 'google') t.indexPut(t.uid, cid, { name: x.name, start: x.start, at: Date.now() }).catch(() => {}); };
+
+/** Bring the account's shared trips onto this device (e.g. the installed app after signing in). Returns how many were added. */
+export async function restoreFromAccount(): Promise<number> {
+  const t = await transport(); if (t.account().provider !== 'google') return 0;
+  const idx = await t.indexGet(t.uid).catch((e: any) => { throw new Error(e?.code === 'permission-denied' ? 'רשימת הטיולים בחשבון עוד לא זמינה (צריך לעדכן את כללי האבטחה ב-Firebase)' : 'לא הצלחנו לטעון את הטיולים מהחשבון — בדקו את החיבור'); });
+  let n = 0;
+  for (const cid of Object.keys(idx)) {
+    if (tripByCloud(cid)) continue;
+    const d = await t.getTrip(cid).catch(() => null);
+    if (!d || !d.members?.[t.uid]) { await t.indexPut(t.uid, cid, null).catch(() => {}); continue; }
+    addLocal(cid, d, d.members[t.uid]); n++;
+  }
+  if (n) { await startSync(); toast(n === 1 ? 'טיול אחד נטען מהחשבון שלך' : `${n} טיולים נטענו מהחשבון שלך`); }
+  return n;
+}
+export async function signOutGoogle() { const t = await transport(); const a = await t.signOut(); const st = useStore.getState(); if (st.settings.cloud) st.setSettings({ cloud: { ...st.settings.cloud, googleUid: undefined } }); useCloud.setState({ account: a, uid: a.uid }); return a; }
 
 export async function leaveTrip(tripId: string, deleteForAll: boolean) {
   const st = useStore.getState(); const trip = st.trips.find(x => x.id === tripId); if (!trip?.shared) return;
   const cid = trip.shared.cloudId; stop(cid);
-  try { const t = await transport(); if (deleteForAll) await t.deleteTrip(cid); else await t.patch(cid, [{ path: ['members', t.uid], value: DELETE }]); } catch { /* offline: local removal still happens */ }
+  try { const t = await transport(); if (t.account().provider === 'google') await t.indexPut(t.uid, cid, null).catch(() => {}); if (deleteForAll) await t.deleteTrip(cid); else await t.patch(cid, [{ path: ['members', t.uid], value: DELETE }]); } catch { /* offline: local removal still happens */ }
 }
 
 export const isOnline = (m?: Member) => !!m?.lastSeen && Date.now() - m.lastSeen < 150_000;

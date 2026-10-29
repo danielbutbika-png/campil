@@ -8,6 +8,7 @@ rules_version = '2';
 // Roles: owner (organiser) · member (joined; optionally bound to one family) · pending (asked to join a closed trip).
 // Joining needs the current invite key from the link; removing someone rotates that key, so old links stop working.
 // The organiser may also set an expiry (invite.until) after which links no longer admit new people.
+// users/{uid}  a person's private index of their shared trips (only they can read/write it).
 service cloud.firestore {
   match /databases/{database}/documents {
     match /trips/{tripId} {
@@ -77,6 +78,11 @@ service cloud.firestore {
         function trip2() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
         allow read, write: if request.auth != null && (trip2().owner == request.auth.uid || request.auth.uid in trip2().members);
       }
+    }
+
+    // users/{uid}: a person's own list of shared trips (ids and names only), so their other devices can find them.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
