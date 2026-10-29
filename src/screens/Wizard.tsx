@@ -33,9 +33,9 @@ const stepWhen = z.object({
 }).refine(v => v.end >= v.start, { message: 'תאריך החזרה לפני תאריך היציאה', path: ['end'] })
   .refine(v => v.start >= todayISO(), { message: 'תאריך היציאה כבר עבר', path: ['start'] });
 const stepWho = z.object({
-  participants: z.array(z.object({ age: z.number({ required_error: 'חסר גיל' }), gender: z.enum(['m', 'f'], { required_error: 'חסר מגדר' }) }).passthrough())
+  participants: z.array(z.object({ gender: z.enum(['m', 'f'], { required_error: 'חסר מגדר' }) }).passthrough())
     .min(1, 'הוסיפו לפחות משתתף אחד')
-    .refine(ps => ps.some(p => p.age >= 18), 'צריך לפחות מבוגר אחד בטיול'),
+    .refine(ps => ps.some(p => p.role !== 'child'), 'צריך לפחות מבוגר אחד בטיול'),
 });
 
 const dietLabel = (d?: import('../lib/types').FamilyDiet) => d ? [STYLE_HE[d.style], KASHRUT_HE[d.kashrut], ...d.allergies.map(a => `ללא ${a}`)].join(', ') : 'לפי ההגדרות';
@@ -74,7 +74,7 @@ export default function Wizard() {
   const validate = (schema: z.ZodTypeAny) => {
     const r = schema.safeParse(t);
     if (r.success) { setErrors({}); return true; }
-    const e: Record<string, string> = {}; r.error.issues.forEach(i => { const k = i.path[0] as string; if (!e[k]) e[k] = k === 'participants' && i.path.length > 1 ? 'השלימו גיל ומגדר לכל משתתף' : i.message; });
+    const e: Record<string, string> = {}; r.error.issues.forEach(i => { const k = i.path[0] as string; if (!e[k]) e[k] = k === 'participants' && i.path.length > 1 ? 'השלימו מגדר לכל משתתף' : i.message; });
     setErrors(e); if (e.participants) setShowPErr(true); toast(Object.values(e)[0]); return false;
   };
   const next = () => {
@@ -162,7 +162,7 @@ export default function Wizard() {
       {step === 2 && (
         <div className="space-y-4 rise">
           <h2 className="flex items-center gap-2 font-display text-xl"><Users size={20} />מי יוצא?</h2>
-          <p className="text-sm text-muted">גיל ומגדר לכל משתתף. יוצאים כמה משפחות יחד? לחצו "יוצאים עם עוד משפחות" — כל משפחה תקבל קישור משלה ותראה רק את הציוד שלה ואת הציוד המשותף.</p>
+          <p className="text-sm text-muted">מבוגר או ילד, ומגדר, לכל משתתף. יוצאים כמה משפחות יחד? לחצו "יוצאים עם עוד משפחות" — כל משפחה תקבל קישור משלה ותראה רק את הציוד שלה ואת הציוד המשותף.</p>
           <FamiliesEditor families={t.families} participants={t.participants} household={st.members} defaultName={st.settings.familyName || 'המשפחה שלי'} showErrors={showPErr}
             onChange={(families, participants) => set({ families, participants: normalizeFamilies(families, participants) })} />
           {errors.participants && <p className="text-sm font-semibold text-danger">{errors.participants}</p>}
@@ -198,7 +198,7 @@ export default function Wizard() {
           <Card className="space-y-3 p-5">
             <h2 className="font-display text-2xl">{t.name || `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${t.regionId ? REGION_BY_ID[t.regionId].short : ''}`}</h2>
             <dl className="grid gap-3 sm:grid-cols-2">
-              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.age}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length ? t.siteIds.map(id => SITES.find(s => s.id === id)?.name).join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
+              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.role === 'child' ? 'ילד/ה' : 'מבוגר/ת'}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length ? t.siteIds.map(id => SITES.find(s => s.id === id)?.name).join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
             </dl>
           </Card>
           <p className="text-muted">ניצור עכשיו: תחזית ליעד, המלצות הכנה, רשימת ציוד מהמאגר שלכם, תפריט ורשימת קניות, לוח זמנים ומשימות לפני היציאה. הכול ניתן לעריכה.</p>

@@ -1,4 +1,5 @@
 // Smart packing list. Quantity rules are explicit and shown to the user as the item's "reason".
+import { ageOf } from '../lib/people';
 import type { GearItem, Member, PackItem, PersonalTemplateItem, Settings, Trip, CategoryId } from '../lib/types';
 import type { WxFlags } from './weatherRules';
 import { tripLength, seasonOf } from '../lib/util';
@@ -66,10 +67,10 @@ export function generatePacking(ctx: PackContext): PackItem[] {
     }
     // Gender / age specific household items follow the actual participants of this trip.
     const ps = invPs;
-    if (has(name, 'גילוח')) { const n = ps.filter(x => x.gender === 'm' && (x.age ?? 30) >= 16).length; if (!n) continue; reason = `${n} משתתפים בגיל 16+`; }
-    if (has(name, 'היגיינה נשית')) { const n = ps.filter(x => x.gender === 'f' && (x.age ?? 30) >= 11).length; if (!n) continue; reason = `${n} משתתפות בגיל 11+`; }
+    if (has(name, 'גילוח')) { const n = ps.filter(x => x.gender === 'm' && ageOf(x) >= 16).length; if (!n) continue; reason = `${n} משתתפים בגיל 16+`; }
+    if (has(name, 'היגיינה נשית')) { const n = ps.filter(x => x.gender === 'f' && ageOf(x) >= 11).length; if (!n) continue; reason = `${n} משתתפות בגיל 11+`; }
     if (has(name, 'גומיות', 'סיכות שיער')) { const n = ps.filter(x => x.gender === 'f').length; if (!n) continue; reason = `${n} משתתפות`; }
-    if (has(name, 'דאודורנט')) { const n = ps.filter(x => (x.age ?? 30) >= 10).length; if (!n) continue; qty = n; reason = `אחד לכל משתתף בגיל 10+ (${n})`; }
+    if (has(name, 'דאודורנט')) { const n = ps.filter(x => ageOf(x) >= 10).length; if (!n) continue; qty = n; reason = `אחד לכל משתתף בגיל 10+ (${n})`; }
     if (g.status === 'check') reason += ' · לבדוק קיום ותקינות';
     if (g.status === 'buy') reason += ' · מסומן במאגר כ"צריך להשלים"';
     if (g.charge) reason += ' · לטעון לפני היציאה';

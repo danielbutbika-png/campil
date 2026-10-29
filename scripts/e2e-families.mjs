@@ -34,7 +34,6 @@ const fam2 = A.locator('section[aria-label="משפחה 2"]');
 await fam2.locator('input[placeholder="שם המשפחה"]').fill('משפחת כהן');
 const famB = A.locator('section[aria-label="משפחת כהן"]');
 await famB.getByRole('button', { name: 'מבוגר/ת' }).click(); await famB.getByRole('button', { name: 'ילד/ה' }).click();
-const ages = famB.locator('input[type=number]'); await ages.nth(0).fill('41'); await ages.nth(1).fill('2');
 const radios = famB.getByRole('radio', { name: 'זכר' }); await radios.nth(0).click(); await radios.nth(1).click();
 await famB.locator('input[aria-label^="שם משתתף"]').nth(0).fill('יוסי');
 await A.waitForTimeout(300); await S(A, '81-wizard-families');

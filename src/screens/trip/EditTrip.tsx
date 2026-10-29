@@ -22,7 +22,7 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
   const { days, nights } = tripLength(d.start, d.end);
   const save = () => {
     if (d.end < d.start) return toast('תאריך החזרה לפני היציאה');
-    if (missingInfo(d.participants).length) { setTried(true); return toast('השלימו גיל ומגדר לכל משתתף'); }
+    if (missingInfo(d.participants).length) { setTried(true); return toast('השלימו מגדר לכל משתתף'); }
     if (d.adults < 1) return toast('צריך לפחות מבוגר אחד');
     if (isGroup(d) && d.families!.some(f => !d.participants.some(p => p.familyId === f.id))) return toast('יש משפחה בלי משתתפים');
     onSave({ types: d.types, typeAnswers: d.typeAnswers, tasks: withTypeTasks(t, d), name: d.name, start: d.start, end: d.end, participants: d.participants, families: d.families, adults: d.adults, children: d.children, childAges: d.childAges, memberIds: d.memberIds, pets: d.pets, kind: d.kind, lodging: d.lodging, vehicle: d.vehicle, regionId: d.regionId, siteIds: d.siteIds, interests: d.interests });
@@ -37,7 +37,7 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
           <div><label className="label" htmlFor="ee">חזרה</label><input id="ee" type="date" min={d.start} className="field" value={d.end} onChange={e => set({ end: e.target.value })} /></div>
           <p className="num self-end rounded-xl bg-forest/8 px-4 py-2.5 font-bold text-forest">{days} ימים · {nights} לילות</p>
         </div>
-        <div><span className="label">משתתפים ומשפחות — גיל ומגדר</span><FamiliesEditor families={d.families} participants={d.participants} household={members} defaultName={famName || 'המשפחה שלי'} showErrors={tried} onChange={(families, ps) => set({ families, participants: normalizeFamilies(families, ps) })} /></div>
+        <div><span className="label">משתתפים ומשפחות</span><FamiliesEditor families={d.families} participants={d.participants} household={members} defaultName={famName || 'המשפחה שלי'} showErrors={tried} onChange={(families, ps) => set({ families, participants: normalizeFamilies(families, ps) })} /></div>
         <div><span className="label">מה מאפיין את הטיול? (אפשר כמה)</span><TripTypePicker types={d.types ?? []} answers={d.typeAnswers ?? {}} onChange={(types, typeAnswers) => set({ types, typeAnswers, ...impliedBy(types, d) })} /></div>
         <Segmented label="סוג הטיול" value={d.kind} onChange={v => set({ kind: v })} options={[{ v: 'camping', label: 'קמפינג' }, { v: 'day', label: 'טיול יום' }, { v: 'combined', label: 'משולב' }]} />
         {d.kind !== 'day' && <Segmented label="לינה" value={d.lodging} onChange={v => set({ lodging: v })} options={[{ v: 'tent', label: 'אוהל' }, { v: 'equipped_site', label: 'חניון מאובזר' }, { v: 'caravan', label: 'קרוואן' }, { v: 'other', label: 'אחר' }]} />}

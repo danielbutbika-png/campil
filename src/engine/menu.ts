@@ -1,5 +1,6 @@
 // Shared menu for everyone on the trip, built from each family's diet:
 // every meal has a main dish for as many people as possible, plus an alternative for those who don't eat it.
+import { ageOf } from '../lib/people';
 import type { DietPrefs, FamilyDiet, MealSlot, MealType, Member, Trip } from '../lib/types';
 import { RECIPES, RECIPE_BY_ID, type Recipe, type Ingredient } from '../data/recipes';
 import { GRILL_BY_ID, DEFAULT_GRILL, MEATS, VEG, type GrillItem } from '../data/grill';
@@ -15,7 +16,7 @@ export const dietFromSettings = (d: DietPrefs): FamilyDiet => ({ style: d.vegan 
 
 /** Portion size by age, as a share of an adult portion (planning estimate). */
 export function appetite(m: Member) {
-  const a = m.age ?? (m.role === 'child' ? 8 : 30);
+  const a = ageOf(m);
   return a < 4 ? 0.4 : a < 9 ? 0.6 : a < 13 ? 0.8 : 1;
 }
 export const APPETITE_NOTE = 'מנה מלאה למבוגר ולגיל 13+; גיל 9–12 כ-80%, 4–8 כ-60%, עד 4 כ-40% (הערכה — אפשר לשנות מספר סועדים בכל ארוחה)';

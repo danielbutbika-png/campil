@@ -27,7 +27,9 @@ export interface State {
   importAll: (data: Partial<State>) => void; resetAll: () => void;
 }
 
-export const isChild = (p: Member) => (p.age != null ? p.age < 18 : p.role === 'child');
+/** Adult / child is chosen directly; the age is optional (older trips may still have one). */
+export const isChild = (p: Member) => p.role === 'child';
+export { ageOf } from './people';
 /** Derive the count fields every engine uses from the trip's participant list. */
 export function withCounts<T extends Pick<Trip, 'participants'>>(t: T) {
   const ps = t.participants.map(p => ({ ...p, role: isChild(p) ? 'child' as const : 'adult' as const }));

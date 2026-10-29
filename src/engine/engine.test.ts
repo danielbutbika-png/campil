@@ -65,6 +65,13 @@ describe('packing', () => {
     expect(generatePacking(ctx()).some(x => x.name.includes('FS-6P'))).toBe(false);
     expect(generatePacking(ctx(flagsFor([day('2026-07-05', { tMin: 24, tMax: 34 })]))).some(x => x.name.includes('FS-6P'))).toBe(true);
   });
+  it('a child without an age gets child items, not adult hygiene items', () => {
+    const t = withCounts({ ...trip, participants: [{ id: 'a', name: 'אמא', role: 'adult', gender: 'f' }, { id: 'k', name: 'ילד', role: 'child', gender: 'm' }] }) as Trip;
+    expect(t.adults).toBe(1); expect(t.children).toBe(1);
+    const p = generatePacking(ctx(undefined, t));
+    expect(p.some(x => x.name.includes('גילוח'))).toBe(false);
+    expect(p.some(x => x.name.includes('היגיינה נשית'))).toBe(true);
+  });
   it('gender and age of participants drive personal and hygiene items', () => {
     const boys = withCounts({ ...trip, participants: [{ id: 'a', name: 'אבא', role: 'adult', age: 40, gender: 'm' }, { id: 'b', name: 'בן', role: 'child', age: 4, gender: 'm' }] }) as Trip;
     const p = generatePacking(ctx(undefined, boys));

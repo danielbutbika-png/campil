@@ -12,7 +12,6 @@ await A.getByRole('button', { name: 'בחרו בשבילי' }).click(); await A.
 await A.getByRole('button', { name: 'יוצאים עם עוד משפחות' }).click(); await A.waitForTimeout(200);
 const famB = A.locator('section[aria-label="משפחה 2"]');
 await famB.getByRole('button', { name: 'מבוגר/ת' }).click(); await famB.getByRole('button', { name: 'ילד/ה' }).click();
-const ages = famB.locator('input[type=number]'); await ages.nth(0).fill('41'); await ages.nth(1).fill('6');
 const r = famB.getByRole('radio', { name: 'נקבה' }); await r.nth(0).click(); await r.nth(1).click();
 // diets: family 2 vegetarian, family 1 mehadrin
 const d2 = A.locator('section[aria-label="תזונה — משפחה 2"]');

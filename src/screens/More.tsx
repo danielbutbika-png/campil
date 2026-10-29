@@ -169,9 +169,8 @@ function MemberSheet({ m, onClose }: { m: Member; onClose: () => void }) {
     <Sheet open onClose={onClose} title={exists ? 'עריכת בן/בת משפחה' : 'הוספה למשפחה'} footer={<><Button onClick={() => { if (!d.name.trim()) return toast('כתבו שם'); upsertMember({ ...d, name: d.name.trim() }); onClose(); }}>שמירה</Button>{exists && <Button variant="danger" icon={<Trash2 size={16} />} onClick={() => { removeMember(m.id); onClose(); }}>הסרה</Button>}</>}>
       <div className="space-y-3">
         <div><label className="label" htmlFor="mn">שם</label><input id="mn" className="field" value={d.name} onChange={e => setD({ ...d, name: e.target.value })} /></div>
-        <Segmented label="תפקיד" value={d.role} onChange={v => setD({ ...d, role: v })} options={[{ v: 'adult', label: 'מבוגר' }, { v: 'child', label: 'ילד/ה' }]} />
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="label" htmlFor="ma">גיל (לא חובה)</label><input id="ma" type="number" min={0} max={120} className="field" value={d.age ?? ''} onChange={e => setD({ ...d, age: e.target.value ? +e.target.value : undefined })} /></div>
+        <Segmented label="תפקיד" value={d.role} onChange={v => setD({ ...d, role: v, age: v === d.role ? d.age : undefined })} options={[{ v: 'adult', label: 'מבוגר' }, { v: 'child', label: 'ילד/ה' }]} />
+        <div>
           <div><label className="label" htmlFor="mg">מגדר (לא חובה)</label><select id="mg" className="field" value={d.gender ?? ''} onChange={e => setD({ ...d, gender: (e.target.value || undefined) as any })}><option value="">—</option><option value="f">נקבה</option><option value="m">זכר</option></select></div>
         </div>
         <p className="text-xs text-muted">ביגוד אישי נבנה לכל בן משפחה מתבנית הביגוד שבקובץ הציוד.</p>

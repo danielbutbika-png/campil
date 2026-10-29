@@ -5,8 +5,8 @@ import { isChild } from '../lib/store';
 import { uid } from '../lib/util';
 import { cx } from './ui';
 
-/** Per-trip participant list: every person has an age and a gender, which drive packing, meals, scoring and recommendations. */
-export function missingInfo(ps: Member[]) { return ps.filter(p => p.age == null || !p.gender); }
+/** Per-trip participant list: every person is an adult or a child and has a gender — these drive packing, meals and recommendations. */
+export function missingInfo(ps: Member[]) { return ps.filter(p => !p.gender); }
 
 export function ParticipantsEditor({ value, onChange, family, showErrors }: { value: Member[]; onChange: (v: Member[]) => void; family: Member[]; showErrors?: boolean }) {
   const set = (id: string, p: Partial<Member>) => onChange(value.map(x => (x.id === id ? { ...x, ...p } : x)));
@@ -16,21 +16,20 @@ export function ParticipantsEditor({ value, onChange, family, showErrors }: { va
   };
   const absent = family.filter(f => !value.some(v => v.id === f.id));
   const adults = value.filter(p => !isChild(p)).length, kids = value.length - adults;
-  const ages = value.filter(isChild).map(p => p.age).filter(a => a != null).sort((a, b) => a! - b!);
   return (
     <div className="space-y-3">
       <ul className="space-y-2">
         {value.map((p, i) => {
-          const bad = showErrors && (p.age == null || !p.gender);
+          const bad = showErrors && !p.gender;
           return (
-            <li key={p.id} className={cx('grid grid-cols-[1fr_auto] items-center gap-2 rounded-xl border bg-surface p-2.5 sm:grid-cols-[1fr_88px_auto_auto]', bad ? 'border-danger' : 'border-line')}>
+            <li key={p.id} className={cx('grid grid-cols-[1fr_auto] items-center gap-2 rounded-xl border bg-surface p-2.5 sm:grid-cols-[1fr_auto_auto_auto]', bad ? 'border-danger' : 'border-line')}>
               <input aria-label={`שם משתתף ${i + 1}`} className="field py-2" value={p.name} onChange={e => set(p.id, { name: e.target.value })} />
               <button type="button" aria-label={`הסרת ${p.name}`} onClick={() => onChange(value.filter(x => x.id !== p.id))} className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-raised hover:text-danger sm:order-last"><X size={18} /></button>
-              <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
-                <label className="sr-only" htmlFor={`age-${p.id}`}>גיל של {p.name}</label>
-                <input id={`age-${p.id}`} type="number" inputMode="numeric" min={0} max={110} placeholder="גיל" className={cx('field num py-2', bad && p.age == null && 'border-danger')}
-                  value={p.age ?? ''} onChange={e => { const a = e.target.value === '' ? undefined : Math.max(0, Math.min(110, +e.target.value)); set(p.id, { age: a, role: a != null && a < 18 ? 'child' : a != null ? 'adult' : p.role }); }} />
-                <span className="text-xs font-bold text-muted sm:hidden">{p.age != null ? (p.age < 18 ? 'ילד/ה' : 'מבוגר/ת') : ''}</span>
+              <div role="radiogroup" aria-label={`מבוגר או ילד: ${p.name}`} className="col-span-2 flex overflow-hidden rounded-xl border border-line sm:col-span-1">
+                {([['adult', 'מבוגר/ת'], ['child', 'ילד/ה']] as const).map(([r, l]) => (
+                  <button key={r} type="button" role="radio" aria-checked={p.role === r} onClick={() => p.role !== r && set(p.id, { role: r, age: undefined })}
+                    className={cx('flex-1 px-3 py-2 text-sm font-bold transition', p.role === r ? 'bg-forest text-onforest' : 'bg-surface hover:bg-raised')}>{l}</button>
+                ))}
               </div>
               <div role="radiogroup" aria-label={`מגדר של ${p.name}`} className={cx('col-span-2 flex overflow-hidden rounded-xl border sm:col-span-1', bad && !p.gender ? 'border-danger' : 'border-line')}>
                 {([['f', 'נקבה'], ['m', 'זכר']] as const).map(([g, l]) => (
@@ -49,9 +48,9 @@ export function ParticipantsEditor({ value, onChange, family, showErrors }: { va
         {absent.length > 1 && <button type="button" onClick={() => onChange([...value, ...absent.map(f => ({ ...f }))])} className="inline-flex items-center gap-1 rounded-full bg-raised px-3.5 py-2 text-sm font-bold hover:bg-sand"><Users size={15} />כל המשפחה</button>}
       </div>
       <p className="num text-sm font-semibold text-muted" aria-live="polite">
-        סה״כ {value.length} משתתפים: {adults} מבוגרים, {kids} ילדים{ages.length ? ` (גילים ${ages.join(', ')})` : ''} · {value.filter(p => p.gender === 'f').length} נשים/בנות, {value.filter(p => p.gender === 'm').length} גברים/בנים
+        סה״כ {value.length} משתתפים: {adults} מבוגרים, {kids} ילדים · {value.filter(p => p.gender === 'f').length} נשים/בנות, {value.filter(p => p.gender === 'm').length} גברים/בנים
       </p>
-      <p className="text-xs text-muted">הגיל והמגדר קובעים את רשימת הביגוד האישית, פריטי היגיינה, כמויות האוכל, התאמת המסלולים וההמלצות לפי מזג האוויר.</p>
+      <p className="text-xs text-muted">מבוגר/ילד והמגדר קובעים את רשימת הביגוד האישית, פריטי היגיינה, כמויות האוכל, התאמת המסלולים וההמלצות לפי מזג האוויר.</p>
     </div>
   );
 }

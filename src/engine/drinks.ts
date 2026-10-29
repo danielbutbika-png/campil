@@ -24,7 +24,7 @@ export interface DrinkLine { key: string; name: string; qty: number; unit: strin
 export function drinkPlan(t: T, s: Pick<Settings, 'waterLitersPerPersonDay'>) {
   const { days, nights } = tripLength(t.start, t.end);
   const people = t.participants?.length || t.adults + t.children;
-  const adults = t.participants?.length ? t.participants.filter(p => (p.age ?? (p.role === 'adult' ? 30 : 10)) >= 18).length : t.adults;
+  const adults = t.participants?.length ? t.participants.filter(p => p.role !== 'child').length : t.adults;
   const d: Required<DrinkPlan> = { waterL: 0, softL: DRINK_DEFAULTS.softL, beerPerAdult: DRINK_DEFAULTS.beerPerAdult, adultsPerWine: DRINK_DEFAULTS.adultsPerWine, alcohol: t.kind !== 'day', ...stripUndef(t.drinks ?? {}) } as Required<DrinkPlan>;
   const w = waterPerPerson(t, s);
   const waterL = Math.ceil(w.liters * people * days);

@@ -49,10 +49,11 @@ await m.goto(BASE + '#/gear/car'); await m.waitForTimeout(400); await full(m, '0
 await m.goto(BASE + '#/new'); await m.waitForTimeout(500);
 await m.getByRole('button', { name: 'ילד/ה', exact: true }).click();
 await m.getByRole('button', { name: 'המשך' }).click(); await m.waitForTimeout(300);
-console.log('blocked without age/gender:', await m.getByText('2. בחירת אזור').count() === 1 && await m.locator('[aria-current=step]').innerText());
+console.log('blocked without gender:', await m.getByText('2. בחירת אזור').count() === 1 && await m.locator('[aria-current=step]').innerText());
 await full(m, '10-wizard-1-error');
-const last = m.locator('ul li').filter({ has: m.locator('input[type=number]') }).last();
-await last.locator('input[type=number]').fill('4'); await last.getByRole('radio', { name: 'זכר' }).click();
+const last = m.locator('ul li').filter({ has: m.getByRole('radio', { name: 'זכר' }) }).last();
+console.log('no age field:', (await m.locator('main input[type=number]').count()) === 0);
+await last.getByRole('radio', { name: 'זכר' }).click();
 await full(m, '10-wizard-1');
 await m.getByRole('button', { name: 'המשך' }).click(); await m.waitForTimeout(2500); await shot(m, '11-wizard-2');
 await m.selectOption('#region-list', 'central_negev'); await m.waitForTimeout(800);
