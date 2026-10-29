@@ -12,6 +12,8 @@ const Gear = lazy(() => import('./screens/Gear'));
 const CampSearch = lazy(() => import('./screens/CampSearch'));
 const Join = lazy(() => import('./screens/Join'));
 import { startSync } from './lib/cloud/sync';
+import { AccountBadge } from './components/AccountBadge';
+import { Welcome } from './components/Welcome';
 import { tripPhotos } from './lib/album';
 import { todayISO } from './lib/util';
 import { toast } from './components/ui';
@@ -69,6 +71,9 @@ export default function App() {
   const { path, parts, query } = useRoute();
   const online = useOnline();
   const theme = useStore(s => s.settings.theme);
+  const welcomed = useStore(s => s.settings.welcomed);
+  // first launch only; automated browsers skip it unless a test asks for it
+  const showWelcome = !welcomed && path !== '/join' && (!navigator.webdriver || !!(window as any).__campilWelcome);
   useTripEndReminder();
   useEffect(() => {
     // A Firebase config baked in at build time (VITE_FIREBASE_CONFIG) connects sharing with no setup on the phone.
@@ -107,7 +112,7 @@ export default function App() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:right-3 focus:top-3 focus:z-[70] focus:rounded-full focus:bg-surface focus:px-4 focus:py-2">דילוג לתוכן</a>
       {/* Desktop rail */}
       <aside className="no-print sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 border-l border-line bg-surface px-5 py-6 lg:flex">
-        <a href={href('/')}><Logo /></a>
+        <div className="flex items-center justify-between gap-2"><a href={href('/')}><Logo /></a><AccountBadge className="!bg-forest" /></div>
         <a href={href('/new')} className="flex h-12 items-center justify-center gap-2 rounded-full bg-sunset font-bold text-white shadow-card hover:brightness-105"><Plus size={18} />מתכננים טיול חדש</a>
         <nav aria-label="ניווט ראשי" className="flex flex-col gap-1">
           {NAV.map(n => <a key={n.to} href={href(n.to)} aria-current={n.match(path) ? 'page' : undefined} className={cx('flex items-center gap-3 rounded-xl px-3 py-2.5 font-bold transition', n.match(path) ? 'bg-forest/10 text-forest' : 'text-muted hover:bg-raised hover:text-ink')}><n.I size={20} />{n.label}</a>)}
@@ -117,6 +122,7 @@ export default function App() {
       <div className="min-w-0 flex-1">
         {STAGING && <div role="note" className="no-print bg-warn px-4 py-1.5 text-center text-sm font-bold text-white safe-t">סביבת בדיקות — נתונים נפרדים מהאפליקציה האמיתית</div>}
         {!online && <div role="status" className="no-print sticky top-0 z-40 flex items-center justify-center gap-2 bg-ink px-4 py-2 text-sm font-bold text-bg safe-t"><WifiOff size={16} />אין חיבור לאינטרנט — הנתונים שלכם שמורים במכשיר, תחזיות ומפות יוצגו מהשמירה האחרונה</div>}
+        {showWelcome && <Welcome onDone={() => useStore.getState().setSettings({ welcomed: true })} />}
         <main id="main" className="pb-28 lg:pb-10"><Suspense fallback={<div role="status" className="p-8 text-muted">טוען…</div>}>{screen}</Suspense></main>
       </div>
       {/* Mobile tab bar */}

@@ -75,6 +75,7 @@ export async function transport(): Promise<Transport> {
       const t = await connect(cfg); tp = t; tpKey = key; useCloud.setState({ status: 'on', uid: t.uid, account: t.account() });
       const c = useStore.getState().settings.cloud; const g = t.account().provider === 'google' ? t.uid : undefined;
       if (c && c.googleUid !== g) useStore.getState().setSettings({ cloud: { ...c, googleUid: g } });
+      adoptGoogleName(t.account());
       return t;
     }
     catch (e: any) { useCloud.setState({ status: 'error', error: e?.message ?? String(e) }); throw new Error('החיבור ל-Firebase נכשל. בדקו את פרטי ההגדרה ושהופעלו Anonymous Auth ו-Firestore.'); }
@@ -423,6 +424,14 @@ export async function setInviteExpiry(cid: string, until: number | null) { const
 export async function setAccess(cid: string, access: Access) { const t = await transport(); await t.patch(cid, [{ path: ['access'], value: access }]); }
 
 // ── identity ──
+/** The household's first adult still has the placeholder name ("מבוגר/ת 1") → use the Google first name. */
+function adoptGoogleName(a: Account) {
+  if (a.provider !== 'google' || !a.name?.trim()) return;
+  const st = useStore.getState(); const first = a.name.trim().split(/\s+/)[0];
+  const me = st.members.find(m => m.role === 'adult');
+  if (me && /^מבוגר(\/ת)?\s*\d*$/.test(me.name.trim())) st.upsertMember({ ...me, name: first });
+  const c = st.settings.cloud; if (c && (!c.myName || /^מבוגר(\/ת)?\s*\d*$|^משתתף$/.test(c.myName.trim()))) st.setSettings({ cloud: { ...c, myName: a.name.trim() } });
+}
 /** Sign in with Google. If this Google account already exists (another device), this device switches to the
  *  account's id: trips it organises are handed over first, trips it joined are re-joined with the same invite key. */
 export async function signInGoogle() {
@@ -443,6 +452,7 @@ export async function signInGoogle() {
   if (a.name && (!st.settings.cloud?.myName || st.settings.cloud.myName === 'משתתף')) st.setSettings({ cloud: { ...st.settings.cloud!, myName: a.name } });
   st.setSettings({ cloud: { ...useStore.getState().settings.cloud!, googleUid: a.uid } });
   useCloud.setState({ account: a, uid: a.uid });
+  adoptGoogleName(a);
   if (a.uid !== oldUid) {
     switching = false; for (const cid of cids) stop(cid); switching = true;
     for (const [cid, { m, owner }] of saved) {

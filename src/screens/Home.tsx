@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, MapPin, ChevronLeft, Backpack, Images, BookOpen, Tent, CalendarDays, AlertTriangle, LocateFixed } from 'lucide-react';
 import { useStore, nextTrip, blankTrip, tasteOf } from '../lib/store';
 import { useForecast, useTripWeather, tripPoint } from '../lib/hooks';
+import { AccountBadge } from '../components/AccountBadge';
 import { greeting, fmtRange, seasonOf, SEASON_HE, diffDays, todayISO, tripLength } from '../lib/util';
 import { REGIONS, REGION_BY_ID } from '../data/regions';
 import { SITES } from '../data/sites';
@@ -66,7 +67,7 @@ export default function Home() {
         {HERO.map((h, i) => <Scene key={h.scene} kind={h.scene} seed={i + 2} className={cx('absolute inset-0 -z-10 h-full w-full transition-opacity duration-[1400ms]', i === hi ? 'opacity-100' : 'opacity-0')} />)}
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
         <div className="gutter mx-auto max-w-6xl space-y-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] md:pb-12">
-          <div className="flex items-center justify-between lg:hidden"><Logo light /><span className="rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur">{HERO[hi].caption}</span></div>
+          <div className="flex items-center justify-between gap-2 lg:hidden"><Logo light /><div className="flex items-center gap-3"><span className="rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur">{HERO[hi].caption}</span><AccountBadge /></div></div>
           <div className="max-w-xl space-y-2 pt-6 md:pt-14">
             <p className="text-lg font-semibold text-white/90">{greeting()}{name ? `, ${name}` : ''}</p>
             <h1 className="font-display text-4xl leading-tight drop-shadow md:text-6xl">{mode === 'field' ? 'טיול נעים!' : mode === 'prep' ? 'עוד רגע יוצאים' : mode === 'after' ? 'ברוכים השבים!' : 'לאן יוצאים הפעם?'}</h1>
