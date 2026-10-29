@@ -71,6 +71,8 @@ export interface Trip {
   places?: TripPlace[];
   /** No meals are planned for this trip (e.g. a short day trip). Drinking water stays in the packing list. */
   noFood?: boolean;
+  /** Driving route home → stops → home, computed from OpenStreetMap roads (OSRM). `sig` = the stops it was computed for. */
+  drive?: (import('../services/routing').DriveRoute & { sig: string }) | null;
   /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
   gpx?: import('../engine/gpx').GpxTrack | null; safety?: Record<string, boolean>;
   /** Trip Type Engine: the selected types (any combination) and answers to their questions. */

@@ -34,7 +34,7 @@ await p.screenshot({ path: `${OUT}/safety.png`, fullPage: true });
 await p.goto(BASE + `#/trip/${tid}`); await p.waitForTimeout(1200);
 await p.setInputFiles('input[aria-label="קובץ GPX"]', { name: 'route.gpx', mimeType: 'application/gpx+xml', buffer: readFileSync('tests/fixtures/route.gpx') });
 await p.waitForTimeout(800);
-const card = await p.getByRole('region', { name: 'מסלול (GPX)' }).innerText();
+const card = await p.getByRole('region', { name: 'מסלול', exact: true }).innerText();
 console.log('GPX imported with distance and climb:', card.includes('מסלול בדיקה') && /\d+(\.\d+)? ק״מ/.test(card) && card.includes('עלייה מצטברת 238 מ׳'));
 const [dl] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'יצוא GPX' }).click()]);
 const out = readFileSync(await dl.path(), 'utf8');

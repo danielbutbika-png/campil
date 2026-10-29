@@ -15,6 +15,11 @@ describe('shared trip model', () => {
     expect(back.tasks.length).toBe(t.tasks.length); expect(back.meals.length).toBe(t.meals.length);
     expect(diffTrip(t, back)).toEqual([]);
   });
+  it('the driving route (it starts at home) is never put in the shared document', () => {
+    const t = { ...base(), drive: { coords: [[35, 32], [35.1, 32.1]] as [number, number][], km: 10, minutes: 12, legs: [], stops: ['הבית', 'א'], at: 'x', source: 'osrm' as const, sig: 's' } };
+    expect('drive' in toDoc(t, 'u1', me).core).toBe(false); expect(JSON.stringify(toDoc(t, 'u1', me))).not.toContain('osrm');
+    expect(fromDoc(JSON.parse(JSON.stringify(toDoc(t, 'u1', me))), t).drive?.km).toBe(10);
+  });
   it('concurrent edits on different items both survive', () => {
     const t = base(); let doc: any = JSON.parse(JSON.stringify(toDoc(t, 'u1', me)));
     const a = { ...t, packing: t.packing.map((p, i) => (i === 0 ? { ...p, packed: true, packedBy: 'אבי', packedAt: 1 } : p)) };

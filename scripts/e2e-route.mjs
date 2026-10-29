@@ -1,0 +1,36 @@
+// Automatic route: driving route home → stops → home (OSRM), marked trails near the stops (OSM), pick one → the trip's track.
+import { chromium } from 'playwright-core';
+const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });
+let osrm = 0, overpass = 0, elev = 0, osrmUrl = '';
+await ctx.route(/router\.project-osrm/, r => { osrm++; osrmUrl = r.request().url(); r.fulfill({ json: { code: 'Ok', routes: [{ distance: 251300, duration: 11400, geometry: { coordinates: [[34.78, 32.08], [35.0, 32.4], [35.36, 32.55], [35.5, 32.5], [34.78, 32.08]] }, legs: [80000, 20000, 15000, 136300].map(d => ({ distance: d, duration: d / 22 })) }] } }); });
+await ctx.route(/overpass-api/, r => { overpass++; r.fulfill({ json: { elements: [{ type: 'relation', id: 777, tags: { route: 'hiking', name: 'שביל המעיין', colour: 'green' }, members: [{ type: 'way', geometry: [{ lat: 32.55, lon: 35.357 }, { lat: 32.56, lon: 35.37 }, { lat: 32.57, lon: 35.38 }] }] }] } }); });
+await ctx.route(/api\.open-meteo\.com\/v1\/elevation/, r => { elev++; const n = new URL(r.request().url()).searchParams.get('latitude').split(',').length; r.fulfill({ json: { elevation: Array.from({ length: n }, (_, i) => 100 + i * 20) } }); });
+await ctx.route(/api\.open-meteo\.com\/v1\/forecast|nominatim|openfreemap|fonts\.|wikipedia/, r => r.abort());
+const p = await ctx.newPage(); const errors = [];
+p.on('pageerror', e => errors.push(e.message));
+await p.goto(BASE); await p.waitForTimeout(1000);
+const tid = await p.evaluate(() => { const k = JSON.parse(localStorage.getItem('campil-v1')); k.state.settings.home = { lat: 32.08, lon: 34.78, label: 'תל אביב' }; k.state.trips[0].gpx = null; localStorage.setItem('campil-v1', JSON.stringify(k)); return k.state.trips[0].id; });
+await p.goto(BASE + `#/trip/${tid}`); await p.reload(); await p.waitForTimeout(2500);
+const card = p.locator('section[aria-labelledby="gpx-h"]');
+await card.scrollIntoViewIfNeeded();
+const txt = await card.innerText();
+console.log('driving route computed automatically, one request:', osrm === 1 && txt.includes('251.3 ק״מ') && txt.includes('הלוך וחזור'));
+console.log('route goes home → 3 stops → home:', osrmUrl.split('/driving/')[1].split('?')[0].split(';').length === 5);
+console.log('legs listed, estimate labelled:', (await card.getByRole('list', { name: 'קטעי הנסיעה' }).locator('li').count()) === 4 && txt.includes('בלי עומסי תנועה'));
+console.log('trails suggested automatically per stop:', overpass >= 1 && (await card.getByText('שביל המעיין').count()) > 0);
+await card.getByRole('list').filter({ hasText: 'שביל המעיין' }).first().getByRole('button', { name: 'בחירה' }).click(); await p.waitForTimeout(800);
+const g = await p.evaluate(id => JSON.parse(localStorage.getItem('campil-v1')).state.trips.find(t => t.id === id).gpx, tid);
+console.log('picked trail becomes the track, climb estimated:', g?.name === 'שביל המעיין' && g.climbEst === true && g.gain > 0 && elev === 1);
+console.log('trail marked unverified, climb marked estimate:', (await card.getByText('השביל מ-OpenStreetMap — לא אומת').count()) === 1 && (await card.getByText(/ממודל גובה/).count()) === 1);
+await card.screenshot({ path: `${OUT}/route-card.png` });
+const [dl] = await Promise.all([p.waitForEvent('download'), card.getByRole('button', { name: 'יצוא GPX' }).click()]);
+const gpx = await (await import('node:fs')).promises.readFile(await dl.path(), 'utf8');
+console.log('export has stops, drive and trail:', gpx.includes('<wpt') && gpx.includes('<rte>') && gpx.includes('<trk>'));
+// back without signal: kept, no new request
+await ctx.route(/router\.project-osrm|overpass-api/, r => r.abort());
+const before = osrm; await p.reload(); await p.waitForTimeout(1500);
+console.log('kept for use without signal, not recomputed:', osrm === before && (await p.locator('section[aria-labelledby="gpx-h"]').innerText()).includes('251.3 ק״מ'));
+console.log('errors:', errors.length ? errors.join(' | ') : 'none');
+await b.close();

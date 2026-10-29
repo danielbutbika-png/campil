@@ -2,7 +2,7 @@
 // distance and climb, and export the trip (track + planned places) back to GPX.
 // Values are computed from the file's points only; elevation figures exist only if the file has <ele>.
 export interface GpxPoint { lat: number; lon: number; ele?: number }
-export interface GpxTrack { name: string; points: GpxPoint[]; waypoints: { name: string; lat: number; lon: number }[]; km: number; gain?: number; loss?: number; source: string; importedAt: string }
+export interface GpxTrack { name: string; points: GpxPoint[]; waypoints: { name: string; lat: number; lon: number }[]; km: number; gain?: number; loss?: number; source: string; importedAt: string; /** climb estimated from a terrain model, not measured in the file */ climbEst?: boolean }
 
 const R = 6371;
 export function distKm(a: GpxPoint, b: GpxPoint) {
@@ -60,8 +60,9 @@ export function parseGpx(text: string, fileName = 'מסלול', now = new Date()
 
 const esc = (s: string) => s.replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]!));
 /** GPX 1.1 with the trip's planned places as waypoints and the imported track (if any). */
-export function toGpx(name: string, places: { name: string; lat: number; lon: number }[], track?: GpxTrack | null): string {
+export function toGpx(name: string, places: { name: string; lat: number; lon: number }[], track?: GpxTrack | null, drive?: { name: string; coords: [number, number][] } | null): string {
   const w = places.map(p => `  <wpt lat="${p.lat}" lon="${p.lon}"><name>${esc(p.name)}</name></wpt>`).join('\n');
   const t = track?.points.length ? `  <trk><name>${esc(track.name)}</name><trkseg>\n${track.points.map(p => `    <trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? `<ele>${p.ele}</ele>` : ''}</trkpt>`).join('\n')}\n  </trkseg></trk>` : '';
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="CampIL" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><name>${esc(name)}</name></metadata>\n${w}\n${t}\n</gpx>\n`;
+  const d = drive?.coords.length ? `  <rte><name>${esc(drive.name)}</name>\n${drive.coords.map(([lon, lat]) => `    <rtept lat="${lat}" lon="${lon}"/>`).join('\n')}\n  </rte>` : '';
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="CampIL" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><name>${esc(name)}</name></metadata>\n${w}\n${d}\n${t}\n</gpx>\n`;
 }
