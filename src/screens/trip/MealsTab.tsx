@@ -17,7 +17,7 @@ import { FamilyDuty, DutyBoard } from '../../components/Duties';
 import { dutyKey } from '../../engine/duties';
 import { isGroup, myFamily } from '../../lib/families';
 import { Segmented } from '../../components/ui';
-import { FoodList, FoodPicker, usePortions } from '../../components/MenuFoods';
+import { FoodList, FoodPicker, FreeTextSheet, GroceryList, usePortions } from '../../components/MenuFoods';
 import { mealsOfDay, keepFoods } from '../../engine/selfMenu';
 import { Plus } from 'lucide-react';
 import type { MealType } from '../../lib/types';
@@ -35,7 +35,7 @@ export default function MealsTab({ t }: { t: Trip }) {
   const { days } = tripLength(t.start, t.end);
   const groups = useMemo(() => dietGroups(t, fallback), [t.participants, t.families, t.diets, fallback]);
   const drinks = useMemo(() => drinkPlan(t, settings), [t.start, t.end, t.kind, t.regionId, t.participants, t.drinks, settings.waterLitersPerPersonDay]);
-  const shop = useMemo(() => [...shoppingList(t.meals, t, fallback), ...drinks.lines], [t.meals, t.grill, t.diets, t.participants, drinks]);
+  const shop = useMemo(() => [...shoppingList(t.meals, t, fallback), ...drinks.lines], [t.meals, t.grill, t.diets, t.participants, t.groceries, drinks]);
   const setDrinks = (p: Partial<NonNullable<Trip['drinks']>>) => updateTrip(t.id, x => ({ drinks: { ...(x.drinks ?? {}), ...p } }));
   const grill = useMemo(() => grillTotals(t, fallback), [t.meals, t.grill, t.diets, t.participants]);
   const choice = t.grill ?? DEFAULT_GRILL;
@@ -46,6 +46,7 @@ export default function MealsTab({ t }: { t: Trip }) {
   const setSlot = (id: string, p: Partial<MealSlot>) => updateTrip(t.id, x => ({ meals: x.meals.map(m => (m.id === id ? { ...m, ...p } : m)) }));
   const manual = t.menuMode === 'manual';
   const [pick, setPick] = useState<{ day: number; type: MealType } | null>(null);
+  const [freeText, setFreeText] = useState<{ open: boolean; initial: { day: number; type: MealType } | null }>({ open: false, initial: null });
   const eqAll = usePortions(t);
   const rebuild = (diets = t.diets) => { if (manual) { updateTrip(t.id, { diets }); toast('התזונה עודכנה — התפריט שבניתם נשאר'); return; } updateTrip(t.id, x => ({ diets, meals: keepFoods(planMeals({ ...x, diets }, fallback), x.meals), pantry: {} })); toast('התפריט נבנה מחדש לפי ההרכב'); };
   const toggleGrill = (kind: 'meats' | 'veg', id: string) => {
@@ -54,7 +55,9 @@ export default function MealsTab({ t }: { t: Trip }) {
     updateTrip(t.id, { grill: { ...choice, [kind]: next } });
   };
   const famOfLine = (k: string) => t.duties?.[dutyKey.shop(k)]?.familyId;
-  const shown = shop.filter(s => !isGroup(t) || shopView === 'all' || (shopView === 'mine' ? famOfLine(s.key) === myFamily(t) : !famOfLine(s.key) && !t.pantry[s.key]));
+  const takenBy = (k: string) => t.duties?.[dutyKey.shop(k)]?.familyId ?? t.duties?.[dutyKey.shop(k)]?.memberId;
+  const canSplit = isGroup(t) || t.participants.filter(p => p.role !== 'child').length > 1;
+  const shown = shop.filter(s => shopView === 'all' || (shopView === 'mine' ? famOfLine(s.key) === myFamily(t) : !takenBy(s.key) && !t.pantry[s.key]));
   const sections = SHOP_ORDER.filter(sec => shown.some(s => s.shop === sec));
   const menuRecipes = [...new Set(t.meals.flatMap(m => [m.recipeId, m.alt?.recipeId]).filter(Boolean) as string[])].map(id => RECIPE_BY_ID[id]).filter(Boolean);
   const grillChosen = [...(hasMeat ? grillItemsFor('meat', t) : []), ...grillItemsFor('veg', t)].filter((g, i, a) => a.indexOf(g) === i && grill.lines.some(l => l.item.id === g.id));
@@ -124,8 +127,9 @@ export default function MealsTab({ t }: { t: Trip }) {
         </Section>
       )}
 
-      <FoodPicker t={t} target={pick} onClose={() => setPick(null)} />
-      <Section title="תפריט הטיול">
+      <FoodPicker t={t} target={pick} onClose={() => setPick(null)} onFreeText={() => { setFreeText({ open: true, initial: pick }); setPick(null); }} />
+      <FreeTextSheet key={String(freeText.open) + JSON.stringify(freeText.initial)} t={t} open={freeText.open} initial={freeText.initial} onClose={() => setFreeText({ open: false, initial: null })} />
+      <Section title="תפריט הטיול" action={<Button size="sm" variant="soft" icon={<Pencil size={14} />} onClick={() => setFreeText({ open: true, initial: null })}>רשימה בטקסט חופשי</Button>}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: days }, (_, d) => (
             <section key={d} className="rounded-xl2 border border-line bg-surface">
@@ -173,6 +177,7 @@ export default function MealsTab({ t }: { t: Trip }) {
             </section>
           ))}
         </div>
+        <GroceryList t={t} />
       </Section>
 
       <Section title="מתכונים מומלצים">
@@ -207,8 +212,8 @@ export default function MealsTab({ t }: { t: Trip }) {
             <p className="text-xs text-muted sm:col-span-2">מי שנוהג לא שותה.{kosher ? ' יין — בהכשר המתאים למשפחות ששומרות כשרות.' : ''}</p>
           </div>}
         </div>
-        {isGroup(t) && <div className="flex flex-wrap gap-2" role="group" aria-label="איזו רשימה להציג">
-          {([['all', 'כל הרשימה'], ['mine', 'מה שאנחנו קונים'], ['open', 'עוד לא נקבע מי קונה']] as const).map(([k, l]) => <Chip key={k} active={shopView === k} onClick={() => setShopView(k)}>{l}</Chip>)}
+        {canSplit && <div className="flex flex-wrap gap-2" role="group" aria-label="איזו רשימה להציג">
+          {([['all', 'כל הרשימה'], ...(isGroup(t) ? [['mine', 'מה שאנחנו קונים']] as const : []), ['open', 'עוד לא נקבע מי קונה']] as const).map(([k, l]) => <Chip key={k} active={shopView === k} onClick={() => setShopView(k)}>{l}</Chip>)}
         </div>}
         <div className="grid gap-4 md:grid-cols-2">
           {sections.map(sec => (
@@ -219,7 +224,7 @@ export default function MealsTab({ t }: { t: Trip }) {
                   <input type="checkbox" className="h-5 w-5 shrink-0 accent-[rgb(var(--forest))]" checked={!!t.pantry[s.key]} onChange={e => updateTrip(t.id, x => ({ pantry: { ...x.pantry, [s.key]: e.target.checked } }))} />
                   <span className={cx('min-w-0 flex-1', t.pantry[s.key] && 'text-muted line-through')}>{s.name}<span className="block truncate text-xs text-muted">{s.recipes.join(', ')}</span></span>
                   <span className="num shrink-0 font-bold">{s.unit === 'יח׳' ? `× ${s.label}` : s.label}</span>{t.pantry[s.key] && <Badge>יש</Badge>}
-                </label>{isGroup(t) && !t.pantry[s.key] && <div className="px-4 pb-2.5 ps-12"><FamilyDuty t={t} k={dutyKey.shop(s.key)} label={`קונים ${s.name}`} doneLabel="נקנה" /></div>}</li>))}</ul>
+                </label>{canSplit && !t.pantry[s.key] && <div className="px-4 pb-2.5 ps-12"><FamilyDuty t={t} k={dutyKey.shop(s.key)} label={`קונים ${s.name}`} doneLabel="נקנה" /></div>}</li>))}</ul>
             </section>
           ))}
         </div>

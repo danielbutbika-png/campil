@@ -18,16 +18,29 @@ export function useDuty(t: Trip) {
   };
 }
 
-/** Compact "which family" select + done checkbox for one duty. Renders nothing outside multi-family trips. */
+/** Compact "who takes it" select + done checkbox for one duty: a family on a multi-family trip, a participant otherwise. */
 export function FamilyDuty({ t, k, label, doneLabel }: { t: Trip; k: string; label: string; doneLabel: string }) {
   const set = useDuty(t);
-  if (!isGroup(t)) return null;
-  const d = t.duties?.[k]; const fam = t.families!.find(f => f.id === d?.familyId);
+  const d = t.duties?.[k];
+  if (!isGroup(t)) {
+    const adults = t.participants.filter(p => p.role !== 'child');
+    if (adults.length < 2) return null; // one adult: nothing to divide
+    const who = adults.find(p => p.id === d?.memberId);
+    return (
+      <span className="inline-flex max-w-full flex-wrap items-center gap-2">
+        <select aria-label={label} className={cx('min-w-0 max-w-full rounded-lg border bg-surface px-2 py-1 text-sm', who ? 'border-line' : 'border-dashed border-muted')} value={d?.memberId ?? ''} onChange={e => set(k, { memberId: e.target.value || undefined, ...(e.target.value ? {} : { done: undefined }) })}>
+          <option value="">{label}: לא נקבע</option>{adults.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        {who && doneLabel && <label className="inline-flex items-center gap-1 text-sm"><input type="checkbox" className="h-4 w-4 accent-[rgb(var(--forest))]" checked={!!d?.done} onChange={e => set(k, { done: e.target.checked || undefined })} />{doneLabel}</label>}
+      </span>
+    );
+  }
+  const fam = t.families!.find(f => f.id === d?.familyId);
   return (
-    <span className="inline-flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex max-w-full flex-wrap items-center gap-2">
+      <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
         <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: fam?.color ?? 'transparent', border: fam ? 'none' : '1.5px dashed currentColor' }} />
-        <select aria-label={label} className="rounded-lg border border-line bg-surface px-2 py-1 text-sm" value={d?.familyId ?? ''} onChange={e => set(k, { familyId: e.target.value || undefined, ...(e.target.value ? {} : { done: undefined }) })}>
+        <select aria-label={label} className="min-w-0 max-w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" value={d?.familyId ?? ''} onChange={e => set(k, { familyId: e.target.value || undefined, ...(e.target.value ? {} : { done: undefined }) })}>
           <option value="">{label}: לא נקבע</option>{t.families!.map(f => <option key={f.id} value={f.id}>{f.name}{f.id === myFamily(t) ? ' (אתם)' : ''}</option>)}
         </select>
       </span>

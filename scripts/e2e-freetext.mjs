@@ -1,0 +1,47 @@
+// Free-text shopping list: typed lines are read into item, amount and section; added to the trip or a meal;
+// then each line waits for "who buys it".
+import { chromium } from 'playwright-core';
+const OUT = process.argv[2]; const BASE = 'http://localhost:4173/';
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.env.CI ? undefined : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome') });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, locale: 'he-IL', deviceScaleFactor: 2 });
+await ctx.route(/open-meteo|overpass|osrm|nominatim|openfreemap|fonts\./, r => r.abort());
+const p = await ctx.newPage(); const errors = [];
+p.on('pageerror', e => errors.push(e.message)); p.on('dialog', d => d.accept());
+await p.goto(BASE); await p.waitForTimeout(1000);
+const T = () => p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0]);
+const tid = (await T()).id;
+await p.goto(BASE + `#/trip/${tid}/meals`); await p.waitForTimeout(800);
+await p.getByRole('button', { name: 'רשימה בטקסט חופשי' }).click(); await p.waitForTimeout(300);
+const dlg = p.getByRole('dialog');
+await dlg.getByLabel(/מה צריך/).fill('2 קילו שוקיים\nלחמניות 12\nשלוש חבילות ספגטי\nחצי קילו גבינה צהובה, פחמים למנגל\nמלוואח');
+await p.waitForTimeout(300);
+const rows = dlg.getByRole('list', { name: 'פריטים שזוהו' }).locator('li');
+console.log('six lines read:', (await rows.count()) === 6);
+const sec = async n => dlg.getByLabel(`מחלקה עבור ${n}`).inputValue();
+console.log('sections recognised:', (await sec('שוקיים')) === 'meat' && (await sec('לחמניות')) === 'bakery' && (await sec('ספגטי')) === 'dry' && (await sec('גבינה צהובה')) === 'cold' && (await sec('פחמים למנגל')) === 'other');
+console.log('amounts read:', (await rows.nth(0).innerText()).includes('2 ק״ג') && (await rows.nth(2).innerText()).includes('3 חבילות'));
+await dlg.getByLabel('מחלקה עבור מלוואח').selectOption('cold');
+await p.screenshot({ path: `${OUT}/freetext.png` });
+await dlg.getByRole('button', { name: /^הוספה/ }).click(); await p.waitForTimeout(500);
+const t = await T();
+console.log('added to the trip as a whole:', t.groceries?.length === 6 && t.groceries.find(g => g.name === 'מלוואח')?.shop === 'cold');
+const shopSec = p.locator('section', { hasText: 'רשימת קניות מאוחדת' }).last();
+const meat = await shopSec.locator('section', { has: p.getByRole('heading', { name: 'בשר ועוף' }) }).innerText();
+console.log('shopping list: in the right section with the amount:', meat.includes('שוקיים') && meat.includes('2 ק״ג'));
+console.log('a section for non-food items:', (await shopSec.getByRole('heading', { name: 'שונות וחד-פעמי' }).count()) === 1);
+// who buys
+const sel = shopSec.getByLabel('קונים שוקיים');
+const adults = (await T()).participants.filter(x => x.role !== 'child');
+await sel.selectOption(adults[0].id); await p.waitForTimeout(300);
+console.log('assigned to a participant:', (await T()).duties[Object.keys((await T()).duties).find(k => k.includes('שוקיים'))]?.memberId === adults[0].id);
+await shopSec.getByRole('button', { name: 'עוד לא נקבע מי קונה' }).click(); await p.waitForTimeout(300);
+console.log('"not assigned yet" view hides it, shows the rest:', !(await shopSec.innerText()).includes('שוקיים') && (await shopSec.innerText()).includes('לחמניות'));
+// into a meal, from the food picker
+await p.getByRole('radio', { name: 'בונים בעצמנו' }).click(); await p.waitForTimeout(400);
+await p.getByRole('button', { name: 'מזון', exact: true }).first().click(); await p.waitForTimeout(300);
+await p.getByRole('button', { name: /יש לכם רשימה/ }).click(); await p.waitForTimeout(300);
+await p.getByRole('dialog').getByLabel(/מה צריך/).fill('פיתות 10');
+await p.getByRole('dialog').getByRole('button', { name: /^הוספה/ }).click(); await p.waitForTimeout(400);
+console.log('from a meal: added to that meal:', (await T()).meals.some(m => m.items?.some(i => i.name === 'פיתות' && i.qty === 10)));
+console.log('errors:', errors.length ? errors.join(' | ') : 'none');
+await b.close();

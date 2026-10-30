@@ -43,10 +43,13 @@ export function shoppingList(meals: MealSlot[], t?: MenuTrip, diet?: DietPrefs):
     const eq = t && diet ? portions(t, diet) : s.eq ?? s.servings;
     for (const i of s.items ?? []) { const q = foodQty(i, eq); if (q > 0) add({ name: i.name, qty: q, unit: i.unit, shop: i.shop }, 1, 'נוסף לתפריט'); }
   }
+  // items for the whole trip, not tied to a meal
+  const eqAll = t && diet ? portions(t, diet) : 1;
+  for (const i of t?.groceries ?? []) { const q = foodQty(i, eqAll); if (q > 0) add({ name: i.name, qty: q, unit: i.unit, shop: i.shop }, 1, 'כללי לטיול'); }
   return [...m.values()].map(l => { const [q, u] = nice(l.qty, l.unit); return { ...l, qty: q, unit: u, label: qtyLabel(q, u) }; }).sort((a, b) => SHOP_ORDER.indexOf(a.shop) - SHOP_ORDER.indexOf(b.shop) || a.name.localeCompare(b.name, 'he'));
 }
-export const SHOP_ORDER = ['fresh', 'meat', 'cold', 'bakery', 'dry', 'drinks', 'alcohol'];
-export const SHOP_LABEL: Record<string, string> = { fresh: 'ירקות ופירות', meat: 'בשר ועוף', cold: 'מקרר — חלב, ביצים ומוכנים', bakery: 'מאפים ולחם', dry: 'מזווה ויבשים', drinks: 'שתייה', alcohol: 'אלכוהול (18+)' };
+export const SHOP_ORDER = ['fresh', 'meat', 'cold', 'bakery', 'dry', 'drinks', 'alcohol', 'other'];
+export const SHOP_LABEL: Record<string, string> = { fresh: 'ירקות ופירות', meat: 'בשר ועוף', cold: 'מקרר — חלב, ביצים ומוכנים', bakery: 'מאפים ולחם', dry: 'מזווה ויבשים', drinks: 'שתייה', alcohol: 'אלכוהול (18+)' , other: 'שונות וחד-פעמי' };
 
 export function buildSchedule(trip: Trip, days: DayWx[], sites: Pick<Site, 'name'>[]): ScheduleItem[] {
   const { days: n } = tripLength(trip.start, trip.end);

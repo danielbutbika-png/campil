@@ -6,7 +6,7 @@ import { RECIPES, RECIPE_BY_ID, type Recipe, type Ingredient } from '../data/rec
 import { GRILL_BY_ID, DEFAULT_GRILL, MEATS, VEG, type GrillItem } from '../data/grill';
 import { tripLength, uid } from '../lib/util';
 
-export type MenuTrip = Pick<Trip, 'start' | 'end' | 'kind' | 'adults' | 'children'> & Partial<Pick<Trip, 'participants' | 'families' | 'diets' | 'grill'>>;
+export type MenuTrip = Pick<Trip, 'start' | 'end' | 'kind' | 'adults' | 'children'> & Partial<Pick<Trip, 'participants' | 'families' | 'diets' | 'grill' | 'groceries'>>;
 export interface DietGroup { key: string; name: string; people: Member[]; diet: FamilyDiet; eq: number }
 
 export const STYLE_HE = { meat: 'אוכלים הכול', vegetarian: 'צמחוני', vegan: 'טבעוני' } as const;

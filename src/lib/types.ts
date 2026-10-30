@@ -73,6 +73,8 @@ export interface Trip {
   noFood?: boolean;
   /** 'manual' = the family builds the menu / the gear list itself; nothing is added or replaced automatically. */
   menuMode?: 'auto' | 'manual'; packingMode?: 'auto' | 'manual';
+  /** Shopping items for the whole trip, not tied to a meal (e.g. typed as free text). */
+  groceries?: MenuFood[];
   /** Driving route home → stops → home, computed from OpenStreetMap roads (OSRM). `sig` = the stops it was computed for. */
   drive?: (import('../services/routing').DriveRoute & { sig: string }) | null;
   /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
@@ -130,7 +132,7 @@ export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'r
 /** One responsibility: which family, and whether it's done (meal prepared / item bought / task done). */
 export interface TripPlace { id: string; name: string; lat: number; lon: number; label: string; source: 'osm'; url: string; website?: string; addedAt: string }
 
-export interface Duty { familyId?: string; done?: boolean; by?: string; at?: number }
+export interface Duty { familyId?: string; /** one-family trip: which participant takes it */ memberId?: string; done?: boolean; by?: string; at?: number }
 
 export interface DietPrefs { kosher: boolean; vegetarian: boolean; vegan: boolean; allergies: string[] }
 
