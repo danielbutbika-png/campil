@@ -1,11 +1,11 @@
 // CampIL service worker. On install it saves every file of this build (list injected at build time by
 // vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
 // Production and staging share an origin, so every cache name carries the environment prefix.
-const BUILD = '83500f6c82';
+const BUILD = 'ef99ae5dbf';
 const P = 'campil-'; // 'campil-' (production) or 'campil-stg-' (staging)
 const VERSION = P + 'app-' + BUILD;
 const RT_FONTS = P + 'rt-fonts', RT_MAP = P + 'rt-map', OFFLINE_MAP = P + 'offline-map';
-const PRECACHE = ["./Academy-DiW73KBk.js","./BoxScreen-SiZgvleo.js","./CampSearch-bEgyOoga.js","./Cook-C5n8l5iD.js","./Explore-D7c_G2Ft.js","./Gear-D9swj1PU.js","./IsraelMap-tLIJtYFJ.js","./IsraelMapGL-CEt4jBBi.js","./IsraelMapGL-KizArRWY.css","./Join-B-Pz56Ke.js","./JournalTab-kMlb0mII.js","./MapScreen-gH1ndaOV.js","./More-DWxeUbNH.js","./RouteFuel-v0FFpfbp.js","./TripPlan-DPE_IHAf.js","./TripTypePicker-CcxMQfdd.js","./Trips-BcWuHHv7.js","./VehiclePicker-DTo32LLB.js","./Wizard-CUbKIWoL.js","./car-CTq19y70.js","./chef-hat-BRdL_JtN.js","./icon-192.png","./icon-512.png","./icon.svg","./index-C4n1MZEu.js","./index-vHlH6jJe.css","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest","./osm-dRGSVYye.js","./package-DiNrhfym.js","./places-D1Q9TkrR.js","./printer-Ui3L5e_j.js","./rotate-ccw-1h-AZ_F0.js","./search-BnLye87E.js","./upload-BIN0RAbr.js"];
+const PRECACHE = ["./Academy-CupisOhw.js","./BoxScreen-B3DcamCc.js","./CampSearch-CVjVnK6x.js","./Cook-DEF5Cm2V.js","./Explore-QDmEJbHP.js","./Gear-DCssrUJj.js","./IsraelMap-w7T0wqdn.js","./IsraelMapGL-BERKc1f9.js","./IsraelMapGL-KizArRWY.css","./Join-MwkmzJ9X.js","./JournalTab-CpqBVC3C.js","./MapScreen-DxLZT2vr.js","./More-D2hAuMq7.js","./RouteFuel-DnZhb2Ew.js","./TripPlan-B7AjBuFC.js","./TripTypePicker-D7J4EVEt.js","./Trips-xvPzBQnV.js","./VehiclePicker-BaD8jqxX.js","./Wizard-DMbM7MMa.js","./car-BM71-fAq.js","./chef-hat-NIIf-e0R.js","./icon-192.png","./icon-512.png","./icon.svg","./index-C8BY_Y2q.js","./index-vHlH6jJe.css","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest","./osm-dRGSVYye.js","./package-2Bxv-RO7.js","./places-D1Q9TkrR.js","./printer-Cux1a00A.js","./rotate-ccw-Do_jo0gD.js","./search-YerwaacE.js","./upload-BNByYuKM.js"];
 const SHELL = ['./', ...PRECACHE];
 // On update, drop only this environment's older app caches. Saved maps (offline-map) and runtime caches stay.
 const stale = k => (k.startsWith(P + 'app-') && k !== VERSION) || (P === 'campil-' && /^campil-[0-9a-f]{10}$/.test(k)); // second: pre-prefix builds
