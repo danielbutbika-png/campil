@@ -322,12 +322,15 @@ export async function startSync() {
   const cloud = useStore.getState().settings.cloud;
   if (!cloud || (!shared.length && !cloud.googleUid)) return;
   let t0: Transport; try { t0 = await transport(); } catch { return; }
-  if (!restored && t0.account().provider === 'google') { restored = true; indexMine().catch(() => {}); restoreFromAccount().catch(() => {}); }
-  if (!useStore.getState().trips.some(t => t.shared)) return;
+  const google = t0.account().provider === 'google';
+  if (!restored && google) { restored = true; indexMine().catch(() => {}); restoreFromAccount().catch(() => {}); saveAllToAccount().catch(() => {}); }
+  if (!google && !useStore.getState().trips.some(t => t.shared)) return;
   for (const t of shared) watch(t.shared!.cloudId);
   if (started) return; started = true;
   useStore.subscribe((s, prev) => {
     if (!tp) return;
+    // signed in with Google: a new trip is saved to the account right away (private until shared with others)
+    if (s.trips !== prev.trips && tp.account().provider === 'google') for (const t of s.trips) if (!t.shared && !t.example && !prev.trips.some(p => p.id === t.id)) saveToAccount(t.id);
     for (const t of s.trips) {
       if (!t.shared) continue;
       const cid = t.shared.cloudId;
@@ -523,8 +526,10 @@ export async function signInGoogle() {
   }
   switching = false;
   for (const cid of watchers.keys()) { const prev = useCloud.getState().members[cid]?.[a.uid]; t.patch(cid, [{ path: ['members', a.uid], value: selfMember(prev?.role ?? 'editor', prev?.color ?? PALETTE[1], prev) }]).catch(() => {}); }
+  await saveAllToAccount().catch(() => {});
   await indexMine().catch(() => {});
   await restoreFromAccount().catch(() => {});
+  await startSync();
   return a;
 }
 
@@ -535,6 +540,18 @@ async function indexMine() {
   for (const x of useStore.getState().trips) if (x.shared && !have[x.shared.cloudId]) await t.indexPut(t.uid, x.shared.cloudId, { name: x.name, start: x.start, at: Date.now() });
 }
 const indexOne = (cid: string, x: { name: string; start: string }) => { const t = tp; if (t?.account().provider === 'google') t.indexPut(t.uid, cid, { name: x.name, start: x.start, at: Date.now() }).catch(() => {}); };
+
+const saving = new Set<string>();
+/** Save a trip that isn't in the cloud yet to the signed-in account: only this account can open it until it is shared. */
+function saveToAccount(tripId: string) {
+  if (saving.has(tripId)) return; saving.add(tripId);
+  shareTrip(tripId).catch(() => {}).finally(() => saving.delete(tripId));
+}
+/** Signed in with Google: every trip on this device follows the account to its other devices. */
+export async function saveAllToAccount() {
+  const t = await transport(); if (t.account().provider !== 'google') return;
+  for (const x of useStore.getState().trips) if (!x.shared && !x.example) { saving.add(x.id); await shareTrip(x.id).catch(() => {}); saving.delete(x.id); }
+}
 
 /** Bring the account's shared trips onto this device (e.g. the installed app after signing in). Returns how many were added. */
 export async function restoreFromAccount(): Promise<number> {

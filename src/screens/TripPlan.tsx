@@ -22,7 +22,7 @@ import JournalTab from './trip/JournalTab';
 import AlbumTab from './trip/AlbumTab';
 import type { PackItem } from '../lib/types';
 import { regenScope, isGroup, itemFamily } from '../lib/families';
-import { useCloud } from '../lib/cloud/sync';
+import { useCloud, leaveTrip } from '../lib/cloud/sync';
 import EditTrip from './trip/EditTrip';
 import SafetyTab from './trip/SafetyTab';
 
@@ -39,6 +39,9 @@ export default function TripPlan({ id, tab }: { id: string; tab: string }) {
 }
 
 function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, setFinish }: any) {
+  // a trip saved only to my account (nobody else joined) is deleted like a private one — from the device and the account
+  const cloudMembers = useCloud(x => (t.shared ? x.members[t.shared.cloudId] : undefined));
+  const solo = !!t.shared && t.shared.role === 'owner' && Object.keys(cloudMembers ?? {}).length <= 1;
   const [share, setShare] = useState(false);
   const wx = useTripWeather(t);
   const sites = useMemo(() => (t as Trip).siteIds.map(i => SITE_BY_ID[i]).filter(Boolean), [t.siteIds]);
@@ -112,13 +115,13 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
         {tab === 'journal' && <JournalTab t={t} />}
       </div>
       {edit && <EditTrip t={t} onClose={() => setEdit(false)} onSave={saveEdit} />}
-      {t.shared ? (
+      {t.shared && !solo ? (
         <Sheet open={confirmDel} onClose={() => setConfirmDel(false)} title="טיול משותף">
           <LeaveOrDelete t={t} onDone={() => { setConfirmDel(false); go('/trips'); }} />
         </Sheet>
       ) : (
-        <Sheet open={confirmDel} onClose={() => setConfirmDel(false)} title="למחוק את הטיול?" footer={<><Button variant="danger" onClick={() => { st.removeTrip(t.id); go('/trips'); toast('הטיול נמחק'); }}>מחיקה</Button><Button variant="ghost" onClick={() => setConfirmDel(false)}>ביטול</Button></>}>
-          <p>הטיול, רשימת הציוד, התפריט ורשומות היומן שלו יימחקו מהמכשיר. אי אפשר לבטל.</p>
+        <Sheet open={confirmDel} onClose={() => setConfirmDel(false)} title="למחוק את הטיול?" footer={<><Button variant="danger" onClick={async () => { if (t.shared) await leaveTrip(t.id, true).catch(() => {}); st.removeTrip(t.id); go('/trips'); toast('הטיול נמחק'); }}>מחיקה</Button><Button variant="ghost" onClick={() => setConfirmDel(false)}>ביטול</Button></>}>
+          <p>{t.shared ? 'הטיול, רשימת הציוד, התפריט ורשומות היומן שלו יימחקו מהמכשיר ומהחשבון שלך. אי אפשר לבטל.' : 'הטיול, רשימת הציוד, התפריט ורשומות היומן שלו יימחקו מהמכשיר. אי אפשר לבטל.'}</p>
         </Sheet>
       )}
       <ShareSheet t={t} open={share} onClose={() => setShare(false)} />

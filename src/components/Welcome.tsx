@@ -24,16 +24,16 @@ export function Welcome() {
           <p className="text-white/85">כדי להשתמש באפליקציה צריך להתחבר עם חשבון Google — כך השם שלכם מופיע, והטיולים המשותפים מגיעים לכל מכשיר שתתחברו ממנו.</p>
         </div>
         <ul className="space-y-2 text-sm text-white/90">
-          <li className="flex items-center gap-2"><Cloud size={17} aria-hidden />טיולים משותפים מסתנכרנים בין הטלפונים שלכם</li>
+          <li className="flex items-center gap-2"><Cloud size={17} aria-hidden />כל הטיולים שלכם עוברים בין הטלפונים שלכם</li>
           <li className="flex items-center gap-2"><BadgeCheck size={17} aria-hidden />שותפים לטיול רואים שזה באמת אתם</li>
-          <li className="flex items-center gap-2"><Smartphone size={17} aria-hidden />הציוד, התמונות והטיולים שלא שיתפתם נשארים במכשיר</li>
+          <li className="flex items-center gap-2"><Smartphone size={17} aria-hidden />טיול נשאר פרטי לכם עד ששולחים קישור למשפחה אחרת</li>
         </ul>
         {!online && <p role="status" className="rounded-xl bg-white/15 p-3 text-sm font-semibold">אין חיבור לאינטרנט. ההתחברות הראשונה צריכה רשת — אחריה האפליקציה עובדת גם בלי קליטה.</p>}
         {err && <p role="alert" className="rounded-xl bg-white/15 p-3 text-sm font-semibold">{err}</p>}
         <div className="space-y-2">
           <Button className="w-full !bg-white !text-ink" disabled={busy || !cloud || !online} icon={busy ? <Loader2 size={16} className="animate-spin" /> : <GoogleG />} onClick={google}>התחברות עם Google</Button>
         </div>
-        <p className="text-xs text-white/60">נשמר רק השם, האימייל והתמונה מהחשבון. הציוד והטיולים שלא שיתפתם לא עולים לענן.</p>
+        <p className="text-xs text-white/60">הטיולים נשמרים בחשבון שלכם ופרטיים לכם עד שאתם משתפים אותם. מהחשבון נשמרים השם, האימייל והתמונה. מאגר הציוד נשאר במכשיר.</p>
       </div>
     </div>
   );
