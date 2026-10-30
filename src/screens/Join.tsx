@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Users, Loader2, ShieldCheck, Clock } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { decodeInvite } from '../lib/cloud/model';
-import { joinTrip, checkApproval, signInGoogle, transport, useCloud } from '../lib/cloud/sync';
+import { joinTrip, checkApproval, signInGoogle, transport, useCloud, useJoinStep } from '../lib/cloud/sync';
 import { GoogleG, AccountRow } from '../components/Collab';
 import { Button, Card, toast } from '../components/ui';
 import { go } from '../lib/router';
@@ -13,6 +13,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
   const cid = query.get('t'); const c = query.get('c'); const approvedOnly = query.get('a') === '1'; const famId = query.get('f') ?? undefined; const famName = query.get('fn'); const key = query.get('k') ?? undefined;
   const expired = !!query.get('e') && Date.now() > Number(query.get('e'));
   const account = useCloud(s => s.account);
+  const joinStep = useJoinStep(s => s.step);
   const [name, setName] = useState(st.settings.cloud?.myName ?? '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
     const n = name.trim() || account?.name || '';
     if (!n) return toast('כתבו את השם שלכם');
     if (approvedOnly && account?.provider !== 'google') return toast('קודם התחברו עם Google');
+    if (!navigator.onLine) return setErr('אין חיבור לאינטרנט. כדי להצטרף צריך קליטה — נסו שוב כשיש.');
     setBusy(true); setErr(null);
     try { const id = await joinTrip(cid, cfg!, n, approvedOnly, famId, key); if (id) finish(id); else setWaiting(true); }
     catch (x: any) { setErr(x.message); }
@@ -68,7 +70,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
             )}
             <form onSubmit={join} className="space-y-3">
               <div><label className="label" htmlFor="jn">השם שיוצג לשותפים</label><input id="jn" className="field" autoComplete="given-name" value={name} placeholder={account?.name ?? ''} onChange={e => setName(e.target.value)} /></div>
-              <Button type="submit" className="w-full" disabled={busy || (approvedOnly && account?.provider !== 'google')} icon={busy ? <Loader2 size={17} className="animate-spin" /> : undefined}>{busy ? 'רגע…' : approvedOnly ? 'שליחת בקשת הצטרפות' : 'הצטרפות לטיול'}</Button>
+              <Button type="submit" className="w-full" disabled={busy || (approvedOnly && account?.provider !== 'google')} icon={busy ? <Loader2 size={17} className="animate-spin" /> : undefined}>{busy ? (joinStep ? `${joinStep}…` : 'רגע…') : approvedOnly ? 'שליחת בקשת הצטרפות' : 'הצטרפות לטיול'}</Button>
             </form>
           </>
         )}

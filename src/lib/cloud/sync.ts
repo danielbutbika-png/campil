@@ -409,32 +409,51 @@ function addLocal(cid: string, doc: TripDoc, me: Member) {
 }
 
 /** Join through an invite. Open trips: immediate. Approved-only trips: leaves a request and returns null. */
+/** A network step that must not spin forever: rejects after `ms` with a message that names the step. */
+export const JOIN_STEP_MS = 20_000;
+function step<T>(label: string, p: Promise<T>, ms = (globalThis as any).__campilStepMs ?? JOIN_STEP_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const late = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(Object.assign(new Error(`אין תשובה מהשרת (שלב: ${label}). בדקו שיש קליטה ונסו שוב — אם זה חוזר, צלמו את ההודעה ושלחו למארגן.`), { code: 'timeout' })), ms); });
+  return Promise.race([p, late]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+/** Which step the join is at — shown on the button so a stuck join is never a silent spinner. */
+export const useJoinStep = create<{ step: string | null }>(() => ({ step: null }));
+const at = (label: string | null) => useJoinStep.setState({ step: label });
+
 export async function joinTrip(cid: string, config: Record<string, string>, name: string, approvedOnly = false, familyId?: string, key?: string): Promise<string | null> {
   const st = useStore.getState();
-  st.setSettings({ cloud: { config, myName: name } });
-  const existing = tripByCloud(cid); if (existing) { await startSync(); return existing.id; }
-  const t = await transport();
-  if (approvedOnly) {
-    if (t.account().provider !== 'google') throw new Error('הטיול הזה פתוח רק למשתתפים מאושרים — התחברו עם Google כדי לבקש הצטרפות');
-    const a = t.account();
-    await t.patch(cid, [{ path: ['pending', t.uid], value: JSON.parse(JSON.stringify({ name, email: a.email, photo: a.photo, at: Date.now(), familyId })) }]);
-    return checkApproval(cid);
-  }
-  let doc: TripDoc | null = await t.getTrip(cid).catch(() => null); // readable only if I'm already a member
-  if (!doc?.members?.[t.uid]) {
-    if (!key) throw new Error('הקישור הזה ישן או חסר בו מפתח הזמנה. בקשו מהמארגן קישור חדש.');
-    // the key goes to a record only this account can read; older trips (rules) still take it in the member entry
-    let viaSecret = false;
-    try { await t.putJoin(cid, t.uid, { k: key, familyId: familyId ?? null }); viaSecret = true; } catch { /* older rules or trip */ }
-    const me: Member = { ...selfMember('editor', PALETTE[Math.floor(Math.random() * PALETTE.length)]), ...(familyId ? { familyId } : {}), ...(viaSecret ? {} : { k: key }) };
-    try { await t.patch(cid, [{ path: ['members', t.uid], value: clean(me) }]); }
-    catch { throw new Error('הקישור כבר לא בתוקף — פג תוקפו, או שהמארגן החליף אותו. בקשו קישור חדש.'); }
-    doc = await t.getTrip(cid).catch(() => null);
-    if (!doc) throw new Error('הטיול לא נמצא. ייתכן שהקישור שגוי או שהשיתוף בוטל.');
-  }
-  const id = addLocal(cid, doc, doc.members[t.uid]);
-  await startSync(); watch(cid);
-  return id;
+  // keep the rest of the cloud settings (the Google sign-in mark) — only the config and display name change
+  st.setSettings({ cloud: { ...(st.settings.cloud ?? {}), config, myName: name } as any });
+  try {
+    const existing = tripByCloud(cid); if (existing) { await startSync(); return existing.id; }
+    at('התחברות'); const t = await step('התחברות', transport());
+    if (approvedOnly) {
+      if (t.account().provider !== 'google') throw new Error('הטיול הזה פתוח רק למשתתפים מאושרים — התחברו עם Google כדי לבקש הצטרפות');
+      const a = t.account();
+      at('שליחת בקשה'); await step('שליחת בקשה', t.patch(cid, [{ path: ['pending', t.uid], value: JSON.parse(JSON.stringify({ name, email: a.email, photo: a.photo, at: Date.now(), familyId })) }]));
+      return await step('בדיקת אישור', checkApproval(cid));
+    }
+    at('בדיקת הטיול');
+    let doc: TripDoc | null = await step('בדיקת הטיול', t.getTrip(cid)).catch(() => null); // readable only if I'm already a member
+    if (!doc?.members?.[t.uid]) {
+      if (!key) throw new Error('הקישור הזה ישן או חסר בו מפתח הזמנה. בקשו מהמארגן קישור חדש.');
+      // the key goes to a record only this account can read; older trips (rules) still take it in the member entry
+      let viaSecret = false;
+      at('אימות ההזמנה');
+      try { await step('אימות ההזמנה', t.putJoin(cid, t.uid, { k: key, familyId: familyId ?? null })); viaSecret = true; }
+      catch (e: any) { if (e?.code === 'timeout') throw e; /* older rules or trip */ }
+      const me: Member = { ...selfMember('editor', PALETTE[Math.floor(Math.random() * PALETTE.length)]), ...(familyId ? { familyId } : {}), ...(viaSecret ? {} : { k: key }) };
+      at('הצטרפות');
+      try { await step('הצטרפות', t.patch(cid, [{ path: ['members', t.uid], value: clean(me) }])); }
+      catch (e: any) { if (e?.code === 'timeout') throw e; throw new Error('הקישור כבר לא בתוקף — פג תוקפו, או שהמארגן החליף אותו. בקשו קישור חדש.'); }
+      at('טעינת הטיול');
+      doc = await step('טעינת הטיול', t.getTrip(cid)).catch(e => { if (e?.code === 'timeout') throw e; return null; });
+      if (!doc) throw new Error('הטיול לא נמצא. ייתכן שהקישור שגוי או שהשיתוף בוטל.');
+    }
+    const id = addLocal(cid, doc, doc.members[t.uid]);
+    startSync().catch(() => {}); watch(cid); // syncing continues in the background — the trip opens now
+    return id;
+  } finally { at(null); }
 }
 
 /** For a pending request: returns the local trip id once the organiser approved, otherwise null. */

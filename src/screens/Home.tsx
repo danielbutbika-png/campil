@@ -21,7 +21,10 @@ import { Logo } from '../App';
 import { myPacking } from '../lib/families';
 import { homeMode, type HomeMode } from '../lib/homeMode';
 import { ModeSwitch, PrepPanel, FieldPanel, AfterPanel } from '../components/HomeModes';
-import { recentlyEnded } from '../lib/tripOps';
+import { recentlyEnded, duplicateTrip } from '../lib/tripOps';
+import { HomeInsights } from '../components/Assistant';
+import { Copy } from 'lucide-react';
+import { toast } from '../components/ui';
 
 const HERO: { scene: any; caption: string }[] = [
   { scene: 'mountain', caption: 'רמת הגולן' }, { scene: 'desert', caption: 'מדבר יהודה' }, { scene: 'crater', caption: 'מכתש רמון' }, { scene: 'forest', caption: 'הגליל העליון' }, { scene: 'sea', caption: 'חופי הגליל המערבי' },
@@ -100,6 +103,9 @@ export default function Home() {
             <Button onClick={() => go('/new')} icon={<Plus size={18} />}>טיול חדש</Button>
           </Card>
         )}
+
+        {mode === 'plan' && !real && <PastTrips />}
+        {mode === 'plan' && !real && <HomeInsights />}
 
         {/* Quick access */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -183,5 +189,25 @@ function UpcomingTrip({ t }: { t: Trip }) {
         </div>
       </div>
     </a>
+  );
+}
+
+/** No upcoming trip: the family's own past trips, each one tap away from planning again. */
+function PastTrips() {
+  const trips = useStore(s => s.trips), addTrip = useStore(s => s.addTrip);
+  const today = todayISO();
+  const past = trips.filter(t => !t.example && t.end < today).sort((a, b) => b.end.localeCompare(a.end)).slice(0, 3);
+  if (!past.length) return null;
+  const again = (t: Trip) => { const n = duplicateTrip(t, today); addTrip(n); toast('נוצר טיול חדש מאותה תוכנית — עדכנו תאריכים'); go(`/trip/${n.id}`); };
+  return (
+    <section aria-labelledby="past-h" className="space-y-3">
+      <div className="flex items-center justify-between gap-2"><h2 id="past-h" className="font-display text-xl">הטיולים הקודמים שלכם</h2><a href={href('/trips')} className="flex items-center text-sm font-bold text-moss">לכל הטיולים<ChevronLeft size={16} /></a></div>
+      <ul className="grid gap-3 md:grid-cols-3">{past.map(t => (
+        <li key={t.id} className="flex flex-col gap-2 rounded-xl2 border border-line bg-surface p-4 shadow-card">
+          <a href={href(`/trip/${t.id}`)} className="min-w-0"><span className="block truncate font-bold">{t.name || (t.regionId ? REGION_BY_ID[t.regionId].name : 'טיול')}</span>
+            <span className="block text-sm text-muted">{fmtRange(t.start, t.end)}{t.rating ? ` · ${t.rating}/5` : ''}{t.lessons?.trim() ? ' · יש הערות לפעם הבאה' : ''}</span></a>
+          <Button variant="soft" icon={<Copy size={16} />} onClick={() => again(t)} aria-label={`לתכנן שוב: ${t.name || 'הטיול'}`}>לתכנן שוב</Button>
+        </li>))}</ul>
+    </section>
   );
 }

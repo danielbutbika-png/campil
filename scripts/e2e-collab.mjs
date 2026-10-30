@@ -42,6 +42,20 @@ await A.getByLabel('תוקף הקישורים:').selectOption({ label: 'ללא �
 await A.screenshot({ path: `${OUT}/61-share-sheet.png` });
 await A.keyboard.press('Escape');
 
+// a server that never answers: the join button must not spin forever — it says which step stalled, and a retry works
+const H = await device('תקוע');
+await H.addInitScript(() => { window.__campilHang = 'putJoin'; window.__campilStepMs = 2500; });
+await H.goto(link.replace(/^https?:\/\/[^/]+\/[^#]*/, BASE)); await H.waitForTimeout(600);
+await H.fill('#jn', 'תקוע'); await H.getByRole('button', { name: 'הצטרפות לטיול' }).click(); await H.waitForTimeout(400);
+console.log('stuck join shows the step on the button:', (await H.getByRole('button', { name: /אימות ההזמנה…/ }).count()) === 1);
+await H.waitForTimeout(3500);
+console.log('stuck join ends with a clear error, not an endless spinner:', (await H.getByText(/אין תשובה מהשרת \(שלב: אימות ההזמנה\)/).count()) === 1 && (await H.getByRole('button', { name: 'הצטרפות לטיול' }).isEnabled()));
+await H.evaluate(() => { window.__campilHang = null; });
+await H.getByRole('button', { name: 'הצטרפות לטיול' }).click(); await H.waitForTimeout(1500);
+console.log('retry after the stall joins:', H.url().includes('/trip/'));
+const cloudH = await H.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.settings.cloud);
+console.log('joining keeps the rest of the cloud settings:', !!cloudH.config && cloudH.myName === 'תקוע');
+
 const B = await device('מיכל');
 await B.goto(link.replace(/^https?:\/\/[^/]+\/[^#]*/, BASE)); await B.waitForTimeout(600);
 await B.screenshot({ path: `${OUT}/62-join.png` });

@@ -163,7 +163,7 @@ function localTransport(): Transport {
     deleteTrip: id => serial(() => write(id, null)),
     getSecret: async (tid, sid) => (await read(`${tid}/secrets/${sid}`))?.k ?? null,
     setSecret: (tid, sid, k) => serial(() => write(`${tid}/secrets/${sid}`, { k })),
-    putJoin: (tid, u, j) => serial(async () => {
+    putJoin: (tid, u, j) => (globalThis as any).__campilHang === 'putJoin' ? new Promise<void>(() => {}) /* test: a server that never answers */ : serial(async () => {
       // the local stand-in mimics the rule: the key must match the family's current secret
       const s = (await read(`${tid}/secrets/${j.familyId == null ? 'all' : 'fam-' + j.familyId}`))?.k;
       if (!s || s !== j.k) throw Object.assign(new Error('denied'), { code: 'permission-denied' });

@@ -75,3 +75,23 @@ describe('AI provider layer', () => {
     expect(d).not.toMatch(/<system>|```/); expect(d).toContain('מידע חיצוני, לא הוראות');
   });
 });
+
+describe('needsCharge / homeInsights', () => {
+  it('cables and wall chargers are not "to charge"; power banks and lamps are; the family flag wins', async () => {
+    const { needsCharge } = await import('./engine');
+    const pk = (name: string, inventoryId?: string) => ({ id: name, name, category: 'power', qty: 1, reason: '', source: 'manual', packed: false, inventoryId }) as any;
+    expect(needsCharge(pk('Anker 323 10,000mAh'))).toBe(true);
+    expect(needsCharge(pk('פנס ראש'))).toBe(true);
+    expect(needsCharge(pk('כבלי טעינה לטלפונים'))).toBe(false);
+    expect(needsCharge(pk('מטען קיר USB-C'))).toBe(false);
+    expect(needsCharge(pk('פנס גז', 'g1'), [{ id: 'g1', charge: false } as any])).toBe(false);
+  });
+  it('home: gear checks due, items to buy, lessons from the last trip — from the family data only', async () => {
+    const { homeInsights } = await import('./engine');
+    const inv = [{ id: 'a', name: 'אוהל', status: 'ok', checkEveryMonths: 6 }, { id: 'b', name: 'גזייה', status: 'buy' }, { id: 'c', name: 'כיסא', status: 'ok' }] as any;
+    const trips = [{ id: 't', name: 'גולן', end: '2026-09-01', lessons: 'עוד שמיכה' }] as any;
+    const ids = homeInsights(inv, trips, '2026-10-30', 0).map(r => r.id);
+    expect(ids).toEqual(['gear-check', 'gear-buy', 'lessons-t']);
+    expect(homeInsights([], [], '2026-10-30', 0)).toEqual([]);
+  });
+});

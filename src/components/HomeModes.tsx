@@ -1,9 +1,9 @@
 // Home screen panels for the two trip-time modes: "preparing" (the week before) and "in the field" (during the trip).
 // Everything shown here comes from the trip itself, the forecast service, or fixed official sources —
 // nothing about terrain, closures or safety is generated.
-import { Images, Star, Wrench, Copy, Backpack, ListChecks, ShoppingCart, ChevronLeft, CalendarDays, Navigation, Camera, NotebookPen, Clock, AlertTriangle, Phone } from 'lucide-react';
+import { Images, Star, Wrench, Copy, Backpack, ListChecks, ShoppingCart, ChevronLeft, CalendarDays, Navigation, Camera, Clock, AlertTriangle, Phone, Wifi, WifiOff, Map as MapIcon, ShieldAlert, BookOpen } from 'lucide-react';
 import type { Trip } from '../lib/types';
-import { useTripWeather, tripPoint } from '../lib/hooks';
+import { useTripWeather, tripPoint, useOnline } from '../lib/hooks';
 import { readiness } from '../engine/packing';
 import { myPacking } from '../lib/families';
 import { diffDays, todayISO, tripLength, fmtRange, fmtDate, addDays } from '../lib/util';
@@ -101,6 +101,8 @@ export function FieldPanel({ t }: { t: Trip }) {
   const nav = camp ?? point;
   return (
     <section aria-labelledby="field-panel-h" className="space-y-4">
+      <FieldStatus t={t} />
+      <FieldActions t={t} next={next} />
       <Card className="space-y-3 p-5">
         <div className="flex flex-wrap items-center gap-2">{live === null ? <Badge>תצוגה מקדימה — הטיול מתחיל ב-{fmtDate(t.start)}; מוצג היום הראשון</Badge> : <><Badge tone="accent">יום {day + 1} מתוך {days}</Badge><span className="text-sm text-muted">{fmtDate(today)}</span></>}</div>
         <h2 id="field-panel-h" className="font-display text-2xl">{live === null ? 'יום ראשון' : 'היום'} ב{tripName(t)}</h2>
@@ -127,15 +129,49 @@ export function FieldPanel({ t }: { t: Trip }) {
           <p className="text-xs text-muted">אפליקציות הניווט צריכות קליטה, אלא אם שמרתם בהן מפה מראש.</p>
         </Card>
       )}
-      <div className="grid gap-3 md:grid-cols-3">
-        <Tile to={`/trip/${t.id}/album`} I={Camera} title="הוספת תמונות" sub="לאלבום המשותף של הטיול" />
-        <Tile to={`/trip/${t.id}/journal`} I={NotebookPen} title="יומן הטיול" sub="רגע שרוצים לזכור" />
-        <Tile to={`/trip/${t.id}/gear`} I={Backpack} title="רשימת הציוד" sub="גם לאריזה בחזרה" />
-      </div>
-      <a href="tel:101" className="flex items-center justify-center gap-2 rounded-xl2 bg-danger py-3 font-bold text-white"><Phone size={18} />חירום — מד״א 101</a>
+      <Tile to={`/trip/${t.id}/album`} I={Images} title="הוספת תמונות" sub="לאלבום המשותף של הטיול" />
       <OfficialAlerts flood={t.siteIds.some(id => SITE_BY_ID[id]?.floodRisk)} />
       <SourceLine f={wx.forecast} />
     </section>
+  );
+}
+
+/** Connection and what is on this device — always visible in the field. */
+function FieldStatus({ t }: { t: Trip }) {
+  const online = useOnline();
+  const o = t.offline;
+  const saved = ['תוכנית הטיול', 'רשימת הציוד', 'המדריכים באקדמיה', ...(o?.forecast ? ['תחזית'] : []), ...(o?.tiles ? ['מפת האזור'] : [])];
+  const missing = [...(!o?.forecast ? ['תחזית'] : []), ...(!o?.tiles ? ['מפת האזור'] : [])];
+  return (
+    <div role="status" aria-label="מצב חיבור ושמירה במכשיר" className={cx('space-y-1 rounded-xl2 border-2 p-4', online ? 'border-ok/40 bg-ok/5' : 'border-warn bg-warn/10')}>
+      <p className="flex items-center gap-2 text-lg font-extrabold">{online ? <Wifi size={22} className="text-ok" /> : <WifiOff size={22} className="text-warn" />}{online ? 'יש חיבור' : 'אין קליטה — עובדים ממה שנשמר במכשיר'}</p>
+      <p className="text-sm"><span className="font-bold">שמור במכשיר:</span> {saved.join(' · ')}{o ? <span className="text-muted"> (נשמר {new Date(o.at).toLocaleDateString('he-IL')})</span> : null}</p>
+      {missing.length > 0 && <p className="text-sm text-muted">לא נשמרו: {missing.join(', ')}{online ? <> — <a className="font-bold text-moss underline" href={href(`/trip/${t.id}`)}>לשמור עכשיו</a></> : ' — אפשר לשמור כשתחזור קליטה'}</p>}
+    </div>
+  );
+}
+
+/** Big, few-word actions for use outdoors (≥56px targets). Actions that need a network say so when offline. */
+function FieldActions({ t, next }: { t: Trip; next?: { title: string; time: string } }) {
+  const online = useOnline();
+  const mapOk = online || !!t.offline?.tiles;
+  const A = ({ to, I, label, sub, tel, need }: { to?: string; I: any; label: string; sub?: string; tel?: string; need?: boolean }) => (
+    <a href={tel ? `tel:${tel}` : href(to!)} className={cx('flex min-h-[64px] items-center gap-3 rounded-xl2 border p-3 shadow-card transition', tel ? 'border-danger bg-danger text-white hover:opacity-90' : 'border-line bg-surface hover:border-moss')}>
+      <I size={28} className={tel ? 'text-white' : 'text-moss'} aria-hidden />
+      <span className="min-w-0 flex-1"><span className="block text-lg font-extrabold leading-tight">{label}</span>{sub && <span className={cx('block truncate text-sm', tel ? 'text-white/90' : 'text-muted')}>{sub}</span>}
+        {need && <span className="block text-xs font-bold text-warn">צריך קליטה</span>}</span>
+    </a>
+  );
+  return (
+    <nav aria-label="פעולות שטח" className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <A to={`/trip/${t.id}/schedule`} I={Clock} label="מה עכשיו" sub={next ? `${next.time} · ${next.title}` : 'הלו״ז של היום'} />
+      <A to={`/trip/${t.id}/gear`} I={Backpack} label="ציוד" sub="מה ארוז, מה חסר" />
+      <A to={t.regionId ? `/map/${t.regionId}` : '/map'} I={MapIcon} label="מפה" sub={t.offline?.tiles ? 'נשמרה במכשיר' : 'מפת האזור'} need={!mapOk} />
+      <A to={`/trip/${t.id}/safety`} I={ShieldAlert} label="בטיחות" sub="בדיקות ומקורות רשמיים" />
+      <A to="/academy" I={BookOpen} label="מדריכים" sub="זמינים גם בלי קליטה" />
+      <A to={`/trip/${t.id}/journal`} I={Camera} label="יומן ותמונה" sub="נשמר במכשיר, מסתנכרן אח״כ" />
+      <div className="col-span-2 md:col-span-3"><A tel="101" I={Phone} label="חירום — מד״א 101" sub="משטרה 100 · כיבוי 102" /></div>
+    </nav>
   );
 }
 

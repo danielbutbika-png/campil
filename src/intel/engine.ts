@@ -3,7 +3,8 @@
 // quantities, dates and counts are computed in code, facts come from the family's data, the forecast and
 // official sources. A language model, if one is connected later (see docs/ai/AI_PLAN.md), may only explain or
 // rephrase — it never decides numbers or safety, and nothing changes the user's data without their approval.
-import type { Trip, PackItem } from '../lib/types';
+import type { Trip, PackItem, GearItem } from '../lib/types';
+import { needsCheck } from '../engine/warehouse';
 import type { ProvKind } from '../components/Provenance';
 import type { Suggestion, Level } from '../engine/assistant';
 import type { ShopLine } from '../engine/planner';
@@ -57,9 +58,16 @@ export function fromSuggestion(s: Suggestion, now: number): Recommendation {
   };
 }
 
-const CHARGE = /טעינ|סוללה|סוללות|פנס|מטען|פאוור|power ?bank|מצבר|רמקול|נטען/i;
+const CHARGE = /טעינ|סוללה|סוללות|פנס|מטען|פאוור|power ?bank|mah|מצבר|רמקול|נטען|משאבה חשמלית/i;
+const NOT_CHARGED = /כבל|מפצל|ארגונית|מטען קיר|מטען לרכב|מתאם/;
+/** Does this item need charging before the trip? The family's own "needs charging" flag wins; otherwise by name. */
+export function needsCharge(p: PackItem, inventory?: GearItem[]): boolean {
+  const g = p.inventoryId ? inventory?.find(x => x.id === p.inventoryId) : undefined;
+  if (g?.charge !== undefined) return g.charge;
+  return CHARGE.test(p.name) && !NOT_CHARGED.test(p.name);
+}
 /** Extra detectors, beyond engine/assistant. Pure functions of the trip and its shopping lines. */
-export function detectMore(t: Trip, today: string, shopLines: ShopLine[], now: number): Recommendation[] {
+export function detectMore(t: Trip, today: string, shopLines: ShopLine[], now: number, inventory?: GearItem[]): Recommendation[] {
   const out: Recommendation[] = [];
   if (t.status !== 'planning' || t.end < today) return out;
   const until = diffDays(today, t.start);
@@ -68,7 +76,7 @@ export function detectMore(t: Trip, today: string, shopLines: ShopLine[], now: n
 
   // things to charge the evening before (packing items that run on batteries / need charging)
   const mine: PackItem[] = myPacking(t).filter(p => !p.removed);
-  const charge = mine.filter(p => p.category === 'power' || CHARGE.test(p.name));
+  const charge = mine.filter(p => needsCharge(p, inventory));
   if (until >= 0 && until <= 2 && charge.length && charge.some(p => !p.packed))
     out.push(mk({ id: 'charge', kind: 'charge', level: until <= 1 ? 'warn' : 'todo', title: `${charge.length} פריטים שצריך לטעון לפני היציאה`,
       why: charge.slice(0, 5).map(p => p.name).join(', ') + (charge.length > 5 ? '…' : '') + ` · יוצאים ${until === 0 ? 'היום' : until === 1 ? 'מחר' : 'בעוד יומיים'}.`,
@@ -127,4 +135,25 @@ export function tripReadiness(t: Trip, shopLines: ShopLine[], fcFresh: boolean):
   const w = items.reduce((s, i) => s + i.weight, 0);
   const pct = w ? Math.round((items.reduce((s, i) => s + i.weight * (i.done / i.total), 0) / w) * 100) : 0;
   return { pct, items };
+}
+
+/** Home screen with no upcoming trip: what the family's own data says is worth doing before the next one.
+ *  Only facts they entered (gear checks, items to buy, lessons they wrote) — no destinations are invented. */
+export function homeInsights(inventory: GearItem[], trips: Trip[], today: string, now: number): Recommendation[] {
+  const out: Recommendation[] = [];
+  const mk = (r: Omit<Recommendation, 'updatedAt' | 'engine' | 'sig'>): Recommendation => ({ ...r, updatedAt: now, engine: 'rules', sig: hash(r.title + '|' + r.why) });
+  const due = inventory.filter(g => needsCheck(g, today));
+  if (due.length)
+    out.push(mk({ id: 'gear-check', kind: 'gearcheck', level: 'todo', title: `${due.length} פריטי ציוד שהגיע זמן לבדוק`, why: due.slice(0, 4).map(g => g.name).join(', ') + (due.length > 4 ? '…' : ''),
+      todo: 'לבדוק עכשיו, כשאין לחץ של יציאה, ולסמן "נבדק"', evidence: [{ kind: 'fact', text: 'מועדי הבדיקה שהגדרתם במחסן הציוד' }, { kind: 'calc', text: `${due.length} פריטים שעבר מועד הבדיקה שלהם או שלא נבדקו` }],
+      source: { kind: 'auto', label: 'מחסן הציוד שלכם' }, certainty: 'high', priority: BASE.todo, action: { label: 'למחסן הציוד', to: '/gear/inventory' } }));
+  const buy = inventory.filter(g => g.status === 'buy');
+  if (buy.length)
+    out.push(mk({ id: 'gear-buy', kind: 'shopping', level: 'info', title: `${buy.length} פריטים שסימנתם "לקנות"`, why: buy.slice(0, 4).map(g => g.name).join(', ') + (buy.length > 4 ? '…' : ''),
+      todo: 'להשלים לפני הטיול הבא', evidence: [{ kind: 'fact', text: 'פריטים שסימנתם במאגר כ"צריך לקנות"' }], source: { kind: 'auto', label: 'מאגר הציוד שלכם' }, certainty: 'high', priority: BASE.info + 5, action: { label: 'למאגר הציוד', to: '/gear' } }));
+  const last = trips.filter(t => !t.example && t.end < today).sort((a, b) => b.end.localeCompare(a.end))[0];
+  if (last?.lessons?.trim())
+    out.push(mk({ id: `lessons-${last.id}`, kind: 'lessons', level: 'info', title: 'מה רציתם לשפר מהטיול הקודם', why: last.lessons.trim().slice(0, 200),
+      todo: 'לשכפל את הטיול — ההערות יעברו איתו', evidence: [{ kind: 'fact', text: `כתבתם אחרי ${last.name || 'הטיול הקודם'}` }], source: { kind: 'auto', label: 'הסיכום שכתבתם' }, certainty: 'high', priority: BASE.info, action: { label: 'לטיול הקודם', to: `/trip/${last.id}` } }));
+  return out;
 }
