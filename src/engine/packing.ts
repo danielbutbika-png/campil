@@ -160,7 +160,7 @@ export function generatePacking(ctx: PackContext): PackItem[] {
 export function mergePacking(prev: PackItem[], next: PackItem[]): PackItem[] {
   const key = (p: PackItem) => `${p.source}|${p.inventoryId ?? ''}|${p.assignee ?? ''}|${p.source === 'rule' ? p.familyId ?? '' : ''}|${p.name}`;
   const old = new Map(prev.map(p => [key(p), p]));
-  const merged = next.map(p => { const o = old.get(key(p)); return o ? { ...p, id: o.id, packed: o.packed, removed: o.removed, boxId: o.boxId ?? p.boxId, assignee: o.assignee ?? p.assignee, familyId: o.familyId ?? p.familyId, packedBy: o.packedBy, packedAt: o.packedAt, qty: o.source === 'manual' ? o.qty : p.qty } : p; });
+  const merged = next.map(p => { const o = old.get(key(p)); return o ? { ...p, id: o.id, packed: o.packed, removed: o.removed, boxId: o.boxId ?? p.boxId, assignee: o.assignee ?? p.assignee, familyId: o.familyId ?? p.familyId, packedBy: o.packedBy, packedAt: o.packedAt, qty: o.source === 'manual' || o.qtyEdited ? o.qty : p.qty, qtyEdited: o.qtyEdited } : p; });
   return [...merged, ...prev.filter(p => p.source === 'manual')];
 }
 

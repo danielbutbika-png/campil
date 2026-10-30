@@ -16,6 +16,11 @@ import { Prov } from '../../components/Provenance';
 import { FamilyDuty, DutyBoard } from '../../components/Duties';
 import { dutyKey } from '../../engine/duties';
 import { isGroup, myFamily } from '../../lib/families';
+import { Segmented } from '../../components/ui';
+import { FoodList, FoodPicker, usePortions } from '../../components/MenuFoods';
+import { mealsOfDay, keepFoods } from '../../engine/selfMenu';
+import { Plus } from 'lucide-react';
+import type { MealType } from '../../lib/types';
 
 const fmtQty = (q: number, unit: string) => unit === 'גר׳' ? (q >= 1000 ? `${(Math.ceil(q / 100) / 10).toLocaleString('he-IL')} ק״ג` : `${Math.ceil(q / 50) * 50} גר׳`) : `${Math.ceil(q - 1e-9)} ${unit}`;
 
@@ -39,7 +44,10 @@ export default function MealsTab({ t }: { t: Trip }) {
   const hasDairy = t.meals.some(m => [m.recipeId, m.alt?.recipeId].some(id => id && RECIPE_BY_ID[id]?.kashrut === 'dairy'));
   const hasGrill = grill.lines.length > 0;
   const setSlot = (id: string, p: Partial<MealSlot>) => updateTrip(t.id, x => ({ meals: x.meals.map(m => (m.id === id ? { ...m, ...p } : m)) }));
-  const rebuild = (diets = t.diets) => { updateTrip(t.id, x => ({ diets, meals: planMeals({ ...x, diets }, fallback), pantry: {} })); toast('התפריט נבנה מחדש לפי ההרכב'); };
+  const manual = t.menuMode === 'manual';
+  const [pick, setPick] = useState<{ day: number; type: MealType } | null>(null);
+  const eqAll = usePortions(t);
+  const rebuild = (diets = t.diets) => { if (manual) { updateTrip(t.id, { diets }); toast('התזונה עודכנה — התפריט שבניתם נשאר'); return; } updateTrip(t.id, x => ({ diets, meals: keepFoods(planMeals({ ...x, diets }, fallback), x.meals), pantry: {} })); toast('התפריט נבנה מחדש לפי ההרכב'); };
   const toggleGrill = (kind: 'meats' | 'veg', id: string) => {
     const cur = choice[kind]; const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
     if (!next.length) return toast('צריך לפחות פריט אחד');
@@ -67,7 +75,20 @@ export default function MealsTab({ t }: { t: Trip }) {
 
   return (
     <div className="space-y-10">
-      <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={() => { if (confirm('להסיר את התפריט ורשימת הקניות מהטיול הזה?')) { updateTrip(t.id, { noFood: true, meals: [], pantry: {} }); toast('הטיול עודכן: בלי אוכל'); } }}>בלי אוכל בטיול הזה</Button></div>
+      <section aria-labelledby="menu-mode-h" className="space-y-2 rounded-xl2 border border-line bg-surface p-4">
+        <h2 id="menu-mode-h" className="font-bold">איך בונים את התפריט?</h2>
+        <Segmented label="איך בונים את התפריט" value={manual ? 'manual' : 'auto'} onChange={v => {
+          if (v === 'none') { if (confirm('להסיר את התפריט ורשימת הקניות מהטיול הזה?')) { updateTrip(t.id, { noFood: true, meals: [], pantry: {} }); toast('הטיול עודכן: בלי אוכל'); } return; }
+          if (v === 'manual') {
+            const hasDishes = t.meals.some(m => m.recipeId || m.alt?.recipeId);
+            const clear = hasDishes && confirm('להתחיל מתפריט ריק?\nאישור — תפריט ריק שבונים בעצמכם · ביטול — לשמור את המנות הקיימות ולערוך אותן');
+            updateTrip(t.id, x => ({ menuMode: 'manual', ...(clear ? { meals: x.meals.filter(m => m.items?.length).map(m => ({ ...m, recipeId: null, alt: undefined })), pantry: {} } : {}) }));
+            toast('בונים בעצמכם — שום דבר לא יוחלף אוטומטית'); return;
+          }
+          if (confirm('לבנות תפריט אוטומטי לפי ההרכב והתזונה? מזון שהוספתם בעצמכם יישאר.')) { updateTrip(t.id, x => ({ menuMode: undefined, meals: keepFoods(planMeals(x, fallback), x.meals), pantry: {} })); toast('נבנה תפריט אוטומטי'); }
+        }} options={[{ v: 'auto', label: 'תפריט מוכן', icon: <ChefHat size={17} /> }, { v: 'manual', label: 'בונים בעצמנו', icon: <Pencil size={17} /> }, { v: 'none' as any, label: 'בלי אוכל', icon: <Utensils size={17} /> }]} />
+        <p className="text-sm text-muted">{manual ? `מוסיפים לכל ארוחה מה שרוצים, והאפליקציה ממליצה על כמות לפי ${t.participants.length} המשתתפים (${eqAll.toLocaleString('he-IL')} מנות מבוגר). הכול נכנס לרשימת הקניות.` : 'תפריט לפי התזונה של כל משפחה. אפשר להחליף מנות ולהוסיף מזון לכל ארוחה.'}</p>
+      </section>
       <DutyBoard t={t} lines={shop} />
       <Section title="מי אוכל מה" action={<Button size="sm" variant="soft" icon={<Pencil size={14} />} onClick={() => { setDraft(t.diets); setEditDiets(true); }}>עריכה</Button>}>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -78,7 +99,7 @@ export default function MealsTab({ t }: { t: Trip }) {
             </div>))}
         </div>
         <p className="flex flex-wrap items-center gap-2 text-xs text-muted"><Prov kind="estimate" />{APPETITE_NOTE}.</p>
-        <Button size="sm" variant="ghost" icon={<RefreshCw size={15} />} onClick={() => rebuild()}>בניית תפריט מחדש לפי ההרכב</Button>
+        {!manual && <Button size="sm" variant="ghost" icon={<RefreshCw size={15} />} onClick={() => rebuild()}>בניית תפריט מחדש לפי ההרכב</Button>}
       </Section>
 
       {(mehadrin || (kosher && hasMeat && hasDairy)) && (
@@ -103,20 +124,30 @@ export default function MealsTab({ t }: { t: Trip }) {
         </Section>
       )}
 
+      <FoodPicker t={t} target={pick} onClose={() => setPick(null)} />
       <Section title="תפריט הטיול">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: days }, (_, d) => (
             <section key={d} className="rounded-xl2 border border-line bg-surface">
               <h3 className="border-b border-line px-4 py-3 font-bold">יום {d + 1} · {shortDay(addDays(t.start, d))} {fmtDate(addDays(t.start, d))}</h3>
               <ul className="divide-y divide-line">
-                {t.meals.filter(m => m.day === d).map(m => {
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).filter(ty => (manual && mealsOfDay(t, d).includes(ty)) || t.meals.some(m => m.day === d && m.type === ty)).flatMap(ty => {
+                  const slots = t.meals.filter(m => m.day === d && m.type === ty);
+                  if (!slots.length) return [<li key={ty} className="flex flex-wrap items-center gap-2 px-4 py-3">
+                    <span className="w-14 shrink-0 text-sm font-bold text-muted">{MEAL_LABEL[ty]}</span>
+                    <select aria-label={`מנה מוכנה ל${MEAL_LABEL[ty]} יום ${d + 1}`} className="field min-w-0 flex-1 py-1.5 text-sm" value="" onChange={e => e.target.value && updateTrip(t.id, x => ({ meals: [...x.meals, { id: `ml-${d}-${ty}-${Date.now()}`, day: d, type: ty, recipeId: e.target.value, servings: x.participants.length, eq: eqAll }] }))}>
+                      <option value="">— מנה מוכנה (לא חובה) —</option>{dishOptions(ty, null).map(({ x, fit, all }) => <option key={x.id} value={x.id}>{x.name}{fit < all ? (fit ? ' (לא לכולם)' : ' (לא מתאים)') : ''}</option>)}
+                    </select>
+                    <Button size="sm" variant="soft" icon={<Plus size={14} />} onClick={() => setPick({ day: d, type: ty })}>מזון</Button>
+                  </li>];
+                  return slots.map(m => {
                   const r = m.recipeId ? RECIPE_BY_ID[m.recipeId] : null;
                   const a = m.alt?.recipeId ? RECIPE_BY_ID[m.alt.recipeId] : null;
                   return (
                     <li key={m.id} className="space-y-1.5 px-4 py-3">
                       <div className="flex items-center gap-2"><span className="w-14 shrink-0 text-sm font-bold text-muted">{MEAL_LABEL[m.type]}</span>
                         <select aria-label={`מנה ל${MEAL_LABEL[m.type]} יום ${d + 1}`} className="field min-w-0 flex-1 py-1.5 text-sm" value={m.recipeId ?? ''} onChange={e => setSlot(m.id, { recipeId: e.target.value || null })}>
-                          <option value="">— ללא —</option>{dishOptions(m.type, null).map(({ x, fit, all }) => <option key={x.id} value={x.id}>{x.name}{fit < all ? (fit ? ' (לא לכולם)' : ' (לא מתאים)') : ''}</option>)}
+                          <option value="">{manual ? '— מנה מוכנה (לא חובה) —' : '— ללא —'}</option>{dishOptions(m.type, null).map(({ x, fit, all }) => <option key={x.id} value={x.id}>{x.name}{fit < all ? (fit ? ' (לא לכולם)' : ' (לא מתאים)') : ''}</option>)}
                         </select>
                       </div>
                       {r && isGroup(t) && <div className="ps-16"><FamilyDuty t={t} k={dutyKey.meal(m.id)} label="מכינים" doneLabel="מוכן" /></div>}
@@ -131,7 +162,12 @@ export default function MealsTab({ t }: { t: Trip }) {
                           {a && <button className="text-xs font-bold text-moss" onClick={() => setRecipe(a)}>מתכון · {KASHRUT_LABEL[a.kashrut]}</button>}
                         </div>
                       )}
+                      <div className="space-y-1 ps-16">
+                        <FoodList t={t} slotId={m.id} items={m.items ?? []} />
+                        <button type="button" className="inline-flex items-center gap-1 text-xs font-bold text-moss" onClick={() => setPick({ day: d, type: m.type })}><Plus size={13} />הוספת מזון</button>
+                      </div>
                     </li>);
+                  });
                 })}
               </ul>
             </section>

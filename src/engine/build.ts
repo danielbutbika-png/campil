@@ -22,7 +22,7 @@ export function materialize(t0: Trip, s: S, days: DayWx[] = [], flags: WxFlags =
   const packing = mergePacking(t.packing, generatePacking({ trip: t, inventory: s.inventory, template: s.template, settings: s.settings, flags, wxSource: src }));
   return {
     ...t, packing, packingGeneratedAt: new Date().toISOString(), packingSig: packingSignature(t, flags, s),
-    meals: t.noFood ? [] : t.meals.length ? t.meals : planMeals(t, s.settings.diet),
+    meals: t.noFood ? [] : t.meals.length || t.menuMode === 'manual' ? t.meals : planMeals(t, s.settings.diet),
     schedule: t.schedule.length ? t.schedule : buildSchedule(t, days, [...sites, ...(t.places ?? [])]),
     tasks: t.tasks.length ? t.tasks : buildTasks(s.seedTasks, t, sites),
   };

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Plus, Printer, Share2, Copy, RotateCcw, EyeOff, Search, Info } from 'lucide-react';
+import { Plus, Printer, Share2, Copy, RotateCcw, EyeOff, Search, Info, Pencil, Sparkles } from 'lucide-react';
 import type { Trip, PackItem, CategoryId } from '../../lib/types';
 import { useStore } from '../../lib/store';
 import { CATEGORIES, CAT_BY_ID } from '../../data/catalog';
 import { readiness } from '../../engine/packing';
-import { Button, Chip, Ring, Sheet, Blaze, Badge, cx, toast } from '../../components/ui';
+import { Button, Chip, Ring, Sheet, Blaze, Badge, Segmented, cx, toast } from '../../components/ui';
 import { shareText, packingText } from '../../lib/share';
 import { uid } from '../../lib/util';
 import { stamp, ago } from '../../components/Collab';
@@ -58,6 +58,19 @@ export default function GearTab({ t }: { t: Trip }) {
         </div>
       </div>
 
+      <section aria-labelledby="pack-mode-h" className="no-print space-y-2 rounded-xl2 border border-line bg-surface p-4">
+        <h2 id="pack-mode-h" className="font-bold">איך בונים את רשימת הציוד?</h2>
+        <Segmented label="איך בונים את רשימת הציוד" value={t.packingMode === 'manual' ? 'manual' : 'auto'} onChange={v => {
+          if (v === 'manual') {
+            const clear = t.packing.some(p => !p.removed && p.source !== 'manual') && confirm('להתחיל מרשימה ריקה?\nאישור — כל הפריטים יוסרו (אפשר להחזיר אותם מ"הוסרו") · ביטול — לשמור את הרשימה ולערוך אותה');
+            updateTrip(t.id, x => ({ packingMode: 'manual', ...(clear ? { packing: x.packing.map(p => (p.source === 'manual' ? p : { ...p, removed: true })) } : {}) }));
+            toast(clear ? 'רשימה ריקה — הוסיפו פריטים בעצמכם' : 'בונים בעצמכם — הרשימה לא תשתנה אוטומטית'); return;
+          }
+          if (confirm('לחזור לרשימה אוטומטית? היא תתעדכן לפי התחזית והמשתתפים. פריטים שהוספתם, שערכתם או שהסרתם — נשארים כמו שהם.')) { updateTrip(t.id, { packingMode: undefined, packingSig: undefined }); toast('הרשימה האוטומטית מתעדכנת'); }
+        }} options={[{ v: 'auto', label: 'רשימה אוטומטית', icon: <Sparkles size={17} /> }, { v: 'manual', label: 'בונים בעצמנו', icon: <Pencil size={17} /> }]} />
+        <p className="text-sm text-muted">{t.packingMode === 'manual' ? 'הרשימה שלכם: מוסיפים, עורכים ומסירים — שום דבר לא מתווסף או משתנה אוטומטית.' : 'נבנית מהמחסן שלכם לפי התחזית, המשתתפים וסוג הטיול. כל פריט אפשר לערוך או להסיר — השינויים נשמרים גם כשהרשימה מתעדכנת.'}</p>
+      </section>
+
       {group2 && (
         <div className="no-print space-y-2 rounded-xl2 border border-line bg-surface p-3">
           {viewOpts.length > 1 ? (
@@ -76,6 +89,7 @@ export default function GearTab({ t }: { t: Trip }) {
         <select aria-label="קיבוץ" className="field w-auto" value={group} onChange={e => setGroup(e.target.value as Group)}><option value="category">לפי קטגוריה</option><option value="box">לפי ארגז / תיק</option><option value="person">לפי משתתף</option>{group2 && <option value="family">משותף / משפחה</option>}</select>
         <Chip active={filter === 'all'} onClick={() => setFilter('all')}>הכול</Chip><Chip active={filter === 'todo'} onClick={() => setFilter('todo')}>לא ארוז</Chip><Chip active={filter === 'missing'} onClick={() => setFilter('missing')}>חסר</Chip>
         <Chip active={showRemoved} onClick={() => setShowRemoved(!showRemoved)}><EyeOff size={14} />הוסרו</Chip>
+        {showRemoved && items.length > 0 && <Button size="sm" variant="soft" icon={<RotateCcw size={14} />} onClick={() => { const ids = new Set(items.map(i => i.id)); updateTrip(t.id, x => ({ packing: x.packing.map(p => (ids.has(p.id) ? { ...p, removed: false } : p)) })); toast(`${ids.size} פריטים חזרו לרשימה`); }}>החזרת כולם</Button>}
       </div>
 
       <h2 className="print-only text-2xl font-bold">{t.name} — רשימת ציוד</h2>
@@ -98,9 +112,9 @@ export default function GearTab({ t }: { t: Trip }) {
                     </div>
                     <button className="no-print text-muted hover:text-ink" aria-label={`למה ${p.name} ברשימה`} onClick={() => setWhy(p)}><Info size={17} /></button>
                     <div className="no-print flex items-center rounded-full bg-raised">
-                      <button aria-label="הפחתת כמות" className="h-8 w-8 font-bold" onClick={() => updatePack(t.id, p.id, { qty: Math.max(1, p.qty - 1) })}>−</button>
+                      <button aria-label="הפחתת כמות" className="h-8 w-8 font-bold" onClick={() => updatePack(t.id, p.id, { qty: Math.max(1, p.qty - 1), qtyEdited: true })}>−</button>
                       <span className="num w-7 text-center text-sm font-bold">{p.qty}</span>
-                      <button aria-label="הוספת כמות" className="h-8 w-8 font-bold" onClick={() => updatePack(t.id, p.id, { qty: p.qty + 1 })}>+</button>
+                      <button aria-label="הוספת כמות" className="h-8 w-8 font-bold" onClick={() => updatePack(t.id, p.id, { qty: p.qty + 1, qtyEdited: true })}>+</button>
                     </div>
                     <span className="print-only num">×{p.qty}</span>
                   </li>
@@ -134,9 +148,34 @@ function ItemSheet({ t, item, onClose }: { t: Trip; item: PackItem | null; onClo
   if (!item) return null;
   const up = (p: Partial<PackItem>) => updatePack(t.id, item.id, p);
   const live = t.packing.find(x => x.id === item.id) ?? item;
+  return <ItemSheetBody key={live.id} t={t} live={live} up={up} boxes={boxes} members={members} onClose={onClose} />;
+}
+
+function ItemSheetBody({ t, live, up, boxes, members, onClose }: { t: Trip; live: PackItem; up: (p: Partial<PackItem>) => void; boxes: ReturnType<typeof useStore.getState>['boxes']; members: Trip['participants']; onClose: () => void }) {
+  const updateTrip = useStore(s => s.updateTrip);
+  const [name, setName] = useState(live.name); const [cat, setCat] = useState<CategoryId>(live.category); const [qty, setQty] = useState(live.qty);
+  const dirty = name.trim() !== live.name || cat !== live.category || qty !== live.qty;
+  const save = () => {
+    if (!name.trim()) return toast('כתבו שם פריט');
+    if (live.source === 'manual' || (name.trim() === live.name && cat === live.category)) up({ name: name.trim(), category: cat, qty, qtyEdited: qty !== live.qty || live.qtyEdited });
+    else {
+      // a generated item that is renamed or moved becomes yours: the original stays removed so a recalculation won't bring it back
+      const mine: PackItem = { ...live, id: uid('pk'), name: name.trim(), category: cat, qty, source: 'manual', reason: `נערך ידנית (במקור: ${live.name})`, inventoryId: live.inventoryId };
+      updateTrip(t.id, x => ({ packing: [...x.packing.map(p => (p.id === live.id ? { ...p, removed: true } : p)), mine] }));
+    }
+    toast('הפריט עודכן'); onClose();
+  };
   return (
     <Sheet open onClose={onClose} title={live.name} footer={<>{live.removed ? <Button variant="soft" icon={<RotateCcw size={16} />} onClick={() => { up({ removed: false }); onClose(); }}>החזרה לרשימה</Button> : <Button variant="danger" onClick={() => { up({ removed: true }); onClose(); }}>הסרה מהרשימה</Button>}<Button variant="ghost" onClick={onClose}>סגירה</Button></>}>
       <div className="space-y-4">
+        <div className="space-y-3 rounded-xl border border-line p-3">
+          <div><label className="label" htmlFor="en">שם הפריט</label><input id="en" className="field" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="label" htmlFor="ec">קטגוריה</label><select id="ec" className="field" value={cat} onChange={e => setCat(e.target.value as CategoryId)}>{CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div><label className="label" htmlFor="eq">כמות</label><input id="eq" type="number" min={1} className="field num" value={qty} onChange={e => setQty(Math.max(1, +e.target.value || 1))} /></div>
+          </div>
+          {dirty && <Button size="sm" onClick={save}>שמירת השינויים</Button>}
+        </div>
         <div className="rounded-xl bg-raised/60 p-3"><p className="text-sm font-bold text-muted">למה זה ברשימה</p><p>{live.reason}</p><div className="mt-1.5">{live.source === 'manual' ? <span className="text-xs text-muted">נוסף ידנית</span> : /קק״ל|רשות הטבע/.test(live.reason) ? <Prov kind="official" source="קק״ל ורשות הטבע והגנים" url={WATER_SOURCE.url} /> : <Prov kind="auto" source={{ inventory: 'ממאגר הציוד שלכם', personal: 'מתבנית הביגוד', rule: 'כלל לפי פרטי הטיול והתחזית' }[live.source]} />}</div></div>
         {isGroup(t) && (
           <div><label className="label" htmlFor="fm">מי רואה את הפריט?</label>
@@ -157,6 +196,7 @@ function ItemSheet({ t, item, onClose }: { t: Trip; item: PackItem | null; onClo
 }
 
 function AddItem({ t, view, open, onClose, onAdd }: { t: Trip; view: View; open: boolean; onClose: () => void; onAdd: (p: PackItem) => void }) {
+  const inventory = useStore(s => s.inventory);
   const [name, setName] = useState(''); const [cat, setCat] = useState<CategoryId>('misc'); const [qty, setQty] = useState(1); const [err, setErr] = useState('');
   const fam0 = isGroup(t) ? (view !== 'all' ? view : myFamily(t)!) : '';
   const [fam, setFam] = useState<string>(fam0);
@@ -164,7 +204,9 @@ function AddItem({ t, view, open, onClose, onAdd }: { t: Trip; view: View; open:
   return (
     <Sheet open={open} onClose={onClose} title="הוספת פריט לרשימה">
       <form onSubmit={submit} className="space-y-3">
-        <div><label className="label" htmlFor="an">שם הפריט</label><input id="an" className={cx('field', err && 'border-danger')} value={name} onChange={e => setName(e.target.value)} aria-invalid={!!err} />{err && <p className="mt-1 text-sm text-danger">{err}</p>}</div>
+        <div><label className="label" htmlFor="an">שם הפריט</label><input id="an" list="an-inv" autoComplete="off" className={cx('field', err && 'border-danger')} value={name} onChange={e => { setName(e.target.value); const g = inventory.find(x => x.name === e.target.value); if (g) setCat(g.category); }} aria-invalid={!!err} />
+          <datalist id="an-inv">{inventory.map(g => <option key={g.id} value={g.name} />)}</datalist>
+          <p className="mt-1 text-xs text-muted">מתחילים להקליד — מופיעים פריטים מהמחסן שלכם, או כותבים כל דבר אחר.</p>{err && <p className="mt-1 text-sm text-danger">{err}</p>}</div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label" htmlFor="ac">קטגוריה</label><select id="ac" className="field" value={cat} onChange={e => setCat(e.target.value as CategoryId)}>{CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
           <div><label className="label" htmlFor="aq">כמות</label><input id="aq" type="number" min={1} className="field" value={qty} onChange={e => setQty(Math.max(1, +e.target.value))} /></div>

@@ -71,6 +71,8 @@ export interface Trip {
   places?: TripPlace[];
   /** No meals are planned for this trip (e.g. a short day trip). Drinking water stays in the packing list. */
   noFood?: boolean;
+  /** 'manual' = the family builds the menu / the gear list itself; nothing is added or replaced automatically. */
+  menuMode?: 'auto' | 'manual'; packingMode?: 'auto' | 'manual';
   /** Driving route home → stops → home, computed from OpenStreetMap roads (OSRM). `sig` = the stops it was computed for. */
   drive?: (import('../services/routing').DriveRoute & { sig: string }) | null;
   /** Imported route (GPX), simplified; and the manual items of the safety checklist that were confirmed. */
@@ -85,7 +87,7 @@ export interface PackItem {
   id: string; name: string; category: CategoryId; qty: number; unit?: string;
   reason: string; source: 'inventory' | 'rule' | 'personal' | 'manual';
   inventoryId?: string; boxId?: string | null; assignee?: string; packed: boolean; missing?: boolean;
-  removed?: boolean; packedBy?: string; packedAt?: number; ord?: number;
+  removed?: boolean; /** quantity set by hand — kept when the list is recalculated */ qtyEdited?: boolean; packedBy?: string; packedAt?: number; ord?: number;
   /** Owning family: an id, '' = shared with everyone, undefined = derived (see lib/families). */
   familyId?: string;
   /** Shared items in a multi-family trip: how many units each family brings (familyId → units). */
@@ -96,7 +98,9 @@ export interface PackItem {
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 /** servings = people eating the dish; eq = adult-equivalent portions (children eat less). alt = second dish for those who don't eat the main one. */
-export interface MealSlot { id: string; day: number; type: MealType; recipeId: string | null; servings: number; eq?: number; alt?: { recipeId: string | null; servings: number; eq?: number; who?: string } }
+/** A food added to a meal by hand. `foodId` = from the foods list (qty follows the number of eaters unless `qty` is set). */
+export interface MenuFood { id: string; name: string; unit: string; shop: string; foodId?: string; per?: number; qty?: number }
+export interface MealSlot { id: string; day: number; type: MealType; recipeId: string | null; servings: number; eq?: number; alt?: { recipeId: string | null; servings: number; eq?: number; who?: string }; items?: MenuFood[] }
 export type DietStyle = 'meat' | 'vegetarian' | 'vegan';
 export type KashrutLevel = 'none' | 'kosher' | 'mehadrin';
 /** What one family (or the whole trip) eats. */

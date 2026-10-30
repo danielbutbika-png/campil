@@ -92,7 +92,8 @@ export default function Wizard() {
     const daysWx = regionFc.data?.days.filter(d => d.date >= t.start && d.date <= t.end) ?? [];
     const first = SITE_BY_ID[t.siteIds[0]]?.name ?? t.places?.[0]?.name;
     const name = t.name.trim() || (t.kind === 'day' && first ? `טיול יום ל${first}` : `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${REGION_BY_ID[t.regionId!].short}`);
-    const done = materialize({ ...t, name }, st, daysWx);
+    const built = materialize({ ...t, name }, st, daysWx);
+    const done = t.packingMode === 'manual' ? { ...built, packing: [] } : built;
     st.addTrip(done); toast('התוכנית מוכנה'); go(`/trip/${done.id}`);
   };
 
@@ -173,9 +174,15 @@ export default function Wizard() {
           <FamiliesEditor families={t.families} participants={t.participants} household={st.members} defaultName={st.settings.familyName || 'המשפחה שלי'} showErrors={showPErr}
             onChange={(families, participants) => set({ families, participants: normalizeFamilies(families, participants) })} />
           {errors.participants && <p className="text-sm font-semibold text-danger">{errors.participants}</p>}
+          <div className="space-y-2 border-t border-line pt-5">
+            <h2 className="font-display text-xl">רשימת ציוד</h2>
+            <Segmented label="רשימת ציוד" value={t.packingMode === 'manual' ? 'manual' : 'auto'} onChange={v => set({ packingMode: v === 'manual' ? 'manual' : undefined })} options={[{ v: 'auto', label: 'רשימה אוטומטית' }, { v: 'manual', label: 'בונים בעצמנו' }]} />
+            <p className="text-sm text-muted">{t.packingMode === 'manual' ? 'הרשימה תתחיל ריקה, ותוסיפו בעצמכם (עם הצעות מהמחסן).' : 'נבנית מהמחסן שלכם לפי התחזית, המשתתפים וסוג הטיול — וכל פריט אפשר לערוך או להסיר.'}</p>
+          </div>
           <div className="space-y-3 border-t border-line pt-5">
             <h2 className="flex items-center gap-2 font-display text-xl"><Utensils size={20} />מה אוכלים?</h2>
-            <Segmented label="אוכל בטיול" value={t.noFood ? 'none' : 'food'} onChange={v => set({ noFood: v === 'none' || undefined })} options={[{ v: 'food', label: 'מתכננים אוכל' }, { v: 'none', label: 'בלי אוכל' }]} />
+            <Segmented label="אוכל בטיול" value={t.noFood ? 'none' : t.menuMode === 'manual' ? 'manual' : 'food'} onChange={v => set({ noFood: v === 'none' || undefined, menuMode: v === 'manual' ? 'manual' : undefined })} options={[{ v: 'food', label: 'תפריט מוכן' }, { v: 'manual', label: 'בונים בעצמנו' }, { v: 'none', label: 'בלי אוכל' }]} />
+            {t.menuMode === 'manual' && !t.noFood && <p className="text-sm text-muted">בלשונית האוכל של הטיול תוסיפו לכל ארוחה מה שרוצים, עם כמות מומלצת לפי מספר המבוגרים והילדים.</p>}
             {t.noFood ? <p className="text-sm text-muted">לא נבנה תפריט ורשימת קניות, וציוד הבישול לא ייכנס לרשימה. מים לשתייה נשארים ברשימת הציוד. אפשר לשנות אחר כך בלשונית האוכל.</p> : <>
             <p className="text-sm text-muted">{isGroup(t) ? 'לכל משפחה: בשרי, צמחוני או טבעוני, רמת כשרות ואלרגיות. נבנה תפריט משותף אחד — עם חלופה למי שלא אוכל את המנה העיקרית — וכמויות לפי הגילים.' : 'בשרי, צמחוני או טבעוני, רמת כשרות ואלרגיות — לפי זה נבנה תפריט עם כמויות.'}</p>
             <DietsEditor t={t} fallback={st.settings.diet} onChange={diets => set({ diets })} /></>}
@@ -207,7 +214,7 @@ export default function Wizard() {
           <Card className="space-y-3 p-5">
             <h2 className="font-display text-2xl">{t.name || `${t.kind === 'day' ? 'טיול יום' : 'קמפינג'} ב${t.regionId ? REGION_BY_ID[t.regionId].short : ''}`}</h2>
             <dl className="grid gap-3 sm:grid-cols-2">
-              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.role === 'child' ? 'ילד/ה' : 'מבוגר/ת'}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', t.noFood ? 'בלי אוכל' : Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length || t.places?.length ? [...t.siteIds.map(id => SITES.find(s => s.id === id)?.name), ...(t.places ?? []).map(p => p.name)].join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
+              {[['תאריכים', `${fmtRange(t.start, t.end)} · ${days} ימים, ${nights} לילות`], ['משתתפים', `${isGroup(t) ? t.families!.map(f => `${f.name}: ${t.participants.filter(p => p.familyId === f.id).map(p => p.name).join(', ')}`).join(' · ') : t.participants.map(p => `${p.name} (${p.role === 'child' ? 'ילד/ה' : 'מבוגר/ת'}, ${p.gender === 'f' ? 'נ' : 'ז'})`).join(', ')}${t.pets ? ' + חיית מחמד' : ''}`], ['אזור', t.regionId ? REGION_BY_ID[t.regionId].name : '—'], ['לינה', t.kind === 'day' ? 'ללא' : { tent: 'אוהל פרטי', equipped_site: 'חניון מאובזר', caravan: 'קרוואן', other: 'אירוח אחר' }[t.lodging]], ['תזונה', t.noFood ? 'בלי אוכל' : t.menuMode === 'manual' ? 'תפריט שבונים בעצמנו' : Object.values(t.diets ?? {}).length ? (isGroup(t) ? t.families!.map(f => `${f.name}: ${dietLabel(t.diets?.[f.id])}`).join(' · ') : dietLabel(t.diets?.all)) : dietLabel(undefined)], ['תחומי עניין', t.interests.map(i => INTEREST_HE[i]).join(', ') || '—'], ['אתרים בתוכנית', t.siteIds.length || t.places?.length ? [...t.siteIds.map(id => SITES.find(s => s.id === id)?.name), ...(t.places ?? []).map(p => p.name)].join(', ') : 'עוד לא נבחרו']].map(([k, v]) => <div key={k}><dt className="text-sm text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>)}
             </dl>
           </Card>
           <p className="text-muted">ניצור עכשיו: תחזית ליעד, המלצות הכנה, רשימת ציוד מהמאגר שלכם, תפריט ורשימת קניות, לוח זמנים ומשימות לפני היציאה. הכול ניתן לעריכה.</p>

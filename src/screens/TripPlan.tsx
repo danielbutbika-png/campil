@@ -5,6 +5,7 @@ import { useTripWeather } from '../lib/hooks';
 import { fmtRange, tripLength, diffDays, todayISO } from '../lib/util';
 import { REGION_BY_ID } from '../data/regions';
 import { materialize, packingSignature } from '../engine/build';
+import { keepFoods } from '../engine/selfMenu';
 import { planMeals, buildSchedule } from '../engine/planner';
 import { SITE_BY_ID } from '../data/sites';
 import { Scene } from '../components/Scene';
@@ -53,6 +54,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
     if (!scope) return;
     const sig = packingSignature(t, wx.flags, st);
     if (sig === t.packingSig) return;
+    if (t.packingMode === 'manual') return; // the family builds the list itself: nothing is added or replaced
     const next = materialize(t, st, wx.days, wx.flags, wx.source);
     // A partner family's device makes its personal and basic list only: the gear store on this device is the
     // organiser's in a shared trip (a partner's app starts with a sample store, not their real gear).
@@ -66,7 +68,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
     const changedCore = p.start !== t.start || p.end !== t.end || p.adults !== t.adults || p.children !== t.children || p.kind !== t.kind || JSON.stringify(p.participants) !== JSON.stringify(t.participants);
     const merged = { ...t, ...p } as Trip;
     const extra: Partial<Trip> = {};
-    if (changedCore) { extra.meals = planMeals(merged, st.settings.diet); extra.schedule = buildSchedule(merged, wx.days, merged.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean)); }
+    if (changedCore) { if (merged.menuMode !== 'manual' && !merged.noFood) extra.meals = keepFoods(planMeals(merged, st.settings.diet), t.meals); extra.schedule = buildSchedule(merged, wx.days, merged.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean)); }
     else if (JSON.stringify(p.siteIds) !== JSON.stringify(t.siteIds)) extra.schedule = buildSchedule(merged, wx.days, merged.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean));
     st.updateTrip(t.id, { ...p, ...extra, example: false });
     setEdit(false); toast(changedCore ? 'הטיול עודכן — התפריט, הלו״ז והציוד חושבו מחדש' : 'הטיול עודכן');

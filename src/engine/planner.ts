@@ -1,4 +1,5 @@
 // Meals, shopping list, day schedule and pre-trip tasks.
+import { portions, foodQty } from './selfMenu';
 import type { DietPrefs, MealSlot, ScheduleItem, TaskItem, Trip, Site } from '../lib/types';
 import { RECIPES, RECIPE_BY_ID, type Recipe } from '../data/recipes';
 import { planMenu, grillItemsFor, grillIngredients, dishContext, type MenuTrip } from './menu';
@@ -38,6 +39,9 @@ export function shoppingList(meals: MealSlot[], t?: MenuTrip, diet?: DietPrefs):
       for (const i of r.ingredients) add(i, n, r.name);
       if (r.grill && t && diet) for (const i of grillIngredients(grillItemsFor(r.grill, t, dishContext(t, diet, s, which)))) add(i, n, r.name);
     }
+    // foods added by hand: the recommended quantity follows everyone on the trip (or the number the user typed)
+    const eq = t && diet ? portions(t, diet) : s.eq ?? s.servings;
+    for (const i of s.items ?? []) { const q = foodQty(i, eq); if (q > 0) add({ name: i.name, qty: q, unit: i.unit, shop: i.shop }, 1, 'נוסף לתפריט'); }
   }
   return [...m.values()].map(l => { const [q, u] = nice(l.qty, l.unit); return { ...l, qty: q, unit: u, label: qtyLabel(q, u) }; }).sort((a, b) => SHOP_ORDER.indexOf(a.shop) - SHOP_ORDER.indexOf(b.shop) || a.name.localeCompare(b.name, 'he'));
 }
