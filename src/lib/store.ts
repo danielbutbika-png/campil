@@ -14,6 +14,9 @@ export interface State {
   /** CampIL Academy on this device: favourite lessons, lessons marked learned, best quiz score (0–3) per knot */
   academy: { fav: string[]; learned: string[]; quiz: Record<string, number> };
   setAcademy: (f: (a: State['academy']) => State['academy']) => void;
+  /** Recommendations the user marked done or not relevant, per `${tripId}:${recId}` (this device). */
+  insightState: Record<string, import('../intel/engine').RecState>;
+  setInsight: (key: string, st: import('../intel/engine').RecState | null) => void;
   setSettings: (p: Partial<Settings>) => void;
   upsertMember: (m: Member) => void; removeMember: (id: string) => void;
   upsertItem: (g: GearItem) => void; removeItem: (id: string) => void;
@@ -51,7 +54,7 @@ const initial = () => {
     version: 1,
     settings: { familyName: 'המשפחה שלי', vehicle: '', diet: { kosher: true, vegetarian: false, vegan: false, allergies: [] }, theme: 'system', fuelBrands: [], fuelBufferKm: 2, aiModel: 'claude-sonnet-5-5' } as Settings,
     members, boxes: seed.boxes as Box[], inventory: (seed.items as GearItem[]).map(g => ({ ...g, available: true })),
-    template: seed.personalTemplate as PersonalTemplateItem[], seedTasks: seed.tasks, trips: [] as Trip[], journal: [] as JournalEntry[], album: [] as AlbumPhoto[], siteChecks: {} as Record<string, SiteCheck>, favorites: [] as string[], onboarded: false, academy: { fav: [] as string[], learned: [] as string[], quiz: {} as Record<string, number> },
+    template: seed.personalTemplate as PersonalTemplateItem[], seedTasks: seed.tasks, trips: [] as Trip[], journal: [] as JournalEntry[], album: [] as AlbumPhoto[], siteChecks: {} as Record<string, SiteCheck>, favorites: [] as string[], onboarded: false, academy: { fav: [] as string[], learned: [] as string[], quiz: {} as Record<string, number> }, insightState: {} as State['insightState'],
   };
 };
 
@@ -73,6 +76,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   upsertPhotos: ps => set(s => { const m = new Map(s.album.map(p => [p.id, p])); for (const p of ps) m.set(p.id, { ...m.get(p.id), ...p }); return { album: [...m.values()] }; }),
   removePhoto: id => set(s => ({ album: s.album.filter(p => p.id !== id) })),
   setAcademy: f => set(s => ({ academy: f(s.academy ?? { fav: [], learned: [], quiz: {} }) })),
+  setInsight: (k, st) => set(s => { const n = { ...(s.insightState ?? {}) }; if (st) n[k] = st; else delete n[k]; return { insightState: n }; }),
   setSiteCheck: (id, c) => set(s => { const n = { ...s.siteChecks }; if (c) n[id] = c; else delete n[id]; return { siteChecks: n }; }),
   toggleFavorite: id => set(s => ({ favorites: s.favorites.includes(id) ? s.favorites.filter(x => x !== id) : [...s.favorites, id] })),
   importAll: data => set(() => ({ ...pickData(data) })),
@@ -89,7 +93,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   },
 }));
 
-const KEYS = ['version', 'settings', 'members', 'boxes', 'inventory', 'template', 'seedTasks', 'trips', 'journal', 'album', 'siteChecks', 'favorites', 'onboarded', 'academy'] as const;
+const KEYS = ['version', 'settings', 'members', 'boxes', 'inventory', 'template', 'seedTasks', 'trips', 'journal', 'album', 'siteChecks', 'favorites', 'onboarded', 'academy', 'insightState'] as const;
 export function pickData(s: Partial<State>) { const o: any = {}; for (const k of KEYS) if (s[k] !== undefined) o[k] = s[k]; return o; }
 
 /** Preferences learned from history: interests and site tags of rated/completed trips, plus favorites. */

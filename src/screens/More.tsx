@@ -199,7 +199,8 @@ export function About() {
       <Card className="space-y-2 p-4"><h2 className="font-bold">מה CampIL לא עושה</h2>
         <ul className="list-inside list-disc space-y-1 text-sm"><li>לא ממציאה תחזית, מחירים, דירוגים, שעות פתיחה או מתקנים.</li><li>לא מציגה אתר כבטוח או פתוח — יש לבדוק מול המפעיל והתרעות רשמיות.</li><li>מדד המוכנות אינו אישור בטיחות.</li><li>חישובי נפח לרכב הם הערכה בלבד.</li></ul>
       </Card>
-      <Card className="space-y-2 p-4"><h2 className="font-bold">פרטיות</h2><p className="text-sm">כל הנתונים, כולל תמונות, נשמרים במכשיר בלבד. האפליקציה פונה לשירותים חיצוניים רק עם קואורדינטות (מזג אוויר, מפה, חניונים).</p></Card>
+      <Card className="space-y-2 p-4"><h2 className="font-bold">פרטיות</h2><p className="text-sm">הטיולים (כולל התמונות שלהם) נשמרים בחשבון Google שלכם ב-Firebase, ופרטיים לכם עד שאתם שולחים קישור למשפחה אחרת. מאגר הציוד, ההגדרות ונקודת היציאה נשארים במכשיר. האפליקציה פונה לשירותים חיצוניים רק עם קואורדינטות או טקסט חיפוש (מזג אוויר, מפה, מקומות, מסלולים). ההמלצות מחושבות בכללים קבועים, בלי מודל AI; היחיד שפונה למודל הוא חיפוש נפח תא מטען לרכב שלא במאגר — רק אם הזנתם מפתח Claude API משלכם.</p></Card>
+      <a href="#/design" className="block text-sm font-bold text-moss underline">שפת העיצוב של CampIL (Outdoor Design System)</a>
       <Badge>גרסה 1.0 · {fmtDate(new Date().toISOString().slice(0, 10))}</Badge>
     </div>
   );

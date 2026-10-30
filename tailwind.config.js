@@ -10,6 +10,7 @@ export default {
         forest: 'rgb(var(--forest) / <alpha-value>)', moss: 'rgb(var(--moss) / <alpha-value>)', sand: 'rgb(var(--sand) / <alpha-value>)',
         earth: 'rgb(var(--earth) / <alpha-value>)', sunset: 'rgb(var(--sunset) / <alpha-value>)', onforest: 'rgb(var(--onforest) / <alpha-value>)',
         ok: 'rgb(var(--ok) / <alpha-value>)', warn: 'rgb(var(--warn) / <alpha-value>)', danger: 'rgb(var(--danger) / <alpha-value>)', info: 'rgb(var(--info) / <alpha-value>)',
+        deco: 'rgb(var(--sunset-deco) / <alpha-value>)', river: 'rgb(var(--river) / <alpha-value>)', olive: 'rgb(var(--olive) / <alpha-value>)',
       },
       fontFamily: { display: ['"Suez One"', 'Assistant', 'system-ui', 'serif'], sans: ['Assistant', 'system-ui', 'Arial', 'sans-serif'] },
       borderRadius: { xl2: '1.25rem' },

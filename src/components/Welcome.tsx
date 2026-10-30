@@ -17,7 +17,7 @@ export function Welcome() {
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="welcome-h" className="fixed inset-0 z-[80] flex items-end justify-center bg-forest/95 p-4 text-white backdrop-blur sm:items-center">
+    <div role="dialog" aria-modal="true" aria-labelledby="welcome-h" className="topo fixed inset-0 z-[80] flex items-end justify-center bg-forest p-4 text-white sm:items-center">
       <div className="safe-b w-full max-w-md space-y-5 pb-4">
         <div className="space-y-2">
           <h1 id="welcome-h" className="font-display text-4xl">ברוכים הבאים ל-CampIL</h1>

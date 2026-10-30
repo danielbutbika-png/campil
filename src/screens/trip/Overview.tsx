@@ -17,7 +17,7 @@ import { RouteFuel, NavButtons } from '../../components/RouteFuel';
 import { stamp, ActivityFeed, Avatars } from '../../components/Collab';
 import { OfficialAlerts, TypeChecks } from '../../components/Field';
 import { DutyBoard, useShopLines } from '../../components/Duties';
-import { AssistantCard } from '../../components/Assistant';
+import { AssistantCard, TripReadiness } from '../../components/Assistant';
 import { GpxCard, TripPlaces } from '../../components/GpxCard';
 import { href } from '../../lib/router';
 import { myPacking } from '../../lib/families';
@@ -50,6 +50,8 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
       {ended && t.status !== 'done' && (
         <Card className="flex flex-wrap items-center gap-3 border-sunset/40 p-4"><Flag className="text-sunset" /><p className="flex-1 font-semibold">הטיול הסתיים. סכמו אותו כדי שההמלצות הבאות ילמדו ממנו.</p><Button size="sm" onClick={onFinish}>סיכום הטיול</Button></Card>
       )}
+      {!ended && <AssistantCard t={t} />}
+      {!ended && <TripReadiness t={t} />}
       {!ended && <FieldCard t={t} point={wx.point ?? null} />}
       {!ended && <TypeChecks t={t} />}
       {!ended && <OfficialAlerts flood={sites.some(x => x.floodRisk)} />}
@@ -74,7 +76,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
           )}
         </Section>
         <Card className="space-y-4 self-start p-5">
-          <div className="flex items-center gap-4"><Ring pct={r.pct} size={86} label={`מדד מוכנות ${r.pct}%`} /><div><p className="font-display text-lg">מדד מוכנות</p><p className="num text-sm text-muted">{r.done} מתוך {r.total} פריטי אריזה</p>{r.missing > 0 && <p className="text-sm font-bold text-danger">{r.missing} פריטים חסרים</p>}</div></div>
+          <div className="flex items-center gap-4"><Ring pct={r.pct} size={86} label={`ארוז ${r.pct}%`} /><div><p className="font-display text-lg">מה ארוז</p><p className="num text-sm text-muted">{r.done} מתוך {r.total} פריטי אריזה</p>{r.missing > 0 && <p className="text-sm font-bold text-danger">{r.missing} פריטים חסרים</p>}</div></div>
           <ul className="space-y-1.5">{[...r.byCat].sort((a, b) => b[1].total - a[1].total).slice(0, 7).map(([c, v]) => (
             <li key={c} className="flex items-center gap-2 text-sm"><Blaze color={CAT_BY_ID[c]?.blaze ?? '#777'} /><span className="flex-1">{CAT_BY_ID[c]?.name}</span><span className="num text-muted">{v.done}/{v.total}</span><span className="h-1.5 w-16 overflow-hidden rounded-full bg-line"><span className="block h-full bg-moss" style={{ width: `${(v.done / v.total) * 100}%` }} /></span></li>))}
           </ul>
@@ -84,7 +86,6 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
       </div>
 
       {t.lessonsFrom && t.lessons && !ended && <Card className="space-y-1 border-info/40 p-4"><p className="font-bold">לקחים מ{t.lessonsFrom}</p><p className="whitespace-pre-line text-sm">{t.lessons}</p></Card>}
-      {!ended && <AssistantCard t={t} />}
       <DutyBoard t={t} lines={shopLines} compact />
       {t.shared && <Section title="מה קורה בטיול" action={<Avatars t={t} />}><Card className="p-4"><ActivityFeed t={t} /></Card></Section>}
 

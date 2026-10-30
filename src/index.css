@@ -5,9 +5,13 @@
 /* Layout: app shell — bottom tab bar on phones, right-side rail (RTL) from 1024px.
    Palette: deep forest, sand & earth, cream, a sunset accent. Display: Suez One (trail-sign weight). Body: Assistant. */
 :root {
-  --bg: 250 246 238; --surface: 255 253 248; --raised: 243 236 222; --ink: 28 36 30; --muted: 98 104 92; --line: 225 215 196;
-  --forest: 29 58 41; --moss: 52 97 64; --sand: 232 220 196; --earth: 139 107 71; --sunset: 168 74 24; --onforest: 246 241 228;
-  --ok: 47 125 74; --warn: 143 88 10; --danger: 190 52 40; --info: 52 108 150; --shadow: 40 34 20;
+  /* CampIL Outdoor Design System (docs/design/OUTDOOR_DESIGN_SYSTEM.md) — every text/background pair is AA-checked in
+     src/lib/contrast.test.ts. Forest #183C34 · Sand #F3ECDD · Earth #786048 (darkened from #80674E for text) · Deep Charcoal #202923; olive and river are
+     darkened for text (#546244, #28687A); Sunset #D77B45 is decorative only (3:1 on white) — text and buttons use #A84A18. */
+  --bg: 250 246 238; --surface: 255 253 248; --raised: 243 236 221; --ink: 32 41 35; --muted: 98 104 92; --line: 225 215 196;
+  --forest: 24 60 52; --moss: 84 98 68; --sand: 232 220 196; --earth: 120 96 72; --sunset: 168 74 24; --onforest: 246 241 228;
+  --ok: 38 110 62; --warn: 143 88 10; --danger: 190 52 40; --info: 40 104 122; --shadow: 40 34 20;
+  --sunset-deco: 215 123 69; --river: 52 124 145; --olive: 101 117 83;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -15,6 +19,7 @@
     --bg: 14 20 16; --surface: 22 31 25; --raised: 31 42 34; --ink: 236 231 218; --muted: 160 164 150; --line: 48 60 50;
     --forest: 120 176 132; --moss: 104 156 116; --sand: 70 62 48; --earth: 196 160 116; --sunset: 240 140 80; --onforest: 14 20 16;
     --ok: 104 190 130; --warn: 230 170 70; --danger: 240 110 95; --info: 120 170 215; --shadow: 0 0 0;
+    --sunset-deco: 230 140 90; --river: 110 170 190; --olive: 150 168 125;
     color-scheme: dark;
   }
 }
@@ -22,6 +27,7 @@
   --bg: 14 20 16; --surface: 22 31 25; --raised: 31 42 34; --ink: 236 231 218; --muted: 160 164 150; --line: 48 60 50;
   --forest: 120 176 132; --moss: 104 156 116; --sand: 70 62 48; --earth: 196 160 116; --sunset: 240 140 80; --onforest: 14 20 16;
   --ok: 104 190 130; --warn: 230 170 70; --danger: 240 110 95; --info: 120 170 215; --shadow: 0 0 0;
+  --sunset-deco: 230 140 90; --river: 110 170 190; --olive: 150 168 125;
   color-scheme: dark;
 }
 
@@ -69,3 +75,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .labels-far .region-label:not(.sel) { font-size: 0; padding: 0; width: 24px; height: 24px; box-shadow: none; background: radial-gradient(circle, #fff 0 3px, #1d3a29 3.5px 5.5px, transparent 6px); }
 
 @keyframes knot-draw { to { stroke-dashoffset: 0; } }
+
+/* Topographic contour lines — a quiet field-map texture for heroes and empty states. Decorative: aria-hidden containers only. */
+.topo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='none' stroke='%23F3ECDD' stroke-opacity='.16' stroke-width='1.2'%3E%3Cpath d='M-10 60c40-30 80 10 120-10s70-40 140 0'/%3E%3Cpath d='M-10 90c45-25 85 15 125-5s75-35 135 5'/%3E%3Cpath d='M-10 125c50-20 90 20 130 0s80-30 130 10'/%3E%3Cpath d='M-10 165c55-15 95 25 135 5s85-25 125 15'/%3E%3Cpath d='M-10 205c60-10 100 30 140 10s90-20 120 20'/%3E%3Cellipse cx='175' cy='45' rx='28' ry='14'/%3E%3Cellipse cx='175' cy='45' rx='14' ry='6'/%3E%3C/svg%3E"); background-size: 240px 240px; }
+.topo-ink { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='none' stroke='%23183C34' stroke-opacity='.07' stroke-width='1.2'%3E%3Cpath d='M-10 60c40-30 80 10 120-10s70-40 140 0'/%3E%3Cpath d='M-10 90c45-25 85 15 125-5s75-35 135 5'/%3E%3Cpath d='M-10 125c50-20 90 20 130 0s80-30 130 10'/%3E%3Cpath d='M-10 165c55-15 95 25 135 5s85-25 125 15'/%3E%3Cpath d='M-10 205c60-10 100 30 140 10s90-20 120 20'/%3E%3Cellipse cx='175' cy='45' rx='28' ry='14'/%3E%3Cellipse cx='175' cy='45' rx='14' ry='6'/%3E%3C/svg%3E"); background-size: 240px 240px; }

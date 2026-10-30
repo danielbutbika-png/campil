@@ -41,6 +41,7 @@ const GuideView = lazy(() => import('./screens/More').then(m => ({ default: m.Gu
 const Albums = lazy(() => import('./screens/More').then(m => ({ default: m.Albums })));
 const Settings = lazy(() => import('./screens/More').then(m => ({ default: m.Settings })));
 const About = lazy(() => import('./screens/More').then(m => ({ default: m.About })));
+const DesignSystem = lazy(() => import('./screens/DesignSystem'));
 
 const MapScreen = lazy(() => import('./screens/MapScreen'));
 const Academy = lazy(() => import('./screens/Academy'));
@@ -106,6 +107,7 @@ export default function App() {
   else if (path === '/albums') screen = <Albums />;
   else if (path === '/settings') screen = <Settings />;
   else if (path === '/about') screen = <About />;
+  else if (path === '/design') screen = <DesignSystem />;
   else screen = <Home />;
 
   return (

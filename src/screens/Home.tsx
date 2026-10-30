@@ -66,6 +66,7 @@ export default function Home() {
       <header className="relative isolate overflow-hidden bg-forest text-white">
         {HERO.map((h, i) => <Scene key={h.scene} kind={h.scene} seed={i + 2} className={cx('absolute inset-0 -z-10 h-full w-full transition-opacity duration-[1400ms]', i === hi ? 'opacity-100' : 'opacity-0')} />)}
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
+        <div aria-hidden className="topo pointer-events-none absolute inset-0 -z-10 opacity-70" />
         <div className="gutter mx-auto max-w-6xl space-y-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] md:pb-12">
           <div className="flex items-center justify-between gap-2 lg:hidden"><Logo light /><div className="flex items-center gap-3"><span className="rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur">{HERO[hi].caption}</span><AccountBadge /></div></div>
           <div className="max-w-xl space-y-2 pt-6 md:pt-14">
