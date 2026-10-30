@@ -139,6 +139,6 @@ export function Toggle({ checked, onChange, label, desc }: { checked: boolean; o
 let toastTimer: any;
 export function toast(msg: string) {
   let el = document.getElementById('toast');
-  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); el.className = 'fixed left-1/2 z-[60] -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-sm font-bold text-bg shadow-lift transition-opacity'; el.style.bottom = 'calc(96px + env(safe-area-inset-bottom))'; document.body.appendChild(el); }
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); el.className = 'pointer-events-none fixed left-1/2 z-[60] -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-sm font-bold text-bg shadow-lift transition-opacity'; el.style.bottom = 'calc(96px + env(safe-area-inset-bottom))'; document.body.appendChild(el); }
   el.textContent = msg; el.style.opacity = '1'; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el!.style.opacity = '0'), 2600);
 }
