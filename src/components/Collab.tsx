@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Users, Copy, Share2, Check, Link2, Loader2, Radio, LogOut, Trash2, Settings2, BadgeCheck, ShieldCheck, Bell, BellOff, Globe, UserMinus, X as XIcon } from 'lucide-react';
 import type { Trip } from '../lib/types';
 import { useStore } from '../lib/store';
-import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, restoreFromAccount, setMemberFamily, setInviteExpiry } from '../lib/cloud/sync';
+import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, restoreFromAccount, setMemberFamily, setInviteExpiry, prepareInvites } from '../lib/cloud/sync';
 import { isGroup, familyById } from '../lib/families';
 import type { Member } from '../lib/cloud/model';
 import { parseFirebaseConfig } from '../lib/cloud/model';
@@ -60,7 +60,8 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
   const pending = Object.entries(meta?.pending ?? {});
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(t.shared && cloud ? inviteLink(t.shared.cloudId) : null);
-  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access, meta?.invite?.until, meta?.invite?.all, keys?.all]);
+  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access, meta?.invite?.until, meta?.invite?.all, keys]);
+  useEffect(() => { if (open && cloud && t.shared) prepareInvites(t.shared.cloudId).catch(() => {}); }, [open, !!cloud, t.shared?.cloudId, (t.families ?? []).length]);
   useEffect(() => { if (open && cloud) import('../lib/cloud/sync').then(m => m.transport()).catch(() => {}); }, [open, !!cloud]);
   const act = (f: () => Promise<unknown>, ok: string) => f().then(() => toast(ok)).catch(e => toast(e.message));
   const start = async () => { setBusy(true); try { setLink(await shareTrip(t.id)); toast('הטיול משותף — שלחו את הקישור'); } catch (e: any) { toast(e.message); } setBusy(false); };
@@ -84,7 +85,7 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
             </div>
           ) : (
             <div className="space-y-3">
-              {isGroup(t) && isOwner ? <FamilyLinks t={t} /> : <>
+              {isGroup(t) && isOwner ? <FamilyLinks t={t} /> : !link ? <Preparing /> : <>
               <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-2"><Link2 size={16} className="shrink-0 text-muted" /><input readOnly aria-label="קישור הזמנה" className="min-w-0 flex-1 bg-transparent text-xs" dir="ltr" value={link ?? ''} onFocus={e => e.target.select()} /><Button size="sm" variant="soft" icon={<Copy size={14} />} onClick={copy}>העתקה</Button></div>
               <div className="flex flex-wrap gap-2">
                 <a className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#25D366] px-4 text-sm font-bold text-white" href={whatsappURL(msg)} target="_blank" rel="noreferrer"><Share2 size={15} />שליחה בוואטסאפ</a>
@@ -156,6 +157,11 @@ export function LeaveOrDelete({ t, onDone }: { t: Trip; onDone: () => void }) {
   );
 }
 
+/** The link's invite key is still being created or loaded — nothing to send yet. */
+function Preparing({ small }: { small?: boolean }) {
+  return <p role="status" className={cx('flex items-center gap-2 text-muted', small ? 'text-xs' : 'rounded-xl border border-line p-3 text-sm')}><Loader2 size={15} className="animate-spin" />מכינים קישור הזמנה…{!small && ' (צריך חיבור לאינטרנט)'}</p>;
+}
+
 /** Organiser view of a group trip: one invite per family. */
 function FamilyLinks({ t }: { t: Trip }) {
   useCloud(s => s.keys[t.shared!.cloudId]); // re-render when the keys arrive
@@ -164,6 +170,7 @@ function FamilyLinks({ t }: { t: Trip }) {
       <p className="text-sm text-muted">לכל משפחה קישור משלה. מי שנכנס דרכו משויך למשפחה, רואה את הציוד שלה ואת הציוד המשותף — ומסמן יחד עם כולם.</p>
       {t.families!.map((f, i) => {
         const link = inviteLink(t.shared!.cloudId, f);
+        if (!link) return <div key={f.id} className="flex items-center gap-2 rounded-xl border-2 p-2.5" style={{ borderColor: f.color + '55' }}><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: f.color }} aria-hidden /><span className="min-w-0 flex-1 font-bold">{f.name}</span><Preparing small /></div>;
         const msg = `${f.name}, הצטרפו לתכנון "${t.name}" ב-CampIL — הציוד של המשפחה שלכם והציוד המשותף, בזמן אמת:\n${link}`;
         return (
           <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-xl border-2 p-2.5" style={{ borderColor: f.color + '55' }}>

@@ -189,7 +189,7 @@ function apply(cid: string) {
   if (mode === 'on' && isGroup(next)) migrate(cid, next).catch(() => {});
 }
 
-const keysLoaded = new Set<string>(); const invitesChecked = new Set<string>();
+const keysLoaded = new Set<string>(); const invitesChecked = new Map<string, string>(); // cid → families checked
 const sidOf = (fam: string | null | undefined) => (fam ? `fam-${fam}` : 'all');
 /** Read the invite keys this device is allowed to see (the organiser: every family; a member: their own family). */
 async function loadKeys(cid: string, doc: TripDoc) {
@@ -206,8 +206,9 @@ async function loadKeys(cid: string, doc: TripDoc) {
  * If the project's rules don't allow secrets yet, the keys stay in the document as before.
  */
 async function ensureInvites(cid: string, doc: TripDoc) {
-  if (invitesChecked.has(cid)) return; invitesChecked.add(cid);
   const t = tp!; const fams: { id: string }[] = (doc.core as any).families ?? [];
+  // checked again whenever the families change — a family added later needs its own key too
+  const sig = fams.map(f => f.id).join(','); if (invitesChecked.get(cid) === sig) return; invitesChecked.set(cid, sig);
   const inv = doc.invite ?? {};
   const want: [string | null, string | undefined][] = [[null, inv.all], ...fams.map(f => [f.id, inv.fam?.[f.id]] as [string, string | undefined])];
   let ok = true;
@@ -362,7 +363,7 @@ export async function startSync() {
 }
 
 /** Turn a local trip into a shared one; returns the invite link. */
-export async function shareTrip(tripId: string): Promise<string> {
+export async function shareTrip(tripId: string): Promise<string | null> {
   const t = await transport();
   const st = useStore.getState(); const trip = st.trips.find(x => x.id === tripId)!;
   if (trip.shared) return inviteLink(trip.shared.cloudId);
@@ -382,7 +383,13 @@ export async function shareTrip(tripId: string): Promise<string> {
 }
 
 /** Invite link; with a family, whoever opens it joins that family. */
-export function inviteLink(cid: string, family?: { id: string; name: string }) {
+/** Share sheet opened: make sure every invite key exists and is loaded (organiser), or load mine (member). */
+export async function prepareInvites(cid: string) {
+  const t = await transport(); const doc = await t.getTrip(cid).catch(() => null); if (!doc) return;
+  if (doc.owner === t.uid) { invitesChecked.delete(cid); await ensureInvites(cid, doc); } else await loadKeys(cid, doc);
+}
+/** The invite link — or null while its key isn't ready, so a link without a key can never be sent. */
+export function inviteLink(cid: string, family?: { id: string; name: string }): string | null {
   // a member of a family invites into their own family (the only key they can read)
   if (!family) { const st = useCloud.getState(); const myFam = st.uid ? st.members[cid]?.[st.uid]?.familyId : undefined;
     if (myFam && st.meta[cid]?.owner !== st.uid) { const f = ((tripByCloud(cid)?.families) ?? []).find(x => x.id === myFam); if (f) family = { id: f.id, name: f.name }; } }
@@ -392,6 +399,7 @@ export function inviteLink(cid: string, family?: { id: string; name: string }) {
   const keys = useCloud.getState().keys[cid];
   const key = family ? keys?.fam[family.id] ?? meta?.invite?.fam?.[family.id] : keys?.all ?? meta?.invite?.all;
   const f = family ? `&f=${encodeURIComponent(family.id)}&fn=${encodeURIComponent(family.name)}` : '';
+  if (!approved && !key) return null;
   const exp = meta?.invite?.until && !approved ? `&e=${meta.invite.until}` : '';
   return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}${key && !approved ? `&k=${key}` : ''}${exp}&c=${encodeInvite(cfg)}`;
 }

@@ -150,5 +150,17 @@ if (!process.env.LEGACY) {
   console.log('duties stored per key:', Object.keys(d3.duties ?? {}).length > 3 && Object.values(d3.duties).some(x => x.done && x.familyId === fidB));
   await S(A, '89-A-duties'); await S(B, '90-B-mine');
 }
+// a family added after the trip was shared gets its own key too — its link is never sent without one
+await A.goto(BASE + `#/trip/${tid}`); await A.waitForTimeout(800);
+await A.getByRole('button', { name: 'עריכת פרטי הטיול' }).click(); await A.waitForTimeout(400);
+await A.getByRole('button', { name: 'הוספת משפחה' }).click(); await A.waitForTimeout(200);
+const fam3 = A.getByRole('dialog').locator('section[aria-label="משפחה 3"]');
+await fam3.getByRole('button', { name: 'מבוגר/ת' }).click().catch(() => {}); await A.waitForTimeout(150);
+for (const r of await fam3.getByRole('radio', { name: 'נקבה' }).all()) await r.click();
+await A.getByRole('button', { name: 'שמירה ועדכון ההמלצות' }).click(); await A.waitForTimeout(1500);
+await A.getByRole('button', { name: 'שיתוף הטיול' }).click(); await A.waitForTimeout(2000);
+const waLinks = await A.getByRole('link', { name: /^שליחה בוואטסאפ ל/ }).evaluateAll(es => es.map(e => decodeURIComponent(e.getAttribute('href').split('text=')[1])));
+console.log('every family link (incl. one added later) carries a key:', waLinks.length === 3 && waLinks.every(x => /&k=\w{16}/.test(x)), waLinks.length);
+await A.keyboard.press('Escape');
 console.log('errors:', errors.length ? errors.join('\n') : 'none');
 await b.close();
