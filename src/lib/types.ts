@@ -117,6 +117,8 @@ export interface TaskItem { id: string; when: string; text: string; done: boolea
 export interface JournalEntry {
   id: string; tripId: string; createdAt: string; date: string; title: string; text: string;
   photoIds: string[]; loc?: { lat: number; lon: number; label?: string }; author?: string;
+  /** account id of the author in a shared trip — only they (or the organiser) may change or delete it */
+  byUid?: string;
 }
 
 /** A photo in a trip's shared album. The image itself is in IndexedDB under `id`. */

@@ -165,3 +165,37 @@ describe('personal trip index (users/{uid})', () => {
     await assertFails(getDocs(collection(as('MA'), 'users')));
   });
 });
+
+describe('journal and photos: authors own their items', () => {
+  const j = (db: any, id: string) => doc(db, 'trips', T, 'journal', id);
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(j(ctx.firestore(), 'pa'), { kind: 'photo', by: 'א', byUid: 'MA', data: 'x' });
+    });
+  });
+  it('a member adds a photo as themselves', async () => {
+    await assertSucceeds(setDoc(j(as('MB'), 'pb'), { kind: 'photo', by: 'ב', byUid: 'MB', data: 'y' }));
+  });
+  it("a member cannot add an item in someone else's name", async () => {
+    await assertFails(setDoc(j(as('MB'), 'pz'), { kind: 'photo', by: 'א', byUid: 'MA', data: 'y' }));
+  });
+  it("another family cannot delete or overwrite a member's photo", async () => {
+    await assertFails(deleteDoc(j(as('MB'), 'pa')));
+    await assertFails(setDoc(j(as('MB'), 'pa'), { kind: 'photo', by: 'ב', byUid: 'MB', data: 'z' }));
+    await assertFails(upd(j(as('MB'), 'pa'), 'caption', 'שונה'));
+  });
+  it('the author edits and deletes their own photo', async () => {
+    await assertSucceeds(upd(j(as('MA'), 'pa'), 'caption', 'שקיעה'));
+    await assertSucceeds(deleteDoc(j(as('MA'), 'pa')));
+  });
+  it('the author cannot hand the item to someone else', async () => {
+    await assertFails(upd(j(as('MA'), 'pa'), 'byUid', 'MB'));
+  });
+  it('the organiser may remove any item', async () => { await assertSucceeds(deleteDoc(j(as('O'), 'pa'))); });
+  it('older items without an author id stay editable by members (no data migration needed)', async () => {
+    await assertSucceeds(upd(j(as('MB'), 'p1'), 'byUid', 'MB', 'caption', 'x'));
+  });
+  it('a removed member or a stranger cannot add items', async () => {
+    await assertFails(setDoc(j(as('S'), 'ps'), { kind: 'photo', by: 'ז', byUid: 'S', data: 'y' }));
+  });
+});

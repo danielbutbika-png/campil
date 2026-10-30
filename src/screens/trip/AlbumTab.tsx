@@ -5,6 +5,7 @@ import { useStore } from '../../lib/store';
 import { addPhotos, tripPhotos, makeCollage, renderVideo, shareFile, downloadFile, videoSupport, videoLength } from '../../lib/album';
 import { deletePhoto } from '../../lib/photos';
 import { useCloud } from '../../lib/cloud/sync';
+import { canChange } from '../../lib/authorship';
 import { addDays, fmtDate, shortDay, todayISO, tripLength } from '../../lib/util';
 import { Button, Sheet, Empty, Badge, Chip, toast } from '../../components/ui';
 import { whoAmI } from '../../components/Collab';
@@ -92,7 +93,7 @@ export default function AlbumTab({ t }: { t: Trip }) {
       )}
 
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.collage ? 'קולאז׳ הטיול' : `צילם/ה: ${open?.by ?? ''}`} wide>
-        {open && <PhotoView p={open} canEdit={open.by === me || isOwner} onCaption={c => upsertPhotos([{ ...open, caption: c || undefined }])}
+        {open && <PhotoView p={open} canEdit={isOwner || canChange(t, open, { uid: myUid, name: me })} onCaption={c => upsertPhotos([{ ...open, caption: c || undefined }])}
           onDelete={async () => { removePhoto(open.id); deletePhoto(open.id).catch(() => {}); setOpen(null); toast('התמונה נמחקה'); }} />}
       </Sheet>
       <Sheet open={!!collage} onClose={() => setCollage(null)} title="קולאז׳ הטיול" wide footer={<>

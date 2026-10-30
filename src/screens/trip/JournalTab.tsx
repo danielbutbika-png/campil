@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Camera, MapPin, Plus, Share2, Trash2, Pencil, LocateFixed, BookOpen } from 'lucide-react';
 import type { Trip, JournalEntry } from '../../lib/types';
 import { useStore } from '../../lib/store';
+import { useCloud } from '../../lib/cloud/sync';
+import { canChange } from '../../lib/authorship';
 import { useGeolocation } from '../../lib/hooks';
 import { compressImage, putPhoto, photoURL, deletePhoto, getPhoto } from '../../lib/photos';
 import { SITE_BY_ID, navLinks } from '../../data/sites';
@@ -20,7 +22,8 @@ export default function JournalTab({ t }: { t: Trip }) {
   const entries = useStore(s => s.journal.filter(j => j.tripId === t.id).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)));
   const remove = useStore(s => s.removeEntry);
   const [edit, setEdit] = useState<JournalEntry | null>(null);
-  const blank = (): JournalEntry => ({ id: uid('j'), tripId: t.id, createdAt: new Date().toISOString(), date: todayISO() >= t.start && todayISO() <= t.end ? todayISO() : t.start, title: '', text: '', photoIds: [], author: whoAmI() });
+  const myUid = useCloud(s => s.uid);
+  const blank = (): JournalEntry => ({ id: uid('j'), tripId: t.id, createdAt: new Date().toISOString(), date: todayISO() >= t.start && todayISO() <= t.end ? todayISO() : t.start, title: '', text: '', photoIds: [], author: whoAmI(), ...(t.shared && myUid ? { byUid: myUid } : {}) });
   const share = async (e: JournalEntry) => {
     const text = `${e.title}\n${fmtDate(e.date)}\n\n${e.text}${e.loc ? `\n📍 ${navLinks(e.loc.lat, e.loc.lon).google}` : ''}`;
     if (navigator.canShare && e.photoIds.length) {
@@ -40,7 +43,7 @@ export default function JournalTab({ t }: { t: Trip }) {
             <div className="space-y-2 p-4">
               <div className="flex items-start gap-2"><div className="flex-1"><h3 className="font-bold">{e.title || 'ללא כותרת'}</h3><p className="text-xs text-muted">{fmtDate(e.date, true)}{e.loc?.label && ` · ${e.loc.label}`}{t.shared && e.author ? ` · ${e.author}` : ''}</p></div>
                 <button aria-label="שיתוף" onClick={() => share(e)} className="text-muted hover:text-ink"><Share2 size={17} /></button>
-                <button aria-label="עריכה" onClick={() => setEdit(e)} className="text-muted hover:text-ink"><Pencil size={17} /></button>
+                {canChange(t, e, { uid: myUid, name: whoAmI() }) && <button aria-label="עריכה" onClick={() => setEdit(e)} className="text-muted hover:text-ink"><Pencil size={17} /></button>}
               </div>
               {e.text && <p className="whitespace-pre-line text-sm">{e.text}</p>}
               {e.loc && <a className="inline-flex items-center gap-1 text-sm font-bold text-moss" href={navLinks(e.loc.lat, e.loc.lon).google} target="_blank" rel="noreferrer"><MapPin size={14} />במפה</a>}

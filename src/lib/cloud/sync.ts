@@ -141,7 +141,7 @@ function watch(cid: string) {
       if (r.kind === 'photo') continue;
       if (!first && !lastJ.has(r.id) && !st.journal.some(j => j.id === r.id)) announce(cid, [{ by: r.author ?? null, text: `הוסיף/ה ליומן: ${r.title || 'רשומה חדשה'}` }]);
       for (const [pid, url] of Object.entries(r.photos ?? {})) if (!(await getPhoto(pid).catch(() => null))) await putPhoto(pid, await dataURLToBlob(url));
-      const e: JournalEntry = { id: r.id, tripId: local.id, createdAt: r.createdAt, date: r.date, title: r.title, text: r.text, loc: r.loc, author: r.author, photoIds: Object.keys(r.photos ?? {}) };
+      const e: JournalEntry = { id: r.id, tripId: local.id, createdAt: r.createdAt, date: r.date, title: r.title, text: r.text, loc: r.loc, author: r.author, photoIds: Object.keys(r.photos ?? {}) , byUid: r.byUid };
       lastJ.set(e.id, JSON.stringify(e));
       const cur = st.journal.find(j => j.id === e.id);
       if (!cur || JSON.stringify(cur) !== JSON.stringify(e)) st.upsertEntry(e);
@@ -270,13 +270,13 @@ function push(cid: string, base: Trip, t: Trip) {
 const metaKey = (p: AlbumPhoto) => JSON.stringify([p.by, p.takenAt, p.caption ?? '', p.collage ?? false]);
 async function pushPhoto(p: AlbumPhoto, cid: string) {
   const b = await getPhoto(p.id); if (!b) return;
-  await tp!.putEntry(cid, JSON.parse(JSON.stringify({ id: p.id, kind: 'photo', by: p.by, byUid: p.byUid, takenAt: p.takenAt, addedAt: p.addedAt, caption: p.caption, w: p.w, h: p.h, collage: p.collage, data: await blobToDataURL(b) })));
+  await tp!.putEntry(cid, JSON.parse(JSON.stringify({ id: p.id, kind: 'photo', by: p.by, byUid: p.byUid ?? tp!.uid, takenAt: p.takenAt, addedAt: p.addedAt, caption: p.caption, w: p.w, h: p.h, collage: p.collage, data: await blobToDataURL(b) })));
 }
 
 async function pushJournal(e: JournalEntry, cid: string) {
   const photos: Record<string, string> = {};
   for (const id of e.photoIds.slice(0, 4)) { const b = await getPhoto(id).catch(() => undefined); if (b) photos[id] = await blobToDataURL(await compressImage(b as File, 900, 0.7)); }
-  await tp!.putEntry(cid, { id: e.id, author: e.author ?? myName(), createdAt: e.createdAt, date: e.date, title: e.title, text: e.text, loc: e.loc ?? null, photos });
+  await tp!.putEntry(cid, { id: e.id, author: e.author ?? myName(), byUid: e.byUid ?? tp!.uid, createdAt: e.createdAt, date: e.date, title: e.title, text: e.text, loc: e.loc ?? null, photos });
 }
 
 let restored = false;

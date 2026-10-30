@@ -8,7 +8,7 @@
 | תרחישי דפדפן (E2E, כולל שני מכשירים) | Playwright + Chromium בגודל טלפון | `scripts/e2e-*.mjs`, `run-e2e.mjs` | כל דחיפה |
 | גלישה אופקית / RTL | `scripts/overflow-audit.mjs` | | כל דחיפה |
 | ביצועים ונגישות | Lighthouse (ידני, מתועד ב-AUDIT) | | לפני שלב גדול |
-| מכשיר אמיתי | ידני | `PHONE-TESTS.md` | לפני הפצה רחבה |
+| מכשיר אמיתי | ידני | `docs/qa/REAL_DEVICE_TEST_SCRIPT.md` | לפני הפצה רחבה |
 
 ## כללים
 - פרסום רק אם כל השכבות האוטומטיות עברו (staging ואז ייצור).

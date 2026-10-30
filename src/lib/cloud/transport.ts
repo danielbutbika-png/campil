@@ -3,7 +3,7 @@
 // automated tests and for trying sharing between two tabs; it is selected with projectId "local-demo".
 import { DELETE, applyPatches, type Patch, type TripDoc, type Member } from './model';
 
-export interface JournalDoc { id: string; author: string; createdAt: string; date: string; title: string; text: string; loc?: any; photos: Record<string, string>; kind?: undefined }
+export interface JournalDoc { id: string; author: string; byUid?: string; createdAt: string; date: string; title: string; text: string; loc?: any; photos: Record<string, string>; kind?: undefined }
 /** An album photo, stored next to the journal entries (same access rules) with the JPEG as a data URL. */
 export interface PhotoDoc { id: string; kind: 'photo'; by: string; byUid?: string; takenAt: number; addedAt: number; caption?: string; w: number; h: number; collage?: boolean; data: string }
 export type SubDoc = JournalDoc | PhotoDoc;

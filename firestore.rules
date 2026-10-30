@@ -8,6 +8,7 @@ rules_version = '2';
 // Roles: owner (organiser) · member (joined; optionally bound to one family) · pending (asked to join a closed trip).
 // Joining needs the current invite key from the link; removing someone rotates that key, so old links stop working.
 // The organiser may also set an expiry (invite.until) after which links no longer admit new people.
+// trips/{tripId}/journal/{entryId}  journal entries and album photos — authors change their own, the organiser any
 // users/{uid}  a person's private index of their shared trips (only they can read/write it).
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -74,9 +75,19 @@ service cloud.firestore {
         allow create: if inFamily() || (request.auth != null && trip().owner == request.auth.uid);
       }
 
+      // Journal entries and album photos: every member reads them; only the author changes or deletes their own
+      // (the organiser may remove anything). Older items without an author id stay editable by members.
       match /journal/{entryId} {
         function trip2() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
-        allow read, write: if request.auth != null && (trip2().owner == request.auth.uid || request.auth.uid in trip2().members);
+        function tripMember() { return request.auth != null && (trip2().owner == request.auth.uid || request.auth.uid in trip2().members); }
+        function tripOwner() { return request.auth != null && trip2().owner == request.auth.uid; }
+        function author() { return resource.data.get('byUid', null); }
+        function mayChange() { return tripOwner() || author() == null || author() == request.auth.uid; }
+        allow read: if tripMember();
+        allow create: if tripMember() && request.resource.data.get('byUid', '') == request.auth.uid;
+        allow update: if tripMember() && mayChange()
+          && (author() == null ? request.resource.data.get('byUid', '') == request.auth.uid || tripOwner() : request.resource.data.get('byUid', null) == author());
+        allow delete: if tripMember() && mayChange();
       }
     }
 
