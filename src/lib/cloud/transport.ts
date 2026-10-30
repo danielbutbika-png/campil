@@ -15,6 +15,11 @@ export interface Transport {
    *  it gets the new id while the old one is still signed in (to hand over what the old id owns). */
   signInGoogle(beforeSwitch?: (newUid: string) => Promise<void>): Promise<Account>;
   /** Per-user list of shared trips (users/{uid}), readable and writable only by that user — lets another device find them. */
+  /** Invite keys (trips/{id}/secrets/{all | fam-<id>}): readable by the organiser and by members of that family only. */
+  getSecret(tripId: string, sid: string): Promise<string | null>;
+  setSecret(tripId: string, sid: string, k: string): Promise<void>;
+  /** A newcomer's key (trips/{id}/joins/{uid}), readable only by them — the rules check it when they add themselves. */
+  putJoin(tripId: string, uid: string, j: { k: string; familyId: string | null }): Promise<void>;
   indexGet(uid: string): Promise<Record<string, TripIndexEntry>>;
   indexPut(uid: string, cid: string, e: TripIndexEntry | null): Promise<void>;
   signOut(): Promise<Account>;
@@ -94,6 +99,9 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
       await (fs.updateDoc as any)(ref(id), ...args);
     },
     deleteTrip: id => fs.deleteDoc(ref(id)),
+    getSecret: async (tid, sid) => { const s = await fs.getDoc(fs.doc(db, 'trips', tid, 'secrets', sid)); return s.exists() ? ((s.data() as any).k ?? null) : null; },
+    setSecret: (tid, sid, k) => fs.setDoc(fs.doc(db, 'trips', tid, 'secrets', sid), { k }),
+    putJoin: (tid, uid, j) => fs.setDoc(fs.doc(db, 'trips', tid, 'joins', uid), { k: j.k, familyId: j.familyId, at: Date.now() }),
     indexGet: async uid => { const s = await fs.getDoc(fs.doc(db, 'users', uid)); return (s.exists() ? (s.data() as any).trips : null) ?? {}; },
     indexPut: (uid, cid, e) => fs.setDoc(fs.doc(db, 'users', uid), { trips: { [cid]: e ?? fs.deleteField() } }, { merge: true }),
     putEntry: (tid, e) => fs.setDoc(fs.doc(db, 'trips', tid, 'journal', e.id), JSON.parse(JSON.stringify(e))),
@@ -153,6 +161,14 @@ function localTransport(): Transport {
       const d = await read(id); if (d) await write(id, { ...applyPatches(d, patches), updatedAt: Date.now() });
     }),
     deleteTrip: id => serial(() => write(id, null)),
+    getSecret: async (tid, sid) => (await read(`${tid}/secrets/${sid}`))?.k ?? null,
+    setSecret: (tid, sid, k) => serial(() => write(`${tid}/secrets/${sid}`, { k })),
+    putJoin: (tid, u, j) => serial(async () => {
+      // the local stand-in mimics the rule: the key must match the family's current secret
+      const s = (await read(`${tid}/secrets/${j.familyId == null ? 'all' : 'fam-' + j.familyId}`))?.k;
+      if (!s || s !== j.k) throw Object.assign(new Error('denied'), { code: 'permission-denied' });
+      await write(`${tid}/joins/${u}`, { ...j, at: Date.now() });
+    }),
     indexGet: async u => (await read(`users/${u}`))?.trips ?? {},
     indexPut: (u, cid, e) => serial(async () => { const d = (await read(`users/${u}`)) ?? { trips: {} }; if (e) d.trips[cid] = e; else delete d.trips[cid]; await write(`users/${u}`, d); }),
     putEntry: (tid, e) => serial(async () => { const k = `${tid}/journal`; const d = (await read(k)) ?? {}; d[e.id] = e; await write(k, d); }),

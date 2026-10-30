@@ -54,12 +54,13 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
   const status = useCloud(s => s.status), err = useCloud(s => s.error);
   const members = useCloud(s => (t.shared ? s.members[t.shared.cloudId] : undefined)) ?? {};
   const meta = useCloud(s => (t.shared ? s.meta[t.shared.cloudId] : undefined));
+  const keys = useCloud(s => (t.shared ? s.keys[t.shared.cloudId] : undefined));
   const myUid = useCloud(s => s.uid);
   const isOwner = t.shared?.role === 'owner' || (meta && meta.owner === myUid);
   const pending = Object.entries(meta?.pending ?? {});
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(t.shared && cloud ? inviteLink(t.shared.cloudId) : null);
-  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access, meta?.invite?.until, meta?.invite?.all]);
+  useEffect(() => { if (t.shared && cloud) setLink(inviteLink(t.shared.cloudId)); }, [t.shared?.cloudId, !!cloud, meta?.access, meta?.invite?.until, meta?.invite?.all, keys?.all]);
   useEffect(() => { if (open && cloud) import('../lib/cloud/sync').then(m => m.transport()).catch(() => {}); }, [open, !!cloud]);
   const act = (f: () => Promise<unknown>, ok: string) => f().then(() => toast(ok)).catch(e => toast(e.message));
   const start = async () => { setBusy(true); try { setLink(await shareTrip(t.id)); toast('הטיול משותף — שלחו את הקישור'); } catch (e: any) { toast(e.message); } setBusy(false); };
@@ -157,6 +158,7 @@ export function LeaveOrDelete({ t, onDone }: { t: Trip; onDone: () => void }) {
 
 /** Organiser view of a group trip: one invite per family. */
 function FamilyLinks({ t }: { t: Trip }) {
+  useCloud(s => s.keys[t.shared!.cloudId]); // re-render when the keys arrive
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted">לכל משפחה קישור משלה. מי שנכנס דרכו משויך למשפחה, רואה את הציוד שלה ואת הציוד המשותף — ומסמן יחד עם כולם.</p>

@@ -3,6 +3,8 @@ rules_version = '2';
 //
 // trips/{tripId}                    the shared trip: plan, shared gear, menu, schedule, members, invite keys
 // trips/{tripId}/families/{famId}   one family's private gear — readable/writable only by that family's members
+// trips/{tripId}/secrets/{all|fam-<id>}  invite keys — the organiser, and members of that family only
+// trips/{tripId}/joins/{uid}  a newcomer's key, readable only by them, checked when they add themselves
 // trips/{tripId}/journal/{entryId}  journal entries and album photos — members only
 //
 // Roles: owner (organiser) · member (joined; optionally bound to one family) · pending (asked to join a closed trip).
@@ -29,11 +31,21 @@ service cloud.firestore {
       // optional expiry set by the organiser (ms since epoch); links stop admitting new people after it
       function notExpired() { return !('until' in resource.data.get('invite', {})) || request.time.toMillis() < resource.data.invite.until; }
 
+      // Invite keys live in trips/{id}/secrets/{all | fam-<id>} — only the organiser, and members of that family, read them.
+      // Joining: the newcomer first writes trips/{id}/joins/{uid} with the key (only they can read it), then adds their own entry.
+      function secretFor(fam) { return get(/databases/$(database)/documents/trips/$(tripId)/secrets/$(fam == null ? 'all' : 'fam-' + fam)).data.get('k', ''); }
+      function joinPath() { return /databases/$(database)/documents/trips/$(tripId)/joins/$(uid()); }
+      function joinedWithSecret() {
+        return exists(joinPath()) && !('k' in newMe())
+          && get(joinPath()).data.get('familyId', null) == newMe().get('familyId', null)
+          && get(joinPath()).data.get('k', '') != '' && get(joinPath()).data.get('k', '') == secretFor(newMe().get('familyId', null));
+      }
       // A new member adds only their own entry, as an editor, with the current key of the family they join.
+      // Older trips still keep the key in this document (validKey) until the organiser's app moves it to secrets.
       function joinsWithKey() {
         return signedIn() && !isMember() && resource.data.get('access', 'link') == 'link'
           && changed().hasOnly(['members', 'updatedAt']) && onlyMine('members')
-          && newMe().get('role', '') == 'editor' && validKey(newMe()) && notExpired();
+          && newMe().get('role', '') == 'editor' && (joinedWithSecret() || validKey(newMe())) && notExpired();
       }
       // A member updates their own entry (name, last seen…) but can't change their family, role or key.
       function ownEntryOk() {
@@ -66,6 +78,28 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.owner == uid() && request.resource.data.members.keys().hasOnly([uid()]);
       allow delete: if isOwner();
       allow update: if ownerEdit() || memberEdit() || joinsWithKey() || requestsToJoin();
+
+      match /secrets/{sid} {
+        function t5() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
+        function owner5() { return request.auth != null && t5().owner == request.auth.uid; }
+        function fam5() { return t5().members[request.auth.uid].get('familyId', null); }
+        function member5() { return request.auth != null && request.auth.uid in t5().members; }
+        allow read: if owner5() || (member5() && (fam5() == null ? sid == 'all' : sid == 'fam-' + fam5()));
+        allow write: if owner5();
+      }
+
+      match /joins/{joinUid} {
+        function t6() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
+        function key6(fam) { return get(/databases/$(database)/documents/trips/$(tripId)/secrets/$(fam == null ? 'all' : 'fam-' + fam)).data.get('k', ''); }
+        function open6() { return t6().get('access', 'link') == 'link' && (!('until' in t6().get('invite', {})) || request.time.toMillis() < t6().invite.until); }
+        function self6() { return request.auth != null && request.auth.uid == joinUid; }
+        allow read: if self6();
+        allow create, update: if self6() && !(joinUid in t6().members) && open6()
+          && request.resource.data.keys().hasOnly(['k', 'familyId', 'at'])
+          && request.resource.data.k is string && request.resource.data.k != ''
+          && request.resource.data.k == key6(request.resource.data.get('familyId', null));
+        allow delete: if self6() || (request.auth != null && t6().owner == request.auth.uid);
+      }
 
       match /families/{famId} {
         function trip() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }

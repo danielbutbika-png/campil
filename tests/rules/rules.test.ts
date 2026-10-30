@@ -199,3 +199,71 @@ describe('journal and photos: authors own their items', () => {
     await assertFails(setDoc(j(as('S'), 'ps'), { kind: 'photo', by: 'ז', byUid: 'S', data: 'y' }));
   });
 });
+
+describe('invite keys are private to the organiser and to each family (secrets/, joins/)', () => {
+  const sec = (db: any, sid: string) => doc(db, 'trips', T, 'secrets', sid);
+  const join = (db: any, u: string) => doc(db, 'trips', T, 'joins', u);
+  const tr = (db: any) => doc(db, 'trips', T);
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      const db = ctx.firestore();
+      const d = trip(); delete (d as any).invite.all; delete (d as any).invite.fam;
+      for (const m of Object.values(d.members) as any[]) delete m.k;
+      await setDoc(tr(db), d);
+      await setDoc(sec(db, 'all'), { k: KEY_ALL }); await setDoc(sec(db, 'fam-A'), { k: KEY_A }); await setDoc(sec(db, 'fam-B'), { k: KEY_B });
+    });
+  });
+  const newcomer = { name: 'חדש', role: 'editor', familyId: 'B', color: '#333' };
+  it('the shared trip document no longer carries any key', async () => {
+    const s = await getDoc(tr(as('MA'))); const d: any = s.data();
+    if (d.invite?.fam || d.invite?.all || Object.values(d.members).some((m: any) => m.k)) throw new Error('a key is visible');
+  });
+  it("a member reads only their own family's key", async () => {
+    await assertSucceeds(getDoc(sec(as('MA'), 'fam-A')));
+    await assertFails(getDoc(sec(as('MA'), 'fam-B')));
+    await assertFails(getDoc(sec(as('MA'), 'all')));
+  });
+  it('the organiser reads every key and may replace one; members and strangers may not write', async () => {
+    await assertSucceeds(getDoc(sec(as('O'), 'fam-B')));
+    await assertSucceeds(setDoc(sec(as('O'), 'fam-B'), { k: 'rotated' }));
+    await assertFails(setDoc(sec(as('MA'), 'fam-A'), { k: 'mine' }));
+    await assertFails(getDoc(sec(as('S'), 'fam-A')));
+  });
+  it('a newcomer with the right key joins: join record, then their own entry (no key in it)', async () => {
+    await assertSucceeds(setDoc(join(as('N'), 'N'), { k: KEY_B, familyId: 'B', at: 1 }));
+    await assertSucceeds(upd(tr(as('N')), new FieldPath('members', 'N'), newcomer));
+    await assertSucceeds(getDoc(fam(as('N'), 'B')));
+  });
+  it("a join record is readable only by its owner", async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(join(ctx.firestore(), 'N'), { k: KEY_B, familyId: 'B', at: 1 }); });
+    await assertFails(getDoc(join(as('MA'), 'N')));
+    await assertFails(getDoc(join(as('O'), 'N')));
+  });
+  it('a wrong key, or the key of another family, is refused', async () => {
+    await assertFails(setDoc(join(as('N'), 'N'), { k: 'guess', familyId: 'B', at: 1 }));
+    await assertFails(setDoc(join(as('N'), 'N'), { k: KEY_A, familyId: 'B', at: 1 }));
+  });
+  it('without a join record nobody can add themselves', async () => {
+    await assertFails(upd(tr(as('N')), new FieldPath('members', 'N'), newcomer));
+  });
+  it("a join record cannot be written for someone else", async () => {
+    await assertFails(setDoc(join(as('N'), 'X'), { k: KEY_B, familyId: 'B', at: 1 }));
+  });
+  it('after the organiser replaces the key, an old join record no longer lets anyone in', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(join(ctx.firestore(), 'R'), { k: KEY_B, familyId: 'B', at: 1 }); await setDoc(sec(ctx.firestore(), 'fam-B'), { k: 'rotated' }); });
+    await assertFails(upd(tr(as('R')), new FieldPath('members', 'R'), { ...newcomer, name: 'הוסר' }));
+    await assertFails(setDoc(join(as('R'), 'R'), { k: KEY_B, familyId: 'B', at: 2 }));
+  });
+  it('an expired link admits nobody, even with the right key', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await updateDoc(tr(ctx.firestore()), 'invite.until', Date.now() - 1000); });
+    await assertFails(setDoc(join(as('N'), 'N'), { k: KEY_B, familyId: 'B', at: 1 }));
+  });
+  it('the organiser removes the old keys from the shared document and from member entries', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await updateDoc(tr(ctx.firestore()), 'invite.fam', { A: KEY_A, B: KEY_B }, 'members.MA.k', KEY_A); });
+    await assertSucceeds(upd(tr(as('O')), 'invite.fam', deleteField(), new FieldPath('members', 'MA', 'k'), deleteField()));
+  });
+  it('a member cannot remove or change keys in the shared document', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await updateDoc(tr(ctx.firestore()), 'invite.fam', { A: KEY_A, B: KEY_B }); });
+    await assertFails(upd(tr(as('MA')), 'invite.fam', deleteField()));
+  });
+});
