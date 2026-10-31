@@ -21,6 +21,9 @@ import { go } from '../lib/router';
 import { TripTypePicker } from '../components/TripTypePicker';
 import { impliedBy } from '../engine/tripTypes';
 import { DestSearch } from '../components/DestSearch';
+import { WhereTo } from '../components/WhereTo';
+import type { Suggestion } from '../services/gazetteer';
+import { loadPlaces, nearby as nearPlaces, richness, CAT_HE as PCAT_HE, wikidataUrl, osmUrl, type Place } from '../services/placesDb';
 import { SITE_BY_ID } from '../data/sites';
 
 const IsraelMap = lazy(() => import('../components/IsraelMap').then(m => ({ default: m.IsraelMap })));
@@ -115,13 +118,14 @@ export default function Wizard() {
 
       {step === 0 && (
         <div className="space-y-6 rise">
+          <WhereStep t={t} set={set} onRegion={() => setWantRecs(false)} />
           <div className="space-y-2"><h2 className="font-display text-xl">מה מאפיין את הטיול?</h2><p className="text-sm text-muted">אפשר לבחור כמה — למשל קמפינג משפחתי + מסלול רטוב. לא חובה.</p>
             <TripTypePicker types={t.types ?? []} answers={t.typeAnswers ?? {}} onChange={(types, typeAnswers) => set({ types, typeAnswers, ...impliedBy(types, t), ...(impliedBy(types, t).kind === 'day' ? { end: t.start } : {}) })} />
           </div>
           <div className="space-y-2"><h2 className="font-display text-xl">איזה טיול?</h2>
             <Segmented label="סוג הטיול" value={t.kind} onChange={v => set({ kind: v, end: v === 'day' ? t.start : t.end })} options={[{ v: 'camping', label: 'קמפינג', icon: <Tent size={18} /> }, { v: 'day', label: 'טיול יום', icon: <Sun size={18} /> }, { v: 'combined', label: 'משולב', icon: <Layers size={18} /> }]} />
           </div>
-          {t.kind === 'day' && <div className="space-y-2"><h2 className="font-display text-xl">לאן נוסעים?</h2>
+          {t.kind === 'day' && <div className="space-y-2"><h2 className="font-display text-xl">{t.dest ? 'תחנות במסלול' : 'לאן נוסעים?'}</h2>
             <p className="text-sm text-muted">חפשו מקום ולחצו עליו — הוא יתווסף למסלול של היום. אפשר להוסיף כמה.</p>
             <DestSearch t={t} onChange={set} />
           </div>}
@@ -232,3 +236,27 @@ export default function Wizard() {
     </div>
   );
 }
+
+/** Free text "where to": picking a suggestion fills the region, the location (forecast, distances), a name if empty,
+ *  and offers what is around — nothing is added to the route without a tap. */
+function WhereStep({ t, set, onRegion }: { t: Trip; set: (p: Partial<Trip>) => void; onRegion: () => void }) {
+  const [around, setAround] = useState<Place[]>([]);
+  const pick = (s: Suggestion) => {
+    const name = t.name.trim() ? {} : { name: `${t.kind === 'day' ? 'טיול יום' : 'טיול'} ל${s.label}` };
+    const stop = s.place && t.kind === 'day' ? (s.place.site ? { siteIds: t.siteIds.includes(s.place.site) ? t.siteIds : [...t.siteIds, s.place.site] } : { places: [...(t.places ?? []).filter(x => x.id !== s.place!.id), toTripPlace(s.place)] }) : {};
+    set({ regionId: s.region, dest: { lat: s.lat, lon: s.lon, label: s.label }, ...name, ...stop });
+    onRegion();
+    loadPlaces().then(db => setAround(nearPlaces(db, s, 15, undefined, s.place?.id).map(x => x.p).filter(p => richness(p) >= 3 && !p.c.every(c => c === 'stream' || c === 'peak')).slice(0, 8)), () => setAround([]));
+  };
+  const added = (p: Place) => (p.site ? t.siteIds.includes(p.site) : (t.places ?? []).some(x => x.id === p.id));
+  const add = (p: Place) => set(p.site ? { siteIds: added(p) ? t.siteIds.filter(x => x !== p.site) : [...t.siteIds, p.site] } : { places: added(p) ? (t.places ?? []).filter(x => x.id !== p.id) : [...(t.places ?? []), toTripPlace(p)] });
+  return (
+    <div className="space-y-2">
+      <WhereTo onPick={pick} label="לאן מטיילים?" initial={t.dest?.label ?? ''} />
+      {t.dest && t.regionId && <p className="rounded-xl bg-forest/8 px-3 py-2 text-sm" role="status"><span className="font-bold">{t.dest.label}</span> · אזור: {REGION_BY_ID[t.regionId].name}. התחזית, המרחקים וההמלצות יחושבו לפי המקום הזה.</p>}
+      {around.length > 0 && <div><p className="text-sm font-bold">מה יש בסביבה (עד 15 ק״מ) — הקישו להוספה למסלול:</p>
+        <div className="mt-1 flex flex-wrap gap-2">{around.map(p => <Chip key={p.id} active={added(p)} onClick={() => add(p)}>{p.he} · {PCAT_HE[p.c[0]]}</Chip>)}</div></div>}
+    </div>
+  );
+}
+const toTripPlace = (p: Place) => ({ id: p.id, name: p.he, lat: p.lat, lon: p.lon, label: PCAT_HE[p.c[0]], source: (p.src.includes('wd') ? 'wd' : 'osm') as 'wd' | 'osm', url: p.qid ? wikidataUrl(p.qid) : osmUrl(p.osm!), website: p.web, addedAt: new Date().toISOString() });
