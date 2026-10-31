@@ -38,7 +38,11 @@ export function alertsState(f: ImsFile | null | undefined, now = Date.now()): Al
 export function alertsFor(f: ImsFile | null | undefined, regions: RegionId[]): OfficialAlert[] {
   if (!f) return [];
   const areas = new Set<ImsArea>(['country', ...regions.flatMap(r => AREAS_OF[r] ?? [])]);
-  return f.feeds.filter(x => areas.has(x.area)).flatMap(x => x.items.map(i => ({ ...i, area: x.area, type: x.type })));
+  // the general feed repeats the specific ones (sea, visibility…): keep each warning once, from its specific feed
+  const all = f.feeds.filter(x => areas.has(x.area)).sort((a, b) => Number(a.type === 'general') - Number(b.type === 'general'))
+    .flatMap(x => x.items.map(i => ({ ...i, area: x.area, type: x.type })));
+  const seen = new Set<string>();
+  return all.filter(a => { const k = (a.text || a.title).replace(/\s+/g, ' ').trim(); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 const WATERY: PlaceCat[] = ['stream', 'waterfall', 'spring', 'cave', 'lake'];
 /** An official warning that rules a place out (the activity there conflicts with it), or null. */
