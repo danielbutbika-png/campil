@@ -7,8 +7,10 @@ import type { Place, PlaceCat } from '../services/placesDb';
 import { richness } from '../services/placesDb';
 import type { Interest, RegionId } from '../lib/types';
 import { REGION_BY_ID } from '../data/regions';
+import { SITE_BY_ID } from '../data/sites';
 import { haversineKm, seasonOf } from '../lib/util';
 import { TYPE_BY_ID } from '../data/tripTypes';
+import { conflictingAlert, AREAS_OF, IMS_CREDIT, type OfficialAlert } from '../services/officialAlerts';
 
 export interface FitContext {
   base?: { lat: number; lon: number; label: string };   // where the family sleeps / starts the day
@@ -18,9 +20,11 @@ export interface FitContext {
   accessible?: boolean;                                 // someone needs step-free access
   days?: DayWx[];                                       // forecast for the trip days, when available
   forecastState?: 'forecast' | 'partial' | 'too_far' | 'past' | 'none';
+  /** official IMS warnings in force for the trip's areas; `alertsChecked` false = could not check */
+  alerts?: OfficialAlert[]; alertsChecked?: boolean;
 }
 export interface FitPart { id: string; label: string; pts: number; max: number; why: string }
-export interface Condition { id: 'heat' | 'wind' | 'rain' | 'uv' | 'flood'; level: 'warn' | 'danger'; day: string; text: string }
+export interface Condition { id: 'heat' | 'wind' | 'rain' | 'uv' | 'flood' | 'official'; level: 'warn' | 'danger'; day: string; text: string; source?: string; link?: string }
 export interface Fit { score: number | null; parts: FitPart[]; excluded?: string; conditions: Condition[]; summary: string; km?: number }
 
 const WATERY: PlaceCat[] = ['stream', 'waterfall', 'spring', 'cave'];
@@ -33,10 +37,14 @@ const BY_INTEREST: Partial<Record<Interest, PlaceCat[]>> = {
 };
 const DESERT: RegionId[] = ['judean_desert', 'central_negev', 'arava', 'eilat', 'north_negev'];
 
+/** In a stream bed or flash-flood terrain: a water category, a desert reserve, or flagged in the curated catalogue
+ *  (e.g. Yehudiya is mapped as "reserve, forest" but its trails run in canyons). */
+export const floodProne = (p: Place) => p.c.some(c => WATERY.includes(c)) || (DESERT.includes(p.r) && p.c.includes('nature_reserve')) || (!!p.site && !!SITE_BY_ID[p.site]?.floodRisk);
+
 /** What the forecast means for this kind of place, day by day. Thresholds are fixed and documented. */
 export function placeConditions(p: Place, days: DayWx[] = []): Condition[] {
   const out: Condition[] = [];
-  const watery = p.c.some(c => WATERY.includes(c)) || DESERT.includes(p.r) && p.c.includes('nature_reserve');
+  const watery = floodProne(p);
   const exposed = p.c.some(c => EXPOSED.includes(c)) || DESERT.includes(p.r);
   const sleep = p.c.some(c => c === 'campsite' || c === 'caravan');
   for (const d of days) {
@@ -55,8 +63,15 @@ export function placeConditions(p: Place, days: DayWx[] = []): Condition[] {
 export function fitScore(p: Place, ctx: FitContext): Fit {
   const parts: FitPart[] = [];
   const conditions = placeConditions(p, ctx.days);
-  const flood = conditions.find(c => c.id === 'flood');
   const km = ctx.base ? haversineKm(ctx.base, p) : undefined;
+  // an official warning that conflicts with this kind of place rules it out — before anything else
+  const here = (ctx.alerts ?? []).filter(a => a.area === 'country' || AREAS_OF[p.r]?.includes(a.area));
+  const official = conflictingAlert(p.c, floodProne(p), here);
+  if (official) {
+    conditions.unshift({ id: 'official', level: 'danger', day: '', text: `אזהרה רשמית: ${official.title}`, source: IMS_CREDIT, link: official.link });
+    return { score: null, parts, conditions, excluded: `לא מומלץ — אזהרה רשמית בתוקף: ${official.title} (${IMS_CREDIT})`, summary: 'לא מומלץ בגלל אזהרה רשמית — ראו פרטים.', km };
+  }
+  const flood = conditions.find(c => c.id === 'flood');
   if (flood) return { score: null, parts, conditions, excluded: `לא מומלץ בתנאים הצפויים: ${flood.text}`, summary: 'לא מומלץ בתנאים הצפויים — ראו אזהרה.', km };
 
   // 1. distance from where you sleep / start (air distance)
@@ -92,7 +107,7 @@ export function fitScore(p: Place, ctx: FitContext): Fit {
 
   const score = Math.max(0, Math.min(100, parts.reduce((s, x) => s + x.pts, 0)));
   const best = parts.filter(x => x.max && x.pts / x.max >= 0.75).map(x => x.why);
-  const summary = (best.length ? best.slice(0, 3).join('; ') + '.' : 'התאמה חלקית.') + ' יש לבדוק את מצב המקום והמסלול לפני היציאה.';
+  const summary = (best.length ? best.slice(0, 3).join('; ') + '.' : 'התאמה חלקית.') + (ctx.alertsChecked === false ? ' לא הצלחנו לבדוק אזהרות רשמיות — לבדוק באתר השירות המטאורולוגי.' : '') + ' יש לבדוק את מצב המקום והמסלול לפני היציאה.';
   return { score, parts, conditions, summary, km };
 }
 

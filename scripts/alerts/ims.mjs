@@ -10,7 +10,9 @@ const UA = 'CampIL-alerts/1.0 (https://github.com/danielbutbika-png/campil; fami
 const BASE = 'https://ims.gov.il';
 const outs = process.argv.slice(2); if (!outs.length) outs.push('/tmp/ims-alerts.json');
 const get = async (u, kind = 'text') => { const r = await fetch(u, { headers: { 'User-Agent': UA } }); if (!r.ok) throw new Error(`${r.status} ${u}`); return kind === 'json' ? r.json() : r.text(); };
-const strip = s => (s ?? '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/[ \t]+/g, ' ').trim();
+const decode = s => s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+// CDATA → entities → tags (the feeds encode their HTML as entities, so tags appear only after decoding)
+const strip = s => decode(decode((s ?? '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1'))).replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
 const tag = (x, t) => strip((x.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`)) ?? [])[1]);
 
 const res = { source: 'השירות המטאורולוגי הישראלי', sourceUrl: 'https://ims.gov.il', terms: 'https://ims.gov.il/sites/default/files/docs/terms_use.pdf', checkedAt: new Date().toISOString(), ok: false, feeds: [] };

@@ -1,4 +1,5 @@
 // Safety center for one trip: what's checked and what isn't, daylight, the trip's type checks, weather plan B,
+import { tripRegions } from '../../services/officialAlerts';
 // sharing the plan with someone who stays home, and official sources. The app never rules a place safe.
 import { useMemo } from 'react';
 import { ShieldCheck, Sun, Share2, Copy, AlertTriangle, Check, X, HelpCircle, Repeat } from 'lucide-react';
@@ -109,7 +110,7 @@ export default function SafetyTab({ t, wx }: { t: Trip; wx: TripWx }) {
         </div>
       </section>
 
-      {t.end >= today && <OfficialAlerts flood={sites.some(x => x.floodRisk)} />}
+      {t.end >= today && <OfficialAlerts flood={sites.some(x => x.floodRisk)} regions={tripRegions(t)} />}
       <ProvLegend />
     </div>
   );

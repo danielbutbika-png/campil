@@ -1,4 +1,5 @@
 // Home screen panels for the two trip-time modes: "preparing" (the week before) and "in the field" (during the trip).
+import { tripRegions } from '../services/officialAlerts';
 // Everything shown here comes from the trip itself, the forecast service, or fixed official sources —
 // nothing about terrain, closures or safety is generated.
 import { Images, Star, Wrench, Copy, Backpack, ListChecks, ShoppingCart, ChevronLeft, CalendarDays, Navigation, Camera, Clock, AlertTriangle, Phone, Wifi, WifiOff, Map as MapIcon, ShieldAlert, BookOpen } from 'lucide-react';
@@ -130,7 +131,7 @@ export function FieldPanel({ t }: { t: Trip }) {
         </Card>
       )}
       <Tile to={`/trip/${t.id}/album`} I={Images} title="הוספת תמונות" sub="לאלבום המשותף של הטיול" />
-      <OfficialAlerts flood={t.siteIds.some(id => SITE_BY_ID[id]?.floodRisk)} />
+      <OfficialAlerts flood={t.siteIds.some(id => SITE_BY_ID[id]?.floodRisk)} regions={tripRegions(t)} />
       <SourceLine f={wx.forecast} />
     </section>
   );

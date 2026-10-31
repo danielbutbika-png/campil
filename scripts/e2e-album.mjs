@@ -77,10 +77,14 @@ console.log('B has no collage:', (await B.getByRole('heading', { name: 'קולא
 await A.getByRole('button', { name: 'יצירת סרטון הטיול' }).click(); await A.waitForTimeout(400);
 await A.getByRole('button', { name: 'מהיר' }).click(); await A.getByRole('button', { name: 'עד 20' }).click();
 await S(A, 'a3-video-opts');
+console.log('music: original (composed on device) is the default, with 4 moods and a preview:', (await A.getByRole('radio', { name: 'מוזיקה מקורית' }).getAttribute('aria-checked')) === 'true' && (await A.getByRole('radiogroup', { name: 'סגנון המוזיקה' }).getByRole('radio').count()) === 4 && (await A.getByRole('button', { name: /השמעה/ }).count()) === 1);
+await A.getByRole('radio', { name: /שמח/ }).click();
 await A.getByRole('button', { name: /יצירת הסרטון/ }).click(); await A.waitForTimeout(6000); await S(A, 'a4-video-progress');
 await A.waitForSelector('video', { timeout: 40000 });
 const v = await A.evaluate(async () => { const el = document.querySelector('video'); await new Promise(r => { if (el.readyState >= 1) r(); else el.onloadedmetadata = r; }); return { w: el.videoWidth, h: el.videoHeight, size: (await (await fetch(el.src)).blob()).size }; });
 console.log('video:', JSON.stringify(v));
+const snd = await A.evaluate(async () => { try { const el = document.querySelector('video'); const buf = await new AudioContext().decodeAudioData(await (await fetch(el.src)).arrayBuffer()); const d = buf.getChannelData(0); let sum = 0, peak = 0; for (let i = 0; i < d.length; i += 4) { sum += d[i] * d[i]; peak = Math.max(peak, Math.abs(d[i])); } return { rms: Math.sqrt(sum / (d.length / 4)), peak, sec: buf.duration }; } catch (e) { return { err: String(e) }; } });
+console.log('video has the music track — audible, not clipping:', !snd.err && snd.rms > 0.02 && snd.peak <= 1, JSON.stringify(snd));
 const [dl2] = await Promise.all([A.waitForEvent('download'), A.getByRole('button', { name: 'הורדה למכשיר' }).click()]);
 console.log('video downloaded:', dl2.suggestedFilename());
 const cloudAfter = [...store].filter(([k]) => k.endsWith('/journal')).flatMap(([, v]) => Object.values(JSON.parse(v)));

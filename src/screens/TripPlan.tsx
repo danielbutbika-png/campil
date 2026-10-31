@@ -74,7 +74,8 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
     if (changedCore) { if (merged.menuMode !== 'manual' && !merged.noFood) extra.meals = keepFoods(planMeals(merged, st.settings.diet), t.meals); extra.schedule = buildSchedule(merged, wx.days, merged.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean)); }
     else if (JSON.stringify(p.siteIds) !== JSON.stringify(t.siteIds)) extra.schedule = buildSchedule(merged, wx.days, merged.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean));
     st.updateTrip(t.id, { ...p, ...extra, example: false });
-    setEdit(false); toast(changedCore ? 'הטיול עודכן — התפריט, הלו״ז והציוד חושבו מחדש' : 'הטיול עודכן');
+    const moved = JSON.stringify(p.dest ?? null) !== JSON.stringify(t.dest ?? null) || p.regionId !== t.regionId;
+    setEdit(false); toast(changedCore ? 'הטיול עודכן — התפריט, הלו״ז והציוד חושבו מחדש' : moved ? `מיקום הטיול עודכן${p.dest ? ` ל${p.dest.label}` : ''} — התחזית וההמלצות מחושבות מחדש` : 'הטיול עודכן');
   };
 
   return (
@@ -95,7 +96,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
             <div className="mb-1 flex flex-wrap gap-2">{t.example && <Badge className="!bg-white/20 !text-white">טיול לדוגמה — אפשר לערוך או למחוק</Badge>}{t.status === 'done' ? <Badge className="!bg-white/20 !text-white">הסתיים</Badge> : until >= 0 && <Badge className="!bg-sunset !text-white">{until === 0 ? 'יוצאים היום' : `בעוד ${until} ימים`}</Badge>}</div>
             <h1 className="font-display text-3xl drop-shadow md:text-5xl">{t.name}</h1>
             {t.shared && <div className="mt-2 flex flex-wrap items-center gap-2"><Avatars t={t} light /><SyncBadge t={t} /></div>}
-            <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-white/90"><span className="flex items-center gap-1"><CalendarDays size={15} />{fmtRange(t.start, t.end)}{nights ? ` · ${nights} לילות` : ' · טיול יום'}</span>{reg && <span className="flex items-center gap-1"><MapPin size={15} />{reg.name}</span>}<span className="flex items-center gap-1"><Users size={15} />{t.adults + t.children} משתתפים</span></p>
+            <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-white/90"><span className="flex items-center gap-1"><CalendarDays size={15} />{fmtRange(t.start, t.end)}{nights ? ` · ${nights} לילות` : ' · טיול יום'}</span>{(reg || t.dest) && <button type="button" onClick={() => setEdit(true)} className="flex items-center gap-1 underline-offset-4 hover:underline" aria-label={`מיקום הטיול: ${t.dest?.label ?? reg?.name} — שינוי`}><MapPin size={15} />{t.dest?.label && t.dest.label !== reg?.name ? `${t.dest.label}${reg ? ` · ${reg.name}` : ''}` : reg?.name}</button>}<span className="flex items-center gap-1"><Users size={15} />{t.adults + t.children} משתתפים</span></p>
           </div>
         </div>
       </header>
