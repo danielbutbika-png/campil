@@ -1,0 +1,27 @@
+# Data refresh: fetch real places from Wikidata (CC0) and image licences from Wikimedia Commons, then write a
+# coverage report. Triggered only by pushing the `data-refresh` branch (or manually). It deploys nothing:
+# results are committed to the `ci-reports` branch under data/, and reviewed before they enter the app.
+name: Data refresh
+on:
+  push:
+    branches: [data-refresh]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  wikidata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/enrich/wikidata.mjs /tmp/places.wd.json
+      - run: node scripts/enrich/coverage.mjs /tmp/places.wd.json > /tmp/COVERAGE.md
+      - name: Save to ci-reports
+        run: |
+          git config user.name "CampIL data"; git config user.email "noreply@github.com"
+          sha=$(git rev-parse --short HEAD)
+          git fetch origin ci-reports && git worktree add -f /tmp/rep FETCH_HEAD && cd /tmp/rep && git checkout -B ci-reports
+          mkdir -p data && cp /tmp/places.wd.json data/places.wd.json && cp /tmp/COVERAGE.md data/COVERAGE.md
+          git add data && git commit -qm "data refresh ${sha}" && git push origin ci-reports
