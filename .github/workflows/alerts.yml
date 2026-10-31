@@ -1,0 +1,39 @@
+# Official IMS weather warnings → /campil/live/ims-alerts.json (and the staging copy), every 30 minutes.
+# Installed on the `main` (GitHub Pages) branch by the production deploy of CampIL. Free (public repo Actions).
+# Commits only when the warnings change, plus a heartbeat every 6 hours so the app can tell fresh from stale.
+# To stop it: delete this file from `main`, or disable the workflow in the Actions tab.
+name: IMS alerts
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: campil-deploy
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node .github/alerts/ims.mjs /tmp/new.json
+      - name: Publish if changed (or every 6 h)
+        run: |
+          node -e '
+            const fs = require("fs"); const n = JSON.parse(fs.readFileSync("/tmp/new.json"));
+            let o = null; try { o = JSON.parse(fs.readFileSync("live/ims-alerts.json")); } catch {}
+            const key = d => JSON.stringify((d?.feeds ?? []).map(f => [f.area, f.type, f.ok, f.items.map(i => i.guid || i.title)]).concat([d?.ok]));
+            const old = o ? (Date.now() - Date.parse(o.checkedAt)) / 36e5 : 99;
+            fs.writeFileSync("/tmp/publish", key(n) !== key(o) || old >= 6 ? "yes" : "no");'
+          if [ "$(cat /tmp/publish)" != yes ]; then echo "no change"; exit 0; fi
+          mkdir -p live && cp /tmp/new.json live/ims-alerts.json
+          if [ -d staging ]; then mkdir -p staging/live && cp /tmp/new.json staging/live/ims-alerts.json; fi
+          git config user.name "campil-alerts"; git config user.email "ci@campil.invalid"
+          git add live staging/live 2>/dev/null || git add live
+          git commit -qm "IMS alerts $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+          for i in 1 2 3; do git push origin HEAD:main && exit 0; git pull -q --rebase origin main; done; exit 1
