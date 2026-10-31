@@ -17,11 +17,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: node scripts/enrich/wikidata.mjs /tmp/places.wd.json
-      - run: node scripts/enrich/coverage.mjs /tmp/places.wd.json > /tmp/COVERAGE.md
+      - run: node scripts/enrich/osm.mjs /tmp/places.osm.json
+      - run: node scripts/enrich/merge.mjs /tmp/places.wd.json /tmp/places.osm.json /tmp/places.json /tmp/MERGE.md
+      - run: node scripts/enrich/coverage.mjs /tmp/places.json > /tmp/COVERAGE.md
       - name: Save to ci-reports
         run: |
           git config user.name "CampIL data"; git config user.email "noreply@github.com"
           sha=$(git rev-parse --short HEAD)
           git fetch origin ci-reports && git worktree add -f /tmp/rep FETCH_HEAD && cd /tmp/rep && git checkout -B ci-reports
-          mkdir -p data && cp /tmp/places.wd.json data/places.wd.json && cp /tmp/COVERAGE.md data/COVERAGE.md
+          mkdir -p data && cp /tmp/places.wd.json /tmp/places.osm.json /tmp/places.json /tmp/COVERAGE.md /tmp/MERGE.md data/
           git add data && git commit -qm "data refresh ${sha}" && git push origin ci-reports

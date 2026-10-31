@@ -2,12 +2,12 @@
 // Runs in GitHub Actions (workflow "Data refresh"), never in the browser bundle and never on a schedule of its own.
 // Polite use: one query at a time, a descriptive User-Agent, results cached in the output file.
 // Output: src/data/places.wd.json — every place carries its Wikidata id, so each fact can be traced and re-checked.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
+import { regionOf } from './regions.mjs';
 
 const UA = 'CampIL-data-refresh/1.0 (https://github.com/danielbutbika-png/campil; family trip planner)';
 const SPARQL = 'https://query.wikidata.org/sparql';
-const OUT = process.argv[2] || 'src/data/places.wd.json';
-const regions = JSON.parse(readFileSync('src/data/regions.geo.json', 'utf8')).features;
+const OUT = process.argv[2] || '/tmp/places.wd.json';
 
 // category → Wikidata classes (instance of, or subclass of) — the app's 30 requested categories map onto these
 export const CATEGORIES = {
@@ -55,13 +55,6 @@ async function run(q, tries = 3) {
   }
   throw new Error('query failed');
 }
-
-// point-in-polygon (ray casting) against the app's own region polygons
-const inside = (x, y, ring) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
-export const regionOf = (lat, lon) => {
-  for (const f of regions) { const g = f.geometry; const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates; if (polys.some(p => inside(lon, lat, p[0]))) return f.properties.id; }
-  return null;
-};
 
 const places = new Map();
 for (const [cat, classes] of Object.entries(CATEGORIES)) {
