@@ -1,6 +1,6 @@
 // "Where are you going?" — find a destination by name and add it to the trip's route.
 // Our catalog is searched as you type (offline); the web (OpenStreetMap / Nominatim) only when the user presses "search".
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, MapPin, X, Globe, Loader2 } from 'lucide-react';
 import type { Trip, RegionId, TripPlace } from '../lib/types';
 import { SITES, SITE_BY_ID } from '../data/sites';
@@ -9,6 +9,7 @@ import { searchByName, type WebPlace } from '../services/places';
 import { haversineKm } from '../lib/util';
 import { Prov } from './Provenance';
 import { cx, toast } from './ui';
+import { loadPlaces, searchPlaces, CAT_HE, wikidataUrl, osmUrl, type Place, type PlaceDb } from '../services/placesDb';
 
 const nearestRegion = (lat: number, lon: number): RegionId => REGIONS.reduce((a, r) => (haversineKm({ lat, lon }, r) < haversineKm({ lat, lon }, a) ? r : a)).id;
 const norm = (s: string) => s.replace(/["״׳'\-–]/g, '').replace(/\s+/g, ' ').trim();
@@ -21,6 +22,17 @@ export function DestSearch({ t, onChange }: { t: Trip; onChange: (p: Partial<Tri
   const nq = norm(q);
   const local = nq.length >= 2 ? SITES.filter(s => norm(s.name).includes(nq) || norm(REGION_BY_ID[s.region].name).includes(nq)).slice(0, 6) : [];
   const places = t.places ?? [];
+  // the extended place database (Wikidata + OpenStreetMap), searched as you type once it's loaded
+  const [db, setDb] = useState<PlaceDb | null>(null);
+  useEffect(() => { loadPlaces().then(setDb, () => setDb(null)); }, []);
+  const fromDb = db && nq.length >= 2 ? searchPlaces(db, q, 12).filter(p => !p.site || !local.some(s => s.id === p.site)).slice(0, 6) : [];
+  const addPlace = (p: Place) => {
+    if (p.site) return addSite(p.site);
+    if (places.some(x => x.id === p.id)) return;
+    const tp: TripPlace = { id: p.id, name: p.he, lat: p.lat, lon: p.lon, label: CAT_HE[p.c[0]], source: p.src.includes('wd') ? 'wd' : 'osm', url: p.qid ? wikidataUrl(p.qid) : osmUrl(p.osm!), website: p.web, addedAt: new Date().toISOString() };
+    onChange({ places: [...places, tp], regionId: t.regionId ?? p.r, dest: t.dest ?? { lat: p.lat, lon: p.lon, label: p.he } });
+    toast(`${p.he} נוסף למסלול`); setQ(''); setWeb(null);
+  };
 
   const addSite = (id: string) => {
     if (t.siteIds.includes(id)) return;
@@ -65,7 +77,17 @@ export function DestSearch({ t, onChange }: { t: Trip; onChange: (p: Partial<Tri
               <span className="shrink-0 text-sm font-bold text-moss">{t.siteIds.includes(s.id) ? 'במסלול' : '+ הוספה'}</span>
             </button></li>))}
         </ul>)}
-      {nq.length >= 2 && !web && !busy && !err && <p className="text-xs text-muted">{local.length ? 'לא מצאתם? ' : 'לא נמצא בקטלוג. '}לחצו "חיפוש" כדי לחפש ב-OpenStreetMap.</p>}
+      {fromDb.length > 0 && (
+        <ul className="divide-y divide-line overflow-hidden rounded-xl2 border border-line bg-surface" aria-label="ממאגר המקומות">
+          {fromDb.map(p => { const on = places.some(x => x.id === p.id) || (!!p.site && t.siteIds.includes(p.site)); return (
+            <li key={p.id}><button type="button" onClick={() => addPlace(p)} disabled={on} className="flex w-full items-center gap-2 p-3 text-right hover:bg-raised disabled:opacity-60">
+              <MapPin size={16} className="shrink-0 text-muted" aria-hidden />
+              <span className="min-w-0 flex-1"><span className="block font-bold">{p.he}</span><span className="block text-xs text-muted">{REGION_BY_ID[p.r].name} · {CAT_HE[p.c[0]]}</span></span>
+              <span className="shrink-0 text-sm font-bold text-moss">{on ? 'במסלול' : '+ הוספה'}</span>
+            </button></li>); })}
+        </ul>)}
+      {fromDb.length > 1 && fromDb.some((p, i) => fromDb.findIndex(x => x.he === p.he) !== i) && <p className="text-xs text-muted">יש כמה מקומות באותו שם — בחרו לפי האזור והסוג.</p>}
+      {nq.length >= 2 && !web && !busy && !err && <p className="text-xs text-muted">{local.length || fromDb.length ? 'לא מצאתם? ' : 'לא נמצא במאגר. '}לחצו "חיפוש" כדי לחפש ב-OpenStreetMap.</p>}
       {err && <p className="text-sm font-semibold text-danger" role="alert">{err}</p>}
       {web && (
         <div className="space-y-1.5">

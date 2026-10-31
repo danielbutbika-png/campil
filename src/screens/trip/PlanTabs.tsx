@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DayIdeas } from '../../components/DayIdeas';
 import { Car, Tent, Utensils, Footprints, Coffee, Package, Plus, RefreshCw, Trash2, Sunrise, Sunset } from 'lucide-react';
 import type { Trip, ScheduleItem, TaskItem } from '../../lib/types';
 import type { TripWx } from '../../lib/hooks';
@@ -26,6 +27,7 @@ export function ScheduleTab({ t, wx }: { t: Trip; wx: TripWx }) {
         <Button size="sm" variant="ghost" icon={<RefreshCw size={15} />} onClick={() => { up(t.id, { schedule: buildSchedule(t, wx.days, t.siteIds.map(i => SITE_BY_ID[i]).filter(Boolean)) }); toast('לוח הזמנים נבנה מחדש לפי התחזית והאתרים'); }}>בנייה מחדש</Button>
       </div>
       <p className="text-sm text-muted">שעות מוצעות. בימים חמים הפעילות מוקדמת לבוקר ונוספת מנוחת צהריים.</p>
+      <DayIdeas t={t} wx={wx} />
       <div className="grid gap-5 lg:grid-cols-2">
         {Array.from({ length: days }, (_, d) => {
           const date = addDays(t.start, d); const w = wx.days.find(x => x.date === date);

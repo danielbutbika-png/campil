@@ -4,7 +4,7 @@
 const BUILD = '__BUILD_ID__';
 const P = '__CACHE_PREFIX__'; // 'campil-' (production) or 'campil-stg-' (staging)
 const VERSION = P + 'app-' + BUILD;
-const RT_FONTS = P + 'rt-fonts', RT_MAP = P + 'rt-map', OFFLINE_MAP = P + 'offline-map';
+const RT_FONTS = P + 'rt-fonts', RT_MAP = P + 'rt-map', OFFLINE_MAP = P + 'offline-map', RT_DATA = P + 'rt-data';
 const PRECACHE = __PRECACHE_MANIFEST__;
 const SHELL = ['./', ...PRECACHE];
 // On update, drop only this environment's older app caches. Saved maps (offline-map) and runtime caches stay.
@@ -16,6 +16,16 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Live data (weather, OSM): network only — the app keeps its own last-good copy and labels it.
   if (/open-meteo\.com|overpass-api/.test(url.host)) return;
+  // Official warnings (live/): network first, the last copy only when offline — the app shows when it was checked.
+  if (url.origin === location.origin && /\/live\//.test(url.pathname)) {
+    e.respondWith(caches.open(RT_DATA).then(c => fetch(req, { cache: 'no-store' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => c.match(req))));
+    return;
+  }
+  // The place database (data/): stale-while-revalidate in a cache that survives app updates.
+  if (url.origin === location.origin && /\/data\/[^/]+\.json$/.test(url.pathname)) {
+    e.respondWith(caches.open(RT_DATA).then(async c => { const hit = await c.match(req); const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit); return hit || net; }));
+    return;
+  }
   // Same-origin assets & fonts: stale-while-revalidate.
   if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     e.respondWith(caches.open(url.origin === location.origin ? VERSION : RT_FONTS).then(async c => {

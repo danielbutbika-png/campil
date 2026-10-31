@@ -77,9 +77,12 @@ jobs:
           git worktree add -B main site origin/main
           if [ "${{ steps.target.outputs.name }}" = staging ]; then
             rm -rf site/staging && mkdir -p site/staging && cp -r dist-staging/. site/staging/; env=staging
+            node scripts/alerts/ims.mjs site/staging/live/ims-alerts.json || true   # snapshot of official warnings for testing
           else
-            find site -mindepth 1 -maxdepth 1 ! -name .git ! -name staging -exec rm -rf {} +
+            find site -mindepth 1 -maxdepth 1 ! -name .git ! -name staging ! -name live ! -name .github -exec rm -rf {} +
             cp -r dist/. site/; env=prod
+            # `.github` on main holds the scheduled IMS-warnings job (installed from deploy/main, see docs/data/ALERTS.md); kept as is
+            node scripts/alerts/ims.mjs site/live/ims-alerts.json || true
           fi
           cd site
           git add -A

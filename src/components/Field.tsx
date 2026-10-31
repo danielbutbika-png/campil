@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, AlertCircle, WifiOff, Wifi, CloudUpload, Check, Loader2, Map as MapIcon, CloudSun, Smartphone, ShieldAlert, Download, RefreshCw } from 'lucide-react';
-import type { Trip } from '../lib/types';
+import type { Trip, RegionId } from '../lib/types';
+import { useOfficialAlerts, alertsState, alertsFor, AREAS_OF, AREA_HE, TYPE_HE, IMS_CREDIT } from '../services/officialAlerts';
 import { useStore } from '../lib/store';
 import { useOnline } from '../lib/hooks';
 import { useCloud } from '../lib/cloud/sync';
@@ -75,7 +76,7 @@ export function FieldCard({ t, point }: { t: Trip; point: { lat: number; lon: nu
 }
 
 /** CampIL doesn't receive official alerts automatically: point to the official sources before leaving. */
-export function OfficialAlerts({ flood }: { flood: boolean }) {
+export function OfficialAlerts({ flood, regions }: { flood: boolean; regions?: RegionId[] }) {
   const links: [string, string, string][] = [
     ['השירות המטאורולוגי', 'https://ims.gov.il', 'התרעות מזג אוויר, שיטפונות ועומסי חום'],
     ['רשות הטבע והגנים', 'https://www.parks.org.il', 'סגירות, הזמנות ושעות פתיחה בשמורות ובגנים'],
@@ -84,11 +85,37 @@ export function OfficialAlerts({ flood }: { flood: boolean }) {
   return (
     <section aria-labelledby="alerts-h" className="space-y-2 rounded-xl2 border border-line bg-surface p-4">
       <h2 id="alerts-h" className="flex items-center gap-2 font-bold"><AlertCircle size={18} className="text-warn" />התרעות רשמיות — לבדוק לפני היציאה</h2>
-      <p className="text-sm text-muted">CampIL לא מקבלת התרעות רשמיות אוטומטית. ההמלצות כאן מחושבות מהתחזית, ואינן מחליפות את הגופים הרשמיים.{flood ? ' בתוכנית יש אתרים בערוצי נחלים — בדקו התרעות שיטפונות גם לאזור שבמעלה הנחל.' : ''}</p>
+      {regions?.length ? <LiveAlerts regions={regions} /> : null}
+      <p className="text-sm text-muted">{regions?.length ? 'אזהרות השירות המטאורולוגי נבדקות כאן אוטומטית. סגירות אתרים — רק באתרי המפעילים.' : 'CampIL לא מקבלת התרעות רשמיות אוטומטית.'} ההמלצות כאן לא מחליפות את הגופים הרשמיים.{flood ? ' יש כאן אתרים בערוצי נחלים — בדקו התרעות שיטפונות גם לאזור שבמעלה הנחל.' : ''}</p>
       <ul className="grid gap-2 sm:grid-cols-3">{links.map(([n, u, d]) => (
         <li key={u}><a href={u} target="_blank" rel="noreferrer" className="flex h-full flex-col rounded-xl border border-line p-3 hover:border-moss"><span className="flex items-center gap-1 font-bold">{n}<ExternalLink size={13} /></span><span className="text-xs text-muted">{d}</span></a></li>))}</ul>
       <p className="text-sm font-semibold">חירום: מד״א 101 · משטרה 100 · כבאות והצלה 102</p>
     </section>
+  );
+}
+
+/** Warnings in force from the IMS feeds for these regions — or an honest "could not check". */
+export function LiveAlerts({ regions }: { regions: RegionId[] }) {
+  const q = useOfficialAlerts();
+  const st = alertsState(q.data);
+  const list = alertsFor(q.data, regions);
+  const when = (iso: string) => new Date(iso).toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const areas = [...new Set(regions.flatMap(r => AREAS_OF[r]))].map(a => AREA_HE[a]).join(', ');
+  if (q.isLoading) return <p className="flex items-center gap-2 text-sm text-muted"><Loader2 size={14} className="animate-spin" />בודקים אזהרות רשמיות…</p>;
+  return (
+    <div className="space-y-2" aria-live="polite">
+      {list.length > 0 && <ul className="space-y-2" aria-label="אזהרות רשמיות בתוקף">{list.map((a, i) => (
+        <li key={i} className={cx('rounded-xl border-2 p-3', a.type === 'flood' || /אדומה|כתומה/.test(a.title) ? 'border-danger bg-danger/10' : 'border-warn bg-warn/10')}>
+          <p className="font-bold">{a.title}</p>
+          {a.text && <p className="mt-1 whitespace-pre-line text-sm">{a.text}</p>}
+          <p className="mt-1 text-xs text-muted">{TYPE_HE[a.type]} · אזור: {AREA_HE[a.area]}{a.pubDate ? ` · פורסם ${when(a.pubDate)}` : ''} · <a className="font-bold underline" href={a.link} target="_blank" rel="noreferrer">{IMS_CREDIT}</a></p>
+        </li>))}</ul>}
+      {st.kind === 'fresh' && !list.length && <p className="rounded-xl bg-raised/60 p-2.5 text-sm">אין כרגע אזהרות בפיד של השירות המטאורולוגי לאזור {areas} (בדיקה אחרונה {when(st.checkedAt)}). <span className="font-bold">זה לא אישור שהמקום בטוח</span> — סגירות ותנאי שטח באתרי המפעילים.</p>}
+      {st.kind === 'fresh' && st.partial && <p className="text-xs text-warn">חלק מהפידים לא נטענו בבדיקה האחרונה — לבדוק גם באתר השירות המטאורולוגי.</p>}
+      {st.kind === 'stale' && <p className="rounded-xl bg-warn/10 p-2.5 text-sm font-bold">האזהרות לא עודכנו מאז {when(st.checkedAt)} — לא ניתן לדעת אם יש אזהרה בתוקף. לבדוק באתר השירות המטאורולוגי.</p>}
+      {st.kind === 'missing' && <p className="rounded-xl bg-warn/10 p-2.5 text-sm font-bold">לא הצלחנו לבדוק אזהרות רשמיות כרגע. לבדוק באתר השירות המטאורולוגי.</p>}
+      {list.length > 0 && <p className="text-xs text-muted">{IMS_CREDIT}. המידע מוצג כפי שפורסם; השירות המטאורולוגי לא אחראי לשימוש בו באפליקציה.</p>}
+    </div>
   );
 }
 

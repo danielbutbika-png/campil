@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Search, Loader2, MapPin, Plus, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { loadPlaces, searchPlaces, nearby, richness, CAT_HE, CAT_GROUPS, wikidataUrl, osmUrl, type Place, type PlaceDb } from '../services/placesDb';
 import { fitScore, fitContextFor, type Fit } from '../intel/placeFit';
+import { useAlertCtx } from '../services/officialAlerts';
 import { useStore, nextTrip } from '../lib/store';
 import { useForecast, tripPoint } from '../lib/hooks';
 import { availability } from '../services/weather';
@@ -33,7 +34,8 @@ export default function Places({ region }: { region?: RegionId }) {
   const [pick, setPick] = useState<string[]>([]); const [confirm, setConfirm] = useState(false);
   const [n, setN] = useState(30);
   const fc = useForecast(base?.lat ?? REGION_BY_ID[reg].lat, base?.lon ?? REGION_BY_ID[reg].lon);
-  const ctx = useMemo(() => (t ? fitContextFor(t, fc.data?.days ?? [], availability(t.start, t.end), base) : null), [t, fc.data, base]);
+  const al = useAlertCtx();
+  const ctx = useMemo(() => (t ? { ...fitContextFor(t, fc.data?.days ?? [], availability(t.start, t.end), base), ...al } : null), [t, fc.data, base, al]);
   const cats = g ? CAT_GROUPS.find(x => x.id === g)!.cats : undefined;
 
   const rows = useMemo(() => {

@@ -44,3 +44,31 @@ describe('place fit (transparent score)', () => {
     expect(placeConditions(park, [day({})])).toEqual([]);
   });
 });
+
+describe('official IMS warnings', () => {
+  const flood = { area: 'north' as const, type: 'flood' as const, title: 'אזהרה כתומה - שיטפונות בנחלי הגולן', text: '', pubDate: '', link: 'https://ims.gov.il' };
+  it('a flood warning for the area rules out a stream, with the official title and credit', () => {
+    const f = fitScore(stream, { ...base, alerts: [flood], alertsChecked: true });
+    expect(f.score).toBeNull(); expect(f.excluded).toMatch(/אזהרה רשמית/); expect(f.excluded).toMatch(/השירות המטאורולוגי/);
+  });
+  it('the same warning does not touch a place in another area, or a park', () => {
+    expect(fitScore({ ...stream, r: 'eilat' }, { ...base, alerts: [flood] }).score).not.toBeNull();
+    expect(fitScore(park, { ...base, alerts: [flood] }).score).not.toBeNull();
+  });
+  it('a sea warning (country-wide) rules out a beach anywhere', () => {
+    const sea = { ...flood, area: 'country' as const, type: 'sea' as const, title: 'ים גבוה ומסוכן לרחצה' };
+    expect(fitScore({ ...park, r: 'sharon', c: ['beach'] }, { ...base, alerts: [sea] }).score).toBeNull();
+  });
+  it('could not check → said in the explanation, never assumed clear', () => {
+    expect(fitScore(park, { ...base, alertsChecked: false }).summary).toMatch(/לא הצלחנו לבדוק אזהרות רשמיות/);
+  });
+});
+
+describe('flood-prone by the curated catalogue', () => {
+  it('a reserve linked to a catalogue site with flood risk (Yehudiya) is ruled out by a flood warning', () => {
+    const yehudiya: Place = { id: 'wd:Q9', he: 'שמורת יער יהודיה', lat: 32.94, lon: 35.71, r: 'golan', c: ['nature_reserve', 'forest'], site: 'yehudiya', src: ['wd'] };
+    const flood = { area: 'north' as const, type: 'flood' as const, title: 'שיטפונות', text: '', pubDate: '', link: '' };
+    expect(fitScore(yehudiya, { ...base, alerts: [flood] }).score).toBeNull();
+    expect(fitScore(yehudiya, { ...base, days: [day({ precip: 25, precipProb: 90 })] }).score).toBeNull();
+  });
+});

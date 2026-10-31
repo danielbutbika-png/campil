@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { tripRegions } from '../../services/officialAlerts';
 import { RefreshCw, ChevronLeft, AlertCircle, ListChecks, Tent, Flag, ExternalLink } from 'lucide-react';
 import type { Trip, Site } from '../../lib/types';
 import type { TripWx } from '../../lib/hooks';
@@ -54,7 +55,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
       {!ended && <TripReadiness t={t} />}
       {!ended && <FieldCard t={t} point={wx.point ?? null} />}
       {!ended && <TypeChecks t={t} />}
-      {!ended && <OfficialAlerts flood={sites.some(x => x.floodRisk)} />}
+      {!ended && <OfficialAlerts flood={sites.some(x => x.floodRisk)} regions={tripRegions(t)} />}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Section title="מזג האוויר ביעד" action={<Button size="sm" variant="soft" icon={<RefreshCw size={15} />} onClick={wx.refetch}>רענון</Button>}>
           {wx.point && <p className="-mt-1 text-sm text-muted">לפי הנקודה: {wx.point.label}</p>}

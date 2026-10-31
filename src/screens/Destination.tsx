@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapPin, Navigation, Heart, Plus, ExternalLink, AlertTriangle, Loader2, Info, Check, X, HelpCircle, Car, Tent, Footprints, Sparkles } from 'lucide-react';
 import { loadPlaces, searchPlaces, nearby, sameNameCount, wikiExtract, amenitiesNear, wikiUrl, osmUrl, wikidataUrl, CAT_HE, CAT_GROUPS, AMENITY_HE, type Place, type PlaceDb, type Amenity, type PlaceCat } from '../services/placesDb';
 import { fitScore, fitContextFor, placeConditions, type Fit } from '../intel/placeFit';
+import { useAlertCtx } from '../services/officialAlerts';
 import { useStore, nextTrip } from '../lib/store';
 import { useForecast, tripPoint } from '../lib/hooks';
 import { availability } from '../services/weather';
@@ -240,7 +241,7 @@ function WeatherTab({ p }: { p: Place }) {
         {!cond.length && days.length > 0 && <p className="text-sm">התחזית לא מעלה בעיה מיוחדת לסוג המקום הזה. זה לא אישור בטיחות — לבדוק התרעות רשמיות לפני היציאה.</p>}
         <SourceLine f={fc.data} />
       </section>
-      <OfficialAlerts flood={flood} />
+      <OfficialAlerts flood={flood} regions={[p.r]} />
     </>
   );
 }
@@ -270,7 +271,8 @@ function Recs({ db, p }: { db: PlaceDb; p: Place }) {
   const trips = useStore(s => s.trips);
   const t = nextTrip(trips);
   const fc = useForecast(p.lat, p.lon);
-  const ctx = useMemo(() => t ? fitContextFor(t, fc.data?.days ?? [], availability(t.start, t.end), tripPoint(t)) : null, [t, fc.data]);
+  const al = useAlertCtx();
+  const ctx = useMemo(() => t ? { ...fitContextFor(t, fc.data?.days ?? [], availability(t.start, t.end), tripPoint(t)), ...al } : null, [t, fc.data, al]);
   const fit = ctx ? fitScore(p, ctx) : null;
   const alts = useMemo(() => ctx ? nearby(db, p, 20, undefined, p.id).map(n => ({ n, f: fitScore(n.p, { ...ctx, base: { lat: p.lat, lon: p.lon, label: p.he } }) })).filter(x => x.f.score != null).sort((a, b) => b.f.score! - a.f.score!).slice(0, 5) : [], [ctx, db, p]);
   return (
