@@ -1,11 +1,11 @@
 // CampIL service worker. On install it saves every file of this build (list injected at build time by
 // vite.config.ts), so the whole app — map screen included — opens with no signal after a single visit.
 // Production and staging share an origin, so every cache name carries the environment prefix.
-const BUILD = 'e69edf563a';
+const BUILD = 'e413fedd39';
 const P = 'campil-stg-'; // 'campil-' (production) or 'campil-stg-' (staging)
 const VERSION = P + 'app-' + BUILD;
-const RT_FONTS = P + 'rt-fonts', RT_MAP = P + 'rt-map', OFFLINE_MAP = P + 'offline-map';
-const PRECACHE = ["./Academy-GXqZ-To1.js","./BoxScreen-BIQCojVg.js","./CampSearch-Bps5uDcH.js","./Cook-DHOfMDzY.js","./DesignSystem-BCvb_Aez.js","./Destination-BS714NZr.js","./Explore-DNqpGoUs.js","./Gear-DRUMGOwj.js","./IsraelMap-Cz_Utbsk.js","./IsraelMapGL-KizArRWY.css","./IsraelMapGL-XWUowVka.js","./Join-CIdWpyO6.js","./JournalTab-DcR2DpDe.js","./MapScreen-BTrlqhGG.js","./More-Dj6oyTMt.js","./Places-Co1040SX.js","./RouteFuel-_nL82S44.js","./TripPlan-CJZgvW9O.js","./TripTypePicker-CaaDSdTA.js","./Trips-BPePPvpn.js","./VehiclePicker-CcfkufIQ.js","./Wizard-B2b6ZoCB.js","./car-rDfaemFm.js","./chef-hat-CKWC7-Sc.js","./data/places.json","./footprints-BL20ZKn8.js","./icon-192.png","./icon-512.png","./icon.svg","./index-Cl8alKzZ.js","./index-Dii-n6Wd.css","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest","./osm-dRGSVYye.js","./package-C3dNBtcY.js","./placeFit-BEtkVnVf.js","./places-D1Q9TkrR.js","./placesDb-DSPI9ieS.js","./printer-CRMXSPXz.js","./rotate-ccw-B3rwAVz8.js","./search-Cs8jo2qF.js","./upload-CpB96Lzf.js"];
+const RT_FONTS = P + 'rt-fonts', RT_MAP = P + 'rt-map', OFFLINE_MAP = P + 'offline-map', RT_DATA = P + 'rt-data';
+const PRECACHE = ["./Academy-D806b5MI.js","./BoxScreen-BdK2Eat3.js","./CampSearch-51_J4I8X.js","./Cook-k3Q-WSUi.js","./DesignSystem-Di4Uc2Ii.js","./Destination-DvplKGmU.js","./Explore-BsVxJ1u5.js","./Gear-DH2S-rgL.js","./IsraelMap-BsjDAUvD.js","./IsraelMapGL-B0yA2Xdq.js","./IsraelMapGL-KizArRWY.css","./Join-DK8n3D8U.js","./JournalTab-Dnyktg1Q.js","./MapScreen-Cyqvjg8n.js","./More-CK5hqMNi.js","./Places-CFxUKXIX.js","./RouteFuel-CJwSTjlg.js","./TripPlan-BI02JlOe.js","./TripTypePicker-Z9iycZJp.js","./Trips-BR7CACgh.js","./VehiclePicker-Cid6OW0J.js","./Wizard-BZeqBlr2.js","./car-BMRWRqEL.js","./chef-hat-7irwteRd.js","./data/places.json","./footprints-BtmTwM0y.js","./icon-192.png","./icon-512.png","./icon.svg","./index-BxkbkFkN.css","./index-Cx-oaroq.js","./index.esm-1jP3d1p-.js","./index.esm-B4Jzzju4.js","./index.esm-CCAWpmwl.js","./index.esm-D_Ez9UD8.js","./index.html","./manifest.webmanifest","./osm-dRGSVYye.js","./package-CiFA3lA1.js","./placeFit-B0PlOYqq.js","./places-D1Q9TkrR.js","./placesDb-C2ln_t9Q.js","./printer-CR4ZFpXK.js","./rotate-ccw-BmF96vlo.js","./search-C0_DoW5k.js","./upload-C1LhbptO.js"];
 const SHELL = ['./', ...PRECACHE];
 // On update, drop only this environment's older app caches. Saved maps (offline-map) and runtime caches stay.
 const stale = k => (k.startsWith(P + 'app-') && k !== VERSION) || (P === 'campil-' && /^campil-[0-9a-f]{10}$/.test(k)); // second: pre-prefix builds
@@ -16,6 +16,16 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Live data (weather, OSM): network only — the app keeps its own last-good copy and labels it.
   if (/open-meteo\.com|overpass-api/.test(url.host)) return;
+  // Official warnings (live/): network first, the last copy only when offline — the app shows when it was checked.
+  if (url.origin === location.origin && /\/live\//.test(url.pathname)) {
+    e.respondWith(caches.open(RT_DATA).then(c => fetch(req, { cache: 'no-store' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => c.match(req))));
+    return;
+  }
+  // The place database (data/): stale-while-revalidate in a cache that survives app updates.
+  if (url.origin === location.origin && /\/data\/[^/]+\.json$/.test(url.pathname)) {
+    e.respondWith(caches.open(RT_DATA).then(async c => { const hit = await c.match(req); const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit); return hit || net; }));
+    return;
+  }
   // Same-origin assets & fonts: stale-while-revalidate.
   if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     e.respondWith(caches.open(url.origin === location.origin ? VERSION : RT_FONTS).then(async c => {
