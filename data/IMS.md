@@ -1,61 +1,148 @@
-## rss.controller.js 200
-"use strict";
-app.controller("rssC", rssC);
-rssC.$inject = ["$scope", "$http", "$sce"];
-function rssC($scope, $http, $sce) {
-  var rssC = this;
-  rssC.init = function () {
-    $http
-      .get("/" + drupalSettings.path.currentLanguage + "/rss_data")
-      .then(function (response) {
-        rssC.rss_data = response.data.data;
-      });
-    $http
-      .get("/" + drupalSettings.path.currentLanguage + "/sea_locations")
-      .then(function (response) {
-        rssC.sea_locations = response.data.data;
-      });
-    $http
-      .get("/" + drupalSettings.path.currentLanguage + "/locations_info")
-      .then(function (response) {
-        rssC.locations = response.data.data;
-      });
-  };
-  rssC.init();
-  return rssC;
+{
+ "source": "השירות המטאורולוגי הישראלי",
+ "sourceUrl": "https://ims.gov.il",
+ "terms": "https://ims.gov.il/sites/default/files/docs/terms_use.pdf",
+ "checkedAt": "2026-10-31T06:05:54.074Z",
+ "ok": true,
+ "feeds": [
+  {
+   "area": "north",
+   "type": "flood",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_north_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Fri, 02 Oct 2026 15:00:00 GMT"
+  },
+  {
+   "area": "north",
+   "type": "fire",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_fire_north_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Mon, 26 Oct 2026 15:00:00 GMT"
+  },
+  {
+   "area": "north",
+   "type": "storm",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_storm_north_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Thu, 29 Oct 2026 16:00:00 GMT"
+  },
+  {
+   "area": "south",
+   "type": "fire",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_fire_south_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Sun, 25 Oct 2026 17:00:00 GMT"
+  },
+  {
+   "area": "south",
+   "type": "storm",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_storm_south_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Tue, 27 Oct 2026 20:00:00 GMT"
+  },
+  {
+   "area": "south",
+   "type": "flood",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_south_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Tue, 27 Oct 2026 20:00:00 GMT"
+  },
+  {
+   "area": "center",
+   "type": "fire",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_fire_center_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Tue, 27 Oct 2026 14:00:00 GMT"
+  },
+  {
+   "area": "center",
+   "type": "flood",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_center_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Tue, 27 Oct 2026 20:00:00 GMT"
+  },
+  {
+   "area": "center",
+   "type": "storm",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_storm_center_he.xml",
+   "ok": true,
+   "items": [],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Thu, 29 Oct 2026 16:00:00 GMT"
+  },
+  {
+   "area": "country",
+   "type": "sea",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_sea_country_he.xml",
+   "ok": true,
+   "items": [
+    {
+     "title": "&#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; - &#1497;&#1501; &#1490;&#1489;&#1493;&#1492; &#1493;&#1502;&#1505;&#1493;&#1499;&#1503; &#1500;&#1512;&#1495;&#1510;&#1492; &#1506;&#1493;&#1491;&#1499;&#1503; &#1489;-30/10 21:32",
+     "text": "<p style='padding-bottom:30px;'> &#1506;&#1491;&#1499;&#1493;&#1503;: &#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; &#1506;&#1500; &#1497;&#1501; &#1490;&#1489;&#1493;&#1492; &#1493;&#1502;&#1505;&#1493;&#1499;&#1503; &#1500;&#1512;&#1495;&#1510;&#1492; &#1489;&#1497;&#1501; &#1492;&#1514;&#1497;&#1499;&#1493;&#1503; &#1502;-30/10 &#1489;-22 &#1506;&#1491; 31/10 &#1489;-10. &#1502;&#1510;&#1489; &#1492;&#1497;&#1501; &#1490;&#1500;&#1497; &#1490;&#1493;&#1489;&#1492; &#1492;&#1490;&#1500; &#1492;&#1505;&#1497;&#1490;&#1504;&#1497;&#1508;&#1497;&#1511;&#1504;&#1496;&#1497; &#1497;&#1504;&#1493;&#1506; &#1502;-70 &#1506;&#1491; 110 &#1505;\"&#1502;, &#1489;&#1502;&#1490;&#1502;&#1514; &#1497;&#1512;&#1497;&#1491;&#1492; </p>",
+     "pubDate": "Fri, 30 Oct 2026 19:32:00 GMT",
+     "link": "https://www.ims.gov.il/he/IMSWarnings",
+     "guid": "Fri, 30 Oct 2026 19:32:00 GMT"
+    }
+   ],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Fri, 30 Oct 2026 23:35:00 GMT"
+  },
+  {
+   "area": "country",
+   "type": "general",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_general_country_he.xml",
+   "ok": true,
+   "items": [
+    {
+     "title": "&#1497;&#1501; &#1490;&#1489;&#1493;&#1492; &#1493;&#1502;&#1505;&#1493;&#1499;&#1503; &#1500;&#1512;&#1495;&#1510;&#1492; &#1506;&#1493;&#1491;&#1499;&#1503; &#1489;-30/10 21:32",
+     "text": "<p style='padding-bottom:30px;'> &#1506;&#1491;&#1499;&#1493;&#1503;: &#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; &#1506;&#1500; &#1497;&#1501; &#1490;&#1489;&#1493;&#1492; &#1493;&#1502;&#1505;&#1493;&#1499;&#1503; &#1500;&#1512;&#1495;&#1510;&#1492; &#1489;&#1497;&#1501; &#1492;&#1514;&#1497;&#1499;&#1493;&#1503; &#1502;-30/10 &#1489;-22 &#1506;&#1491; 31/10 &#1489;-10. &#1502;&#1510;&#1489; &#1492;&#1497;&#1501; &#1490;&#1500;&#1497; &#1490;&#1493;&#1489;&#1492; &#1492;&#1490;&#1500; &#1492;&#1505;&#1497;&#1490;&#1504;&#1497;&#1508;&#1497;&#1511;&#1504;&#1496;&#1497; &#1497;&#1504;&#1493;&#1506; &#1502;-70 &#1506;&#1491; 110 &#1505;\"&#1502;, &#1489;&#1502;&#1490;&#1502;&#1514; &#1497;&#1512;&#1497;&#1491;&#1492; </p>",
+     "pubDate": "Fri, 30 Oct 2026 19:32:00 GMT",
+     "link": "https://www.ims.gov.il/he/IMSWarnings",
+     "guid": "Fri, 30 Oct 2026 19:32:00 GMT"
+    },
+    {
+     "title": "&#1506;&#1512;&#1508;&#1497;&#1500;&#1497; &#1492;&#1512;&#1497;&#1501; &#1506;&#1493;&#1491;&#1499;&#1503; &#1489;-31/10 05:34",
+     "text": "<p style='padding-bottom:30px;'> &#1506;&#1491;&#1499;&#1493;&#1503;: &#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; &#1506;&#1500; &#1506;&#1512;&#1508;&#1497;&#1500;&#1497; &#1492;&#1512;&#1497;&#1501; &#1489;&#1492;&#1512;&#1497; &#1492;&#1510;&#1508;&#1493;&#1503;, &#1489;&#1492;&#1512;&#1497; &#1492;&#1502;&#1512;&#1499;&#1494; &#1493;&#1489;&#1492;&#1512; &#1492;&#1504;&#1490;&#1489; &#1489;-31/10 &#1502;-06 &#1506;&#1491; 10 </p>",
+     "pubDate": "Sat, 31 Oct 2026 03:34:00 GMT",
+     "link": "https://www.ims.gov.il/he/IMSWarnings",
+     "guid": "Sat, 31 Oct 2026 03:34:00 GMT"
+    }
+   ],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Sat, 31 Oct 2026 03:35:00 GMT"
+  },
+  {
+   "area": "country",
+   "type": "visibility",
+   "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_visibility_country_he.xml",
+   "ok": true,
+   "items": [
+    {
+     "title": "&#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; - &#1506;&#1512;&#1508;&#1497;&#1500;&#1497; &#1492;&#1512;&#1497;&#1501; &#1506;&#1493;&#1491;&#1499;&#1503; &#1489;-31/10 05:34",
+     "text": "<p style='padding-bottom:30px;'> &#1506;&#1491;&#1499;&#1493;&#1503;: &#1488;&#1494;&#1492;&#1512;&#1492; &#1510;&#1492;&#1493;&#1489;&#1492; &#1506;&#1500; &#1506;&#1512;&#1508;&#1497;&#1500;&#1497; &#1492;&#1512;&#1497;&#1501; &#1489;&#1492;&#1512;&#1497; &#1492;&#1510;&#1508;&#1493;&#1503;, &#1489;&#1492;&#1512;&#1497; &#1492;&#1502;&#1512;&#1499;&#1494; &#1493;&#1489;&#1492;&#1512; &#1492;&#1504;&#1490;&#1489; &#1489;-31/10 &#1502;-06 &#1506;&#1491; 10 </p>",
+     "pubDate": "Sat, 31 Oct 2026 03:34:00 GMT",
+     "link": "https://www.ims.gov.il/he/IMSWarnings",
+     "guid": "Sat, 31 Oct 2026 03:34:00 GMT"
+    }
+   ],
+   "title": "&#1488;&#1494;&#1492;&#1512;&#1493;&#1514; &#1493;&#1492;&#1514;&#1512;&#1488;&#1493;&#1514; &#1502;&#1493;&#1511;&#1491;&#1502;&#1493;&#1514;",
+   "updated": "Sat, 31 Oct 2026 03:35:00 GMT"
+  }
+ ]
 }
-
-## candidate urls
-rssC
-/rss_data
-TRY https://ims.gov.il/rssC → 404 text/html; charset=utf-8 cors=null
-<!DOCTYPE html>
-<html dir="rtl" lang="he-IL" class="no-js">
-    <head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width" />
-    	<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
-		<title>שגיאה</title>
-        <meta name="keywords" content="" />
-        <meta name="description" content="" />
-        <link rel='stylesheet' type='text/css' media='all' href="https://maintenance.gov.il/css/style.css">      
-    </head>
-    <body class="light-blue no-pa">
-        <img class="logo" src="https://maintenance.gov.il/img/National-digital-logo.png">
-        <div class="wrapper">
-         <section>
-           <img class="img" src="https://maintenance.gov.il/img/Bird-looking-and-standing-on-sign.png">
-           <span class="h1 ma-bo-20 text-center">מצטערים, העמוד שחיפשת לא נמצא</span>
-           <span class="text-center">יתכן שהכתובת הוחלפה או הוזנה לא נכון</span>
-         </section>
-        </div>
-     
-      <span class="number">(5)</span>
-     
-    </body>
-</html>
-TRY https://ims.gov.il/rss_data → 200 application/json cors=null
-{"data":{"forecast_sea":{"216":{"id":"24024","type":"forecast_sea","language":"he","datetime":"2020-11-01 16:50:00","lid":null,"sea_lid":"216","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_216_he.xml","created":"2020-11-01 16:51:00"},"215":{"id":"24026","type":"forecast_sea","language":"he","datetime":"2020-11-01 16:50:00","lid":null,"sea_lid":"215","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_215_he.xml","created":"2020-11-01 16:51:00"},"217":{"id":"24028","type":"forecast_sea","language":"he","datetime":"2020-11-01 16:50:00","lid":null,"sea_lid":"217","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_217_he.xml","created":"2020-11-01 16:51:00"},"213":{"id":"344130","type":"forecast_sea","language":"he","datetime":"2026-10-31 00:01:00","lid":null,"sea_lid":"213","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_213_he.xml","created":"2026-10-30 22:06:00"},"210":{"id":"344132","type":"forecast_sea","language":"he","datetime":"2026-10-31 00:01:00","lid":null,"sea_lid":"210","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_210_he.xml","created":"2026-10-30 22:06:00"},"212":{"id":"344134","type":"forecast_sea","language":"he","datetime":"2026-10-31 00:01:00","lid":null,"sea_lid":"212","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_212_he.xml","created":"2026-10-30 22:06:00"},"211":{"id":"344136","type":"forecast_sea","language":"he","datetime":"2026-10-31 00:01:00","lid":null,"sea_lid":"211","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_211_he.xml","created":"2026-10-30 22:06:00"},"214":{"id":"344138","type":"forecast_sea","language":"he","datetime":"2026-10-31 00:01:00","lid":null,"sea_lid":"214","alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_sea\/rssForecastSea_214_he.xml","created":"2026-10-30 22:06:00"}},"forecast_city":{"520":{"id":"35070","type":"forecast_city","language":"he","datetime":"2021-01-26 16:10:00","lid":"520","sea_lid":null,"alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_city\/rssForecastCity_520_he.xml","created":"2021-01-26 16:11:00"},"114":{"id":"35072","type":"forecast_city","language":"he","datetime":"2021-01-26 16:10:00","lid":"114","sea_lid":null,"alert_type":null,"alert_area":null,"file_path":"\/sites\/default\/files\/ims_data\/rss\/forecast_city\/rssForecastCity_114_he.xml","created":"2021-01-26 16:11:00"},"513":{"id":"35074","type":"forecast_city","language":"he","datetime":"2021-01-26 16:10:00","lid":"513","sea_lid":null,"alert_type":null
