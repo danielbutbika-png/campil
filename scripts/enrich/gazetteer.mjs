@@ -15,7 +15,6 @@ const Q = {
   area: `VALUES ?cls { wd:Q82794 wd:Q1620908 wd:Q15642541 } ?p wdt:P31 ?cls . ${box}`, // geographic region, historical region, human-geographic territorial entity
   range: `VALUES ?cls { wd:Q46831 wd:Q1437459 wd:Q75520 } ?p wdt:P31 ?cls . ${box}`, // mountain range, ridge, plateau
   desert: `VALUES ?cls { wd:Q8514 } ?p wdt:P31/wdt:P279* ?cls . ${box}`,
-  locality: `?p wdt:P17 wd:Q801; wdt:P31/wdt:P279* wd:Q486972; wdt:P625 ?coord .`,
 };
 async function run(q) {
   for (let i = 0; i < 3; i++) {
@@ -40,6 +39,17 @@ for (const [k, body] of Object.entries(Q)) {
   console.log(rows.length);
   await new Promise(res => setTimeout(res, 2000));
 }
+// stream beds are places (in the place database), not destinations to type: keep real valleys and areas only
+for (const [k, v] of out) if (v.k === 'valley' && /^(נחל|ואדי|ערוץ|גיא|חור)\s/.test(v.n)) out.delete(k);
+// localities from OpenStreetMap (© OpenStreetMap contributors, ODbL): cities, towns, villages with a Hebrew name
+{
+  process.stdout.write('locality (OSM)… ');
+  const q = '[out:json][timeout:120];(node["place"~"^(city|town|village|hamlet)$"]["name"](29.45,34.2,33.45,35.95););out tags;';
+  let els = null;
+  for (let i = 0; i < 3 && !els; i++) { const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }).catch(() => null); if (r?.ok) els = (await r.json()).elements; else await new Promise(res => setTimeout(res, 15000)); }
+  if (!els) { failed.push('locality'); console.log('FAILED'); }
+  else { let n = 0; for (const e of els) { const t = e.tags ?? {}; const he = t['name:he'] || (/[\u0590-\u05FF]/.test(t.name ?? '') ? t.name : null); if (!he) continue; const r = regionOf(e.lat, e.lon); if (!r) continue; out.set('osm:n' + e.id, { n: he, lat: Math.round(e.lat * 1e4) / 1e4, lon: Math.round(e.lon * 1e4) / 1e4, r, k: 'locality', q: t.wikidata || 'osm:n' + e.id, a: [] }); n++; } console.log(n); }
+}
 const list = [...out.values()].map(x => (x.a.length ? x : (delete x.a, x)));
-writeFileSync(OUT, JSON.stringify({ source: 'Wikidata (CC0)', fetchedAt: new Date().toISOString(), failed, count: list.length, names: list }));
+writeFileSync(OUT, JSON.stringify({ source: 'Wikidata (CC0) · © OpenStreetMap contributors (ODbL)', fetchedAt: new Date().toISOString(), failed, count: list.length, names: list }));
 console.log(`gazetteer: ${list.length} names${failed.length ? ' · failed: ' + failed.join(',') : ''}`);
