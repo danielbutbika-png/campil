@@ -2,7 +2,7 @@
  "source": "השירות המטאורולוגי הישראלי",
  "sourceUrl": "https://ims.gov.il",
  "terms": "https://ims.gov.il/sites/default/files/docs/terms_use.pdf",
- "checkedAt": "2026-10-31T17:54:02.906Z",
+ "checkedAt": "2026-10-31T17:56:21.079Z",
  "ok": true,
  "feeds": [
   {

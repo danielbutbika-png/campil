@@ -1,6 +1,6 @@
-valley… 22366
+valley… 18656
 area… 108
 range… 80
 desert… 5
-locality (OSM)… 0
-gazetteer: 132 names
+locality (OSM)… 1175
+gazetteer: 1307 names
