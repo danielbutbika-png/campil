@@ -130,7 +130,7 @@ export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: st
 export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'recommended' | 'none'; access?: 'yes' | 'partial' | 'no'; lodging?: 'yes' | 'no'; note?: string }
 
 /** One responsibility: which family, and whether it's done (meal prepared / item bought / task done). */
-export interface TripPlace { id: string; name: string; lat: number; lon: number; label: string; source: 'osm'; url: string; website?: string; addedAt: string }
+export interface TripPlace { id: string; name: string; lat: number; lon: number; label: string; source: 'osm' | 'wd'; url: string; website?: string; addedAt: string }
 
 export interface Duty { familyId?: string; /** one-family trip: which participant takes it */ memberId?: string; done?: boolean; by?: string; at?: number }
 

@@ -14,7 +14,14 @@ const km = (a, b) => { const R = 6371, r = Math.PI / 180, dLat = (b.lat - a.lat)
 // name key: drop generic prefixes and punctuation, so "שמורת טבע עין אפק" and "עין אפק" match
 const GENERIC = /^(שמורת טבע|שמורת|גן לאומי|גן|פארק|חוף|מעיין|חניון לילה|חניון|מפל|מערת|תצפית|נקודת תצפית|יער|אתר|מצפה)\s+/;
 export const nameKey = s => s.replace(/["'״׳()\-–,.]/g, ' ').replace(/\s+/g, ' ').trim().replace(GENERIC, '').replace(GENERIC, '').trim();
-const sameName = (a, b) => { const x = nameKey(a), y = nameKey(b); return x.length > 1 && y.length > 1 && (x === y || (Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x)))); };
+// kinds that can be the same place; a campsite named after a mountain is not the mountain
+const FAMILY = { campsite: 'sleep', caravan: 'sleep', picnic: 'picnic', beach: 'beach', spring: 'water', waterfall: 'water', stream: 'water', lake: 'water', viewpoint: 'view', peak: 'view', archaeological: 'heritage', castle: 'heritage', nature_reserve: 'nature', national_park: 'nature', park: 'nature', forest: 'nature', botanical: 'nature', trail: 'trail', bicycle: 'trail', cave: 'cave', visitor_center: 'visitor', attraction: 'attraction', zoo: 'attraction', observatory: 'observatory', birding: 'birding' };
+const sameKind = (a, b) => { const x = new Set(a.map(c => FAMILY[c])); return b.some(c => x.has(FAMILY[c])); };
+const VAGUE = /^(לא רשמי|רשמי|צפוני|דרומי|מזרחי|מערבי|עליון|תחתון|אמצעי|החדש|הישן|\d+)$/;
+const DIRECTION = /(^|\s)(מערב|מערבי|מזרח|מזרחי|צפון|צפוני|דרום|דרומי|עליון|תחתון|אמצעי|א|ב|ג|\d+)(\s|$)/;
+const sameName = (a, b) => { const x = nameKey(a), y = nameKey(b); if (VAGUE.test(x) || VAGUE.test(y)) return false;
+  if (x !== y && (DIRECTION.test(x.replace(y, '')) || DIRECTION.test(y.replace(x, '')))) return false; // "שחורת מערבי" ≠ "שחורת"
+  return x.length > 1 && y.length > 1 && (x === y || (Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x)))); };
 
 // Wikidata categories that are only worth showing with a Wikipedia article (otherwise thousands of minor entries)
 const NEEDS_ARTICLE = new Set(['stream', 'peak', 'archaeological', 'park', 'castle', 'forest', 'lake']);
@@ -28,7 +35,11 @@ for (const p of wd.places) {
 }
 for (const o of osm.places) {
   let t = o.qid ? byQid.get(o.qid) : undefined;
-  if (!t) t = out.find(x => km(x, o) <= 1 && sameName(x.he, o.he));
+  if (t && !sameKind(t.c, o.cats)) { // e.g. a campsite tagged with its national park's id: its own place, linked to the park
+    out.push({ id: 'osm:' + o.osm, he: o.he, en: o.en, lat: o.lat, lon: o.lon, r: o.region, c: [...o.cats], osm: o.osm, in: t.id, web: o.web, fac: o.fac, hours: o.hours, op: o.operator, km: o.km, mark: o.mark, src: ['osm'] });
+    continue;
+  }
+  if (!t) t = out.find(x => km(x, o) <= 1 && sameKind(x.c, o.cats) && sameName(x.he, o.he));
   if (t) { // same place: add what OSM knows, keep Wikidata's identity and position
     log.merged.push(`${o.he} (${o.osm}) → ${t.he} (${t.id})`);
     t.osm = o.osm; for (const c of o.cats) if (!t.c.includes(c)) t.c.push(c);
