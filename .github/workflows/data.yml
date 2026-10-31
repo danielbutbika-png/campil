@@ -31,5 +31,6 @@ jobs:
           git config user.name "CampIL data"; git config user.email "noreply@github.com"
           sha=$(git rev-parse --short HEAD)
           git fetch origin ci-reports && git worktree add -f /tmp/rep FETCH_HEAD && cd /tmp/rep && git checkout -B ci-reports
-          mkdir -p data && cp /tmp/log.txt data/log.txt 2>/dev/null; cp /tmp/IMS.md data/IMS.md 2>/dev/null; for f in places.wd.json places.osm.json places.json COVERAGE.md MERGE.md; do [ -f /tmp/$f ] && cp /tmp/$f data/; done; true
+          mkdir -p data
+          for f in log.txt IMS.md places.wd.json places.osm.json places.json COVERAGE.md MERGE.md; do if [ -f /tmp/$f ]; then cp /tmp/$f data/; fi; done
           git add data && git commit -qm "data refresh ${sha}" && git push origin ci-reports
