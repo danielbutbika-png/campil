@@ -9,6 +9,8 @@ import { INTEREST_HE } from '../../engine/scoring';
 import { tripLength } from '../../lib/util';
 import { Button, Chip, Sheet, Toggle, Segmented, toast } from '../../components/ui';
 import { TripTypePicker } from '../../components/TripTypePicker';
+import { LocationPicker } from '../../components/LocationPicker';
+import { DestSearch } from '../../components/DestSearch';
 import { impliedBy, typeTasks } from '../../engine/tripTypes';
 import { uid } from '../../lib/util';
 
@@ -25,7 +27,7 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
     if (missingInfo(d.participants).length) { setTried(true); return toast('השלימו מגדר לכל משתתף'); }
     if (d.adults < 1) return toast('צריך לפחות מבוגר אחד');
     if (isGroup(d) && d.families!.some(f => !d.participants.some(p => p.familyId === f.id))) return toast('יש משפחה בלי משתתפים');
-    onSave({ types: d.types, typeAnswers: d.typeAnswers, tasks: withTypeTasks(t, d), name: d.name, start: d.start, end: d.end, participants: d.participants, families: d.families, adults: d.adults, children: d.children, childAges: d.childAges, memberIds: d.memberIds, pets: d.pets, kind: d.kind, lodging: d.lodging, vehicle: d.vehicle, regionId: d.regionId, siteIds: d.siteIds, interests: d.interests });
+    onSave({ types: d.types, typeAnswers: d.typeAnswers, tasks: withTypeTasks(t, d), name: d.name, start: d.start, end: d.end, participants: d.participants, families: d.families, adults: d.adults, children: d.children, childAges: d.childAges, memberIds: d.memberIds, pets: d.pets, kind: d.kind, lodging: d.lodging, vehicle: d.vehicle, regionId: d.regionId, siteIds: d.siteIds, interests: d.interests, dest: d.dest, places: d.places });
   };
   const regionSites = SITES.filter(s => !d.regionId || s.region === d.regionId);
   return (
@@ -42,6 +44,8 @@ export default function EditTrip({ t, onClose, onSave }: { t: Trip; onClose: () 
         <Segmented label="סוג הטיול" value={d.kind} onChange={v => set({ kind: v })} options={[{ v: 'camping', label: 'קמפינג' }, { v: 'day', label: 'טיול יום' }, { v: 'combined', label: 'משולב' }]} />
         {d.kind !== 'day' && <Segmented label="לינה" value={d.lodging} onChange={v => set({ lodging: v })} options={[{ v: 'tent', label: 'אוהל' }, { v: 'equipped_site', label: 'חניון מאובזר' }, { v: 'caravan', label: 'קרוואן' }, { v: 'other', label: 'אחר' }]} />}
         <Toggle checked={d.pets} onChange={v => set({ pets: v })} label="חיות מחמד מצטרפות" />
+        <div><span className="label">מיקום הטיול (לינה / יעד)</span><LocationPicker t={d} onChange={set} /></div>
+        <div><span className="label">תחנות במסלול</span><DestSearch t={d} onChange={set} /></div>
         <div><label className="label" htmlFor="er">אזור</label><select id="er" className="field" value={d.regionId ?? ''} onChange={e => set({ regionId: (e.target.value || null) as RegionId })}><option value="">—</option>{REGIONS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
         <div><span className="label">אתרים בתוכנית</span><div className="flex flex-wrap gap-2">{regionSites.map(s => <Chip key={s.id} active={d.siteIds.includes(s.id)} onClick={() => set({ siteIds: d.siteIds.includes(s.id) ? d.siteIds.filter(x => x !== s.id) : [...d.siteIds, s.id] })}>{s.name}</Chip>)}</div></div>
         <div><span className="label">תחומי עניין</span><div className="flex flex-wrap gap-2">{INTERESTS.map(i => <Chip key={i} active={d.interests.includes(i)} onClick={() => set({ interests: d.interests.includes(i) ? d.interests.filter(x => x !== i) : [...d.interests, i] })}>{INTEREST_HE[i]}</Chip>)}</div></div>
