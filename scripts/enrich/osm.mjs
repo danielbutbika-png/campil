@@ -30,15 +30,16 @@ async function run(q, tries = 3) {
   for (let i = 0; i < tries; i++) {
     const r = await fetch(OVERPASS, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) });
     if (r.ok) return (await r.json()).elements;
-    console.error(`  HTTP ${r.status}, retry ${i + 1}`); await new Promise(res => setTimeout(res, 15000 * (i + 1)));
+    const wait = Number(r.headers.get('retry-after')) || 0; console.error(`  HTTP ${r.status}, retry ${i + 1}${wait ? ` after ${wait}s` : ''}`); if (wait) await new Promise(res => setTimeout(res, Math.min(wait, 120) * 1000)); await new Promise(res => setTimeout(res, 15000 * (i + 1)));
   }
-  throw new Error('overpass failed');
+  return null;
 }
 
-const out = new Map();
+const out = new Map(); const failed = [];
 for (const [cat, sels] of Object.entries(OSM_CATS)) {
   process.stdout.write(`${cat}… `);
-  const els = await run(`[out:json][timeout:120];(${sels.map(s => `${s}(${BB});`).join('')});out center tags;`);
+  const els = await run(`[out:json][timeout:120];(${sels.map(s => `${s}(${BB});`).join('')});out center tags;`).catch(e => { console.error(e.message); return null; });
+  if (!els) { failed.push(cat); console.log('FAILED'); continue; }
   let n = 0;
   for (const e of els) {
     const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (!lat || !lon) continue;
@@ -63,5 +64,5 @@ for (const [cat, sels] of Object.entries(OSM_CATS)) {
   await new Promise(res => setTimeout(res, 8000));
 }
 const list = [...out.values()];
-writeFileSync(OUT, JSON.stringify({ source: '© OpenStreetMap contributors (ODbL)', fetchedAt: new Date().toISOString(), count: list.length, places: list }));
+writeFileSync(OUT, JSON.stringify({ source: '© OpenStreetMap contributors (ODbL)', fetchedAt: new Date().toISOString(), failed, count: list.length, places: list }));
 console.log(`wrote ${list.length} → ${OUT}`);

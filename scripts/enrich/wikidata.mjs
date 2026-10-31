@@ -51,15 +51,16 @@ async function run(q, tries = 3) {
   for (let i = 0; i < tries; i++) {
     const r = await fetch(SPARQL, { method: 'POST', headers: { 'User-Agent': UA, Accept: 'application/sparql-results+json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'query=' + encodeURIComponent(q) });
     if (r.ok) return (await r.json()).results.bindings;
-    console.error(`  HTTP ${r.status}, retry ${i + 1}`); await new Promise(res => setTimeout(res, 5000 * (i + 1)));
+    const wait = Number(r.headers.get('retry-after')) || 0; console.error(`  HTTP ${r.status}, retry ${i + 1}${wait ? ` after ${wait}s` : ''}`); if (wait) await new Promise(res => setTimeout(res, Math.min(wait, 120) * 1000)); await new Promise(res => setTimeout(res, 5000 * (i + 1)));
   }
-  throw new Error('query failed');
+  return null;
 }
 
-const places = new Map();
+const places = new Map(); const failed = [];
 for (const [cat, classes] of Object.entries(CATEGORIES)) {
   process.stdout.write(`${cat}… `);
-  const rows = await run(query(classes));
+  const rows = await run(query(classes)).catch(e => { console.error(e.message); return null; });
+  if (!rows) { failed.push(cat); console.log('FAILED'); continue; }
   let n = 0;
   for (const b of rows) {
     const qid = b.p.value.split('/').pop();
@@ -85,7 +86,7 @@ const withImg = [...places.values()].filter(p => p.img);
 for (let i = 0; i < withImg.length; i += 40) {
   const batch = withImg.slice(i, i + 40);
   const u = `${COMMONS}?action=query&format=json&prop=imageinfo&iiprop=extmetadata|url&iiurlwidth=640&titles=${encodeURIComponent(batch.map(p => 'File:' + p.img).join('|'))}`;
-  const r = await fetch(u, { headers: { 'User-Agent': UA } }); if (!r.ok) continue;
+  const r = await fetch(u, { headers: { 'User-Agent': UA } }).catch(() => null); if (!r?.ok) continue;
   const pages = Object.values((await r.json()).query?.pages ?? {});
   for (const p of batch) {
     const pg = pages.find(x => x.title?.replace(/^File:/, '').replace(/_/g, ' ') === p.img.replace(/_/g, ' '));
@@ -100,5 +101,5 @@ for (let i = 0; i < withImg.length; i += 40) {
 for (const p of places.values()) delete p.img;
 
 const list = [...places.values()].sort((a, b) => a.region.localeCompare(b.region) || a.he.localeCompare(b.he, 'he'));
-writeFileSync(OUT, JSON.stringify({ source: 'Wikidata (CC0) + Wikimedia Commons licences', fetchedAt: new Date().toISOString(), count: list.length, places: list }, null, 0));
+writeFileSync(OUT, JSON.stringify({ source: 'Wikidata (CC0) + Wikimedia Commons licences', fetchedAt: new Date().toISOString(), failed, count: list.length, places: list }, null, 0));
 console.log(`wrote ${list.length} places → ${OUT}`);
