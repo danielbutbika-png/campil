@@ -1,0 +1,45 @@
+nature_reserve… 478
+national_park… 444
+spring… 502
+waterfall… 3
+stream… 3146
+lake… 91
+beach… 39
+cave…   HTTP 502, retry 1
+264
+viewpoint… 52
+archaeological… 789
+castle… 89
+forest… 148
+park… 1733
+campsite… 0
+trail… 34
+visitor_center… 0
+observatory… 37
+zoo… 37
+peak… 813
+botanical… 67
+wrote 3220 places → /tmp/places.wd.json
+campsite… 236
+caravan… 1
+birding…   HTTP 502, retry 1
+2
+picnic… 155
+beach… 101
+waterfall… 83
+spring…   HTTP 502, retry 1
+512
+viewpoint… 554
+cave… 224
+visitor_center… 8
+trail… 295
+bicycle… 194
+attraction… 237
+wrote 2589 → /tmp/places.osm.json
+# מיזוג מקומות — 2026-10-31
+
+- Wikidata: 3220 → נשמרו 2025 (1195 נחלים/פסגות/אתרים בלי ערך בוויקיפדיה, בלי תמונה ובלי אתר — לא נכללו)
+- OpenStreetMap: 2589, מתוכם 672 מוזגו עם מקום קיים (אותו מזהה Wikidata, או אותו שם עד 1 ק״מ)
+- קישורים לקטלוג CampIL: 39 מתוך 55
+- **סה״כ מקומות:** 3942
+
