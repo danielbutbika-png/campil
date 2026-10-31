@@ -1,0 +1,9 @@
+valley… 16801
+area… 108
+range… 80
+desert… 5
+locality…   HTTP 504, retry 1
+  HTTP 504, retry 2
+  HTTP 504, retry 3
+FAILED
+gazetteer: 1212 names · failed: locality
