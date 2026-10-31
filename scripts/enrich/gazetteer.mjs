@@ -44,7 +44,7 @@ for (const [k, v] of out) if (v.k === 'valley' && /^(נחל|ואדי|ערוץ|ג
 // localities from OpenStreetMap (© OpenStreetMap contributors, ODbL): cities, towns, villages with a Hebrew name
 {
   process.stdout.write('locality (OSM)… ');
-  const q = '[out:json][timeout:120];(node["place"~"^(city|town|village|hamlet)$"]["name"](29.45,34.2,33.45,35.95););out tags;';
+  const q = '[out:json][timeout:120];(node["place"~"^(city|town|village|hamlet)$"]["name"](29.45,34.2,33.45,35.95););out body;';
   let els = null;
   for (let i = 0; i < 3 && !els; i++) { const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }).catch(() => null); if (r?.ok) els = (await r.json()).elements; else await new Promise(res => setTimeout(res, 15000)); }
   if (!els) { failed.push('locality'); console.log('FAILED'); }
