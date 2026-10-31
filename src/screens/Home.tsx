@@ -81,7 +81,7 @@ export default function Home() {
           <div className={cx('flex flex-wrap items-center gap-3', mode !== 'plan' && 'hidden')}>
             <Button variant="accent" size="lg" icon={<Plus size={22} />} onClick={() => go('/new')}>מתכננים טיול חדש</Button>
             <Button size="lg" className="!bg-white/15 backdrop-blur hover:!bg-white/25" icon={<Tent size={20} />} onClick={() => go('/camps')}>מקום לקמפינג</Button>
-            <Button size="lg" className="!bg-white/15 backdrop-blur hover:!bg-white/25" icon={<MapPin size={20} />} onClick={() => go('/explore')}>חיפוש מקומות</Button>
+            <Button size="lg" className="!bg-white/15 backdrop-blur hover:!bg-white/25" icon={<MapPin size={20} />} onClick={() => go('/places')}>מקומות לטייל</Button>
             {today && (
               <a href={href('/settings')} className="flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-2.5 backdrop-blur hover:bg-black/40">
                 <WxIcon code={today.code} size={30} className="!text-white" />

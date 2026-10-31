@@ -7,7 +7,8 @@ import { INTEREST_HE, type Scored } from '../engine/scoring';
 import { useStore } from '../lib/store';
 import { Scene } from './Scene';
 import { Badge, Blaze, cx, Sheet, Button, toast } from './ui';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { href } from '../lib/router';
 
 const TYPE_BLAZE: Record<Site['type'], string> = { trail: '#c0392b', campsite: '#2f6b3f', attraction: '#3c6e9f', beach: '#2c8c99', viewpoint: '#d9822b', spring: '#2c8c99', park: '#5d7a3a' };
 const DIFF = { easy: 'קל', moderate: 'בינוני', hard: 'קשה' };
@@ -91,6 +92,7 @@ export function SiteSheet({ site, onClose }: { site: Site | null; onClose: () =>
           {editing && <CheckForm site={site} init={check} onSave={c => { setCheck(site.id, c); setEditing(false); toast('הבדיקה נשמרה במכשיר'); }} />}
         </div>
         <div className="flex flex-wrap gap-2">
+          <PlaceLink siteId={site.id} />
           <a className="inline-flex h-11 items-center gap-2 rounded-full bg-forest px-4 font-bold text-onforest" href={site.officialUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} />אתר המפעיל</a>
           <a className="inline-flex h-11 items-center gap-2 rounded-full bg-raised px-4 font-bold" href={n.waze} target="_blank" rel="noreferrer"><Navigation size={16} />Waze</a>
           <a className="inline-flex h-11 items-center gap-2 rounded-full bg-raised px-4 font-bold" href={n.google} target="_blank" rel="noreferrer"><Navigation size={16} />Google Maps</a>
@@ -121,4 +123,11 @@ function CheckForm({ site, init, onSave }: { site: Site; init?: SiteCheck; onSav
 export function useSiteSheet() {
   const [site, setSite] = useState<Site | null>(null);
   return { open: setSite, el: <SiteSheet site={site} onClose={() => setSite(null)} /> };
+}
+
+/** The catalogue entry's full destination page (sources, facilities, weather, around), once the database has it. */
+function PlaceLink({ siteId }: { siteId: string }) {
+  const [id, setId] = useState<string | null>(null);
+  useEffect(() => { import('../services/placesDb').then(m => m.placeForSite(siteId)).then(p => setId(p?.id ?? null), () => setId(null)); }, [siteId]);
+  return id ? <a className="inline-flex h-11 items-center gap-2 rounded-full bg-sunset px-4 font-bold text-white" href={href(`/place/${encodeURIComponent(id)}`)}>כל הפרטים על המקום</a> : null;
 }

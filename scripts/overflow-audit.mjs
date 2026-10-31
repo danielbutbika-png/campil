@@ -19,7 +19,7 @@ for (const vp of [{ width: 375, height: 812 }, { width: 430, height: 932 }]) {
   const p = await ctx.newPage();
   await p.goto(BASE); await p.waitForTimeout(1500);
   const tid = await p.evaluate(() => JSON.parse(localStorage.getItem('campil-v1')).state.trips[0].id);
-  const routes = ['/', '/trips', `/trip/${tid}`, `/trip/${tid}/gear`, `/trip/${tid}/meals`, `/trip/${tid}/schedule`, `/trip/${tid}/tasks`, `/trip/${tid}/journal`, '/map', '/map/upper_galilee', '/gear', '/gear/boxes', '/gear/car', '/camps', '/more', '/settings', '/guides', '/guide/firebase', '/albums', '/about', '/new', '/cook', '/gear/power', '/academy', '/explore', '/design'];
+  const routes = ['/', '/trips', `/trip/${tid}`, `/trip/${tid}/gear`, `/trip/${tid}/meals`, `/trip/${tid}/schedule`, `/trip/${tid}/tasks`, `/trip/${tid}/journal`, '/map', '/map/upper_galilee', '/gear', '/gear/boxes', '/gear/car', '/camps', '/more', '/settings', '/guides', '/guide/firebase', '/albums', '/about', '/new', '/cook', '/gear/power', '/academy', '/explore', '/design', '/places/golan', '/place/wd%3AQ1011544'];
   for (const r of routes) {
     await p.goto(BASE + '#' + r); await p.waitForTimeout(r.startsWith('/map') ? 2500 : 900);
     const res = await p.evaluate(() => {

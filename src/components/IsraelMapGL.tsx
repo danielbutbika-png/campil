@@ -69,7 +69,7 @@ export default function IsraelMapGL({ selected, onSelect, sites = [], osm = [], 
       m.on('click', 'osm', e => {
         const p = e.features![0].properties as any; const [lon, lat] = (e.features![0].geometry as any).coordinates;
         const links = navApps(lat, lon).map(a => `<a href="${a.url}" target="_blank" rel="noreferrer" style="display:inline-block;margin:4px 4px 0 0;padding:4px 10px;border-radius:999px;background:#efe7d6;color:#1c241e;font-weight:700;text-decoration:none">${a.name}</a>`).join('');
-        new maplibregl.Popup({ closeButton: true }).setLngLat([lon, lat]).setHTML(`<div dir="rtl"><strong>${escapeHtml(p.name)}</strong><br/><span style="font-size:12px">${escapeHtml(p.kind)}</span>${p.url ? ` · <a href="${p.url}" target="_blank" rel="noreferrer" style="font-size:12px">OSM</a>` : ''}<div>${links}</div></div>`).addTo(m);
+        new maplibregl.Popup({ closeButton: true }).setLngLat([lon, lat]).setHTML(`<div dir="rtl"><strong>${escapeHtml(p.name)}</strong><br/><span style="font-size:12px">${escapeHtml(p.kind)}</span>${p.url ? (String(p.url).startsWith('#') ? ` · <a href="${p.url}" style="font-size:13px;font-weight:700">לפרטי המקום</a>` : ` · <a href="${p.url}" target="_blank" rel="noreferrer" style="font-size:12px">OSM</a>`) : ''}<div>${links}</div></div>`).addTo(m);
       });
       for (const l of ['sites', 'osm']) { m.on('mouseenter', l, () => (m.getCanvas().style.cursor = 'pointer')); m.on('mouseleave', l, () => (m.getCanvas().style.cursor = '')); }
       const zl = () => el.current?.classList.toggle('labels-far', m.getZoom() < 7.2);
