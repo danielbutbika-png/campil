@@ -1,4 +1,4 @@
-# CI 6e07c84 — 2026-10-31T06:34Z
+# CI 9e0335e — 2026-10-31T06:56Z
 - typecheck: success
 - unit: success
 - build: success
@@ -16,11 +16,14 @@
 
 ## unit
 ```
- [32m✓[39m src/engine/warehouse.test.ts[2m > [22mwarehouse[2m > [22mlists only upcoming trips that still pack the item
  [32m✓[39m src/engine/warehouse.test.ts[2m > [22mwarehouse[2m > [22mtotals only entered data and reports what is missing
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mresolves regions locally without network
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mmerges catalogue + OSM, de-duplicates and sorts by distance
  [32m✓[39m src/engine/camps.test.ts[2m > [22mcamp search[2m > [22mfalls back to catalogue when OSM is down
+ [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mfreshness: ≤8h fresh, older stale, missing file = missing (never "no warnings")
+ [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mregion → IMS area: Golan gets north + country-wide; Eilat gets country-wide only
+ [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22ma warning repeated in the general feed is shown once, from its specific feed
+ [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mthe copy of the fetcher installed on main is identical to scripts/alerts/ims.mjs
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22mattributes ticks to whoever ticked, other edits to the last editor
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22mreports nothing when the trip did not change
  [32m✓[39m src/engine/notify.test.ts[2m > [22mpartner change notifications[2m > [22msummarizes several changes into one short notification
@@ -43,11 +46,12 @@
  [32m✓[39m src/engine/planB.test.ts[2m > [22mweather plan B[2m > [22mrain + flood-prone planned place → nearby non-flood alternatives in the same region
  [32m✓[39m src/engine/planB.test.ts[2m > [22mweather plan B[2m > [22mwind avoids exposed places; heat prefers water
  [32m✓[39m src/engine/planB.test.ts[2m > [22mweather plan B[2m > [22mnothing without a real forecast, nothing for booked lodging, nothing when weather is fine
+ [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mplans when there is no trip or only the example
+ [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mprepares within a week of the start
+ [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mis in the field from the first to the last day
+ [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mnumbers trip days from 0
  [32m✓[39m src/lib/tripOps.test.ts[2m > [22mtrip operations[2m > [22ma copy is fresh, dated two weeks ahead, and never linked to the shared original
  [32m✓[39m src/lib/tripOps.test.ts[2m > [22mtrip operations[2m > [22mfinds the trip that ended in the last week, ignoring the example
- [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mfreshness: ≤8h fresh, older stale, missing file = missing (never "no warnings")
- [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mregion → IMS area: Golan gets north + country-wide; Eilat gets country-wide only
- [32m✓[39m src/services/officialAlerts.test.ts[2m > [22mofficial alerts file[2m > [22mthe copy of the fetcher installed on main is identical to scripts/alerts/ims.mjs
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mlight: ink on bg
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mlight: ink on surface
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mlight: ink on raised
@@ -112,10 +116,6 @@
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mdark: onforest on forest
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mwhite text on the main buttons (forest, sunset) passes too
  [32m✓[39m src/lib/contrast.test.ts[2m > [22mOutdoor Design System — WCAG AA contrast (4.5:1 for text)[2m > [22mthe decorative sunset is not used for text (documented: under 4.5:1)
- [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mplans when there is no trip or only the example
- [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mprepares within a week of the start
- [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mis in the field from the first to the last day
- [32m✓[39m src/lib/homeMode.test.ts[2m > [22mhome mode[2m > [22mnumbers trip days from 0
  [32m✓[39m src/engine/power.test.ts[2m > [22mpower calculator[2m > [22mconverts mAh to Wh only with a voltage
  [32m✓[39m src/engine/power.test.ts[2m > [22mpower calculator[2m > [22msums daily use of devices
  [32m✓[39m src/engine/power.test.ts[2m > [22mpower calculator[2m > [22mgives a range, not a single number, and reports batteries it cannot count
@@ -132,9 +132,9 @@
  [32m✓[39m src/engine/gpx.test.ts[2m > [22mGPX[2m > [22mexports a valid GPX that reads back the same places and track
 
 [2m Test Files [22m [1m[32m32 passed[39m[22m[90m (32)[39m
-[2m      Tests [22m [1m[32m238 passed[39m[22m[90m (238)[39m
-[2m   Start at [22m 06:24:37
-[2m   Duration [22m 4.68s[2m (transform 1.28s, setup 0ms, collect 2.93s, tests 571ms, environment 433ms, prepare 3.09s)[22m
+[2m      Tests [22m [1m[32m239 passed[39m[22m[90m (239)[39m
+[2m   Start at [22m 06:46:35
+[2m   Duration [22m 5.42s[2m (transform 1.42s, setup 0ms, collect 3.24s, tests 614ms, environment 453ms, prepare 3.57s)[22m
 
 ```
 
@@ -151,45 +151,45 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                  [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
 [2mdist/[22m[35mindex-BxkbkFkN.css          [39m[1m[2m   47.42 kB[22m[1m[22m[2m │ gzip:   9.52 kB[22m
 [2mdist/[22m[35mIsraelMapGL-KizArRWY.css    [39m[1m[2m   69.94 kB[22m[1m[22m[2m │ gzip:  10.05 kB[22m
-[2mdist/[22m[36msearch-BxL20BDW.js          [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
-[2mdist/[22m[36mrotate-ccw-Wcnk_yBf.js      [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
-[2mdist/[22m[36mupload-eDUQde7O.js          [39m[1m[2m    0.44 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
-[2mdist/[22m[36mchef-hat-DO--cHxy.js        [39m[1m[2m    0.51 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
-[2mdist/[22m[36mprinter-D2xd_ZIR.js         [39m[1m[2m    0.52 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
-[2mdist/[22m[36mpackage-CH7ejwoy.js         [39m[1m[2m    0.58 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
-[2mdist/[22m[36mcar-CCY_ArCr.js             [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
-[2mdist/[22m[36mfootprints-DEryYv2y.js      [39m[1m[2m    0.65 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2mdist/[22m[36msearch-DTSbH4QN.js          [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[36mrotate-ccw-D4rhK8Yz.js      [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[36mupload-D23MG6-V.js          [39m[1m[2m    0.44 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36mchef-hat-Dx8fnB2T.js        [39m[1m[2m    0.51 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
+[2mdist/[22m[36mprinter-CWF7V9Xh.js         [39m[1m[2m    0.52 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2mdist/[22m[36mpackage-DAOXxxx8.js         [39m[1m[2m    0.58 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[2mdist/[22m[36mcar-CBfQXaaM.js             [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2mdist/[22m[36mfootprints-BsVV3F-t.js      [39m[1m[2m    0.65 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
 [2mdist/[22m[36mindex.esm-B4Jzzju4.js       [39m[1m[2m    1.35 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
 [2mdist/[22m[36mosm-dRGSVYye.js             [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.95 kB[22m
-[2mdist/[22m[36mTrips-nPD3XqUx.js           [39m[1m[2m    3.02 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
+[2mdist/[22m[36mTrips-DjZ0h7Y_.js           [39m[1m[2m    3.02 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
 [2mdist/[22m[36mplaces-D1Q9TkrR.js          [39m[1m[2m    4.08 kB[22m[1m[22m[2m │ gzip:   2.14 kB[22m
-[2mdist/[22m[36mJoin-BFGfAczi.js            [39m[1m[2m    4.15 kB[22m[1m[22m[2m │ gzip:   2.12 kB[22m
-[2mdist/[22m[36mplacesDb-BYqu7PJR.js        [39m[1m[2m    4.70 kB[22m[1m[22m[2m │ gzip:   2.50 kB[22m
-[2mdist/[22m[36mplaceFit-Thkh7KpY.js        [39m[1m[2m    5.19 kB[22m[1m[22m[2m │ gzip:   2.86 kB[22m
-[2mdist/[22m[36mRouteFuel-D6MFj8a0.js       [39m[1m[2m    5.50 kB[22m[1m[22m[2m │ gzip:   2.60 kB[22m
-[2mdist/[22m[36mJournalTab-BiO7VbCf.js      [39m[1m[2m    6.99 kB[22m[1m[22m[2m │ gzip:   3.17 kB[22m
-[2mdist/[22m[36mMapScreen-5R71bC63.js       [39m[1m[2m    7.36 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
-[2mdist/[22m[36mCook-CHTDOMcA.js            [39m[1m[2m    7.38 kB[22m[1m[22m[2m │ gzip:   3.13 kB[22m
-[2mdist/[22m[36mDesignSystem-BR65Gcpo.js    [39m[1m[2m    7.72 kB[22m[1m[22m[2m │ gzip:   3.22 kB[22m
-[2mdist/[22m[36mExplore-DcuUFjZS.js         [39m[1m[2m    8.99 kB[22m[1m[22m[2m │ gzip:   3.78 kB[22m
-[2mdist/[22m[36mIsraelMap-BHTZVKzw.js       [39m[1m[2m    9.51 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
-[2mdist/[22m[36mPlaces-BayQ8cZT.js          [39m[1m[2m   10.00 kB[22m[1m[22m[2m │ gzip:   4.40 kB[22m
-[2mdist/[22m[36mCampSearch-DZ4FBnRI.js      [39m[1m[2m   10.85 kB[22m[1m[22m[2m │ gzip:   4.93 kB[22m
-[2mdist/[22m[36mTripTypePicker-BeD2cphx.js  [39m[1m[2m   10.86 kB[22m[1m[22m[2m │ gzip:   3.82 kB[22m
-[2mdist/[22m[36mVehiclePicker-DZmYgyvn.js   [39m[1m[2m   12.82 kB[22m[1m[22m[2m │ gzip:   5.27 kB[22m
-[2mdist/[22m[36mAcademy-DMAGL10U.js         [39m[1m[2m   16.46 kB[22m[1m[22m[2m │ gzip:   5.76 kB[22m
-[2mdist/[22m[36mMore-xwz09n69.js            [39m[1m[2m   19.48 kB[22m[1m[22m[2m │ gzip:   7.73 kB[22m
-[2mdist/[22m[36mDestination-6GGQ7xPM.js     [39m[1m[2m   27.60 kB[22m[1m[22m[2m │ gzip:   9.21 kB[22m
-[2mdist/[22m[36mBoxScreen-ClE7hACx.js       [39m[1m[2m   30.24 kB[22m[1m[22m[2m │ gzip:  12.02 kB[22m
-[2mdist/[22m[36mGear-IBw-dcPA.js            [39m[1m[2m   43.99 kB[22m[1m[22m[2m │ gzip:  14.15 kB[22m
+[2mdist/[22m[36mJoin-CBAr7vVZ.js            [39m[1m[2m    4.15 kB[22m[1m[22m[2m │ gzip:   2.12 kB[22m
+[2mdist/[22m[36mplacesDb-CkpUg9Bh.js        [39m[1m[2m    4.70 kB[22m[1m[22m[2m │ gzip:   2.51 kB[22m
+[2mdist/[22m[36mplaceFit-DsOGTECP.js        [39m[1m[2m    5.19 kB[22m[1m[22m[2m │ gzip:   2.86 kB[22m
+[2mdist/[22m[36mRouteFuel-DdJd6qLS.js       [39m[1m[2m    5.50 kB[22m[1m[22m[2m │ gzip:   2.60 kB[22m
+[2mdist/[22m[36mJournalTab-b44rp4e1.js      [39m[1m[2m    6.99 kB[22m[1m[22m[2m │ gzip:   3.17 kB[22m
+[2mdist/[22m[36mMapScreen-BU3gNZ0W.js       [39m[1m[2m    7.36 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
+[2mdist/[22m[36mCook-CO05iVKM.js            [39m[1m[2m    7.38 kB[22m[1m[22m[2m │ gzip:   3.13 kB[22m
+[2mdist/[22m[36mDesignSystem-C57STMXJ.js    [39m[1m[2m    7.72 kB[22m[1m[22m[2m │ gzip:   3.22 kB[22m
+[2mdist/[22m[36mExplore-Dr9ygv_X.js         [39m[1m[2m    8.99 kB[22m[1m[22m[2m │ gzip:   3.78 kB[22m
+[2mdist/[22m[36mIsraelMap-C9IN2EWY.js       [39m[1m[2m    9.51 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
+[2mdist/[22m[36mPlaces-C5OYXGyh.js          [39m[1m[2m   10.00 kB[22m[1m[22m[2m │ gzip:   4.41 kB[22m
+[2mdist/[22m[36mCampSearch-D9QVHBOd.js      [39m[1m[2m   10.85 kB[22m[1m[22m[2m │ gzip:   4.93 kB[22m
+[2mdist/[22m[36mTripTypePicker-CsCU6XF3.js  [39m[1m[2m   10.86 kB[22m[1m[22m[2m │ gzip:   3.82 kB[22m
+[2mdist/[22m[36mVehiclePicker-D8N6Gpws.js   [39m[1m[2m   12.82 kB[22m[1m[22m[2m │ gzip:   5.27 kB[22m
+[2mdist/[22m[36mAcademy-DlTW4WBH.js         [39m[1m[2m   16.46 kB[22m[1m[22m[2m │ gzip:   5.76 kB[22m
+[2mdist/[22m[36mMore-Dx7Ihxa5.js            [39m[1m[2m   19.48 kB[22m[1m[22m[2m │ gzip:   7.72 kB[22m
+[2mdist/[22m[36mDestination-Bn55v1WV.js     [39m[1m[2m   27.60 kB[22m[1m[22m[2m │ gzip:   9.21 kB[22m
+[2mdist/[22m[36mBoxScreen-BFpMry9F.js       [39m[1m[2m   30.24 kB[22m[1m[22m[2m │ gzip:  12.02 kB[22m
+[2mdist/[22m[36mGear-BUQCasUL.js            [39m[1m[2m   43.99 kB[22m[1m[22m[2m │ gzip:  14.15 kB[22m
 [2mdist/[22m[36mindex.esm-CCAWpmwl.js       [39m[1m[2m   48.25 kB[22m[1m[22m[2m │ gzip:  11.34 kB[22m
-[2mdist/[22m[36mWizard-BAOv2tmy.js          [39m[1m[2m   78.97 kB[22m[1m[22m[2m │ gzip:  21.12 kB[22m
-[2mdist/[22m[36mTripPlan-DLVuRzCc.js        [39m[1m[2m  134.90 kB[22m[1m[22m[2m │ gzip:  43.43 kB[22m
+[2mdist/[22m[36mWizard-zfO2CQBn.js          [39m[1m[2m   78.97 kB[22m[1m[22m[2m │ gzip:  21.12 kB[22m
+[2mdist/[22m[36mTripPlan-B975ZLwy.js        [39m[1m[2m  134.90 kB[22m[1m[22m[2m │ gzip:  43.43 kB[22m
 [2mdist/[22m[36mindex.esm-D_Ez9UD8.js       [39m[1m[2m  195.98 kB[22m[1m[22m[2m │ gzip:  38.91 kB[22m
-[2mdist/[22m[36mindex-CdZTN3Il.js           [39m[1m[2m  536.11 kB[22m[1m[22m[2m │ gzip: 180.88 kB[22m
+[2mdist/[22m[36mindex-BFIqzsF1.js           [39m[1m[2m  536.28 kB[22m[1m[22m[2m │ gzip: 180.95 kB[22m
 [2mdist/[22m[36mindex.esm-1jP3d1p-.js       [39m[1m[2m  663.33 kB[22m[1m[22m[2m │ gzip: 171.92 kB[22m
-[2mdist/[22m[36mIsraelMapGL-uyaZzjJ6.js     [39m[1m[2m1,065.02 kB[22m[1m[22m[2m │ gzip: 289.32 kB[22m
-[32m✓ built in 8.65s[39m
+[2mdist/[22m[36mIsraelMapGL-C47sYMvy.js     [39m[1m[2m1,065.02 kB[22m[1m[22m[2m │ gzip: 289.32 kB[22m
+[32m✓ built in 10.09s[39m
 [36mvite v5.4.21 [32mbuilding for staging...[36m[39m
 transforming...
 [32m✓[39m 2235 modules transformed.
@@ -201,163 +201,163 @@ computing gzip size...
 [2mdist-staging/[22m[32mindex.html                  [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
 [2mdist-staging/[22m[35mindex-BxkbkFkN.css          [39m[1m[2m   47.42 kB[22m[1m[22m[2m │ gzip:   9.52 kB[22m
 [2mdist-staging/[22m[35mIsraelMapGL-KizArRWY.css    [39m[1m[2m   69.94 kB[22m[1m[22m[2m │ gzip:  10.05 kB[22m
-[2mdist-staging/[22m[36msearch-C0_DoW5k.js          [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
-[2mdist-staging/[22m[36mrotate-ccw-BmF96vlo.js      [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
-[2mdist-staging/[22m[36mupload-C1LhbptO.js          [39m[1m[2m    0.44 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
-[2mdist-staging/[22m[36mchef-hat-7irwteRd.js        [39m[1m[2m    0.51 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
-[2mdist-staging/[22m[36mprinter-CR4ZFpXK.js         [39m[1m[2m    0.52 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
-[2mdist-staging/[22m[36mpackage-CiFA3lA1.js         [39m[1m[2m    0.58 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
-[2mdist-staging/[22m[36mcar-BMRWRqEL.js             [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.41 kB[22m
-[2mdist-staging/[22m[36mfootprints-BtmTwM0y.js      [39m[1m[2m    0.65 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2mdist-staging/[22m[36msearch-BUNOGoHn.js          [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist-staging/[22m[36mrotate-ccw-DrFuN5-d.js      [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist-staging/[22m[36mupload-znPnlNkD.js          [39m[1m[2m    0.44 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist-staging/[22m[36mchef-hat-CIe7oDyd.js        [39m[1m[2m    0.51 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
+[2mdist-staging/[22m[36mprinter-D-BVGpEU.js         [39m[1m[2m    0.52 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
+[2mdist-staging/[22m[36mpackage-Cr5xbk7w.js         [39m[1m[2m    0.58 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[2mdist-staging/[22m[36mcar-WiWqBx2v.js             [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2mdist-staging/[22m[36mfootprints-Bu46Ew5a.js      [39m[1m[2m    0.65 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
 [2mdist-staging/[22m[36mindex.esm-B4Jzzju4.js       [39m[1m[2m    1.35 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
 [2mdist-staging/[22m[36mosm-dRGSVYye.js             [39m[1m[2m    1.42 kB[22m[1m[22m[2m │ gzip:   0.95 kB[22m
-[2mdist-staging/[22m[36mTrips-BR7CACgh.js           [39m[1m[2m    3.02 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
+[2mdist-staging/[22m[36mTrips-fVZpQ9Yd.js           [39m[1m[2m    3.02 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
 [2mdist-staging/[22m[36mplaces-D1Q9TkrR.js          [39m[1m[2m    4.08 kB[22m[1m[22m[2m │ gzip:   2.14 kB[22m
-[2mdist-staging/[22m[36mJoin-DK8n3D8U.js            [39m[1m[2m    4.15 kB[22m[1m[22m[2m │ gzip:   2.12 kB[22m
-[2mdist-staging/[22m[36mplacesDb-C2ln_t9Q.js        [39m[1m[2m    4.70 kB[22m[1m[22m[2m │ gzip:   2.50 kB[22m
-[2mdist-staging/[22m[36mplaceFit-B0PlOYqq.js        [39m[1m[2m    5.19 kB[22m[1m[22m[2m │ gzip:   2.86 kB[22m
-[2mdist-staging/[22m[36mRouteFuel-CJwSTjlg.js       [39m[1m[2m    5.50 kB[22m[1m[22m[2m │ gzip:   2.59 kB[22m
-[2mdist-staging/[22m[36mJournalTab-Dnyktg1Q.js      [39m[1m[2m    6.99 kB[22m[1m[22m[2m │ gzip:   3.17 kB[22m
-[2mdist-staging/[22m[36mMapScreen-Cyqvjg8n.js       [39m[1m[2m    7.36 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
-[2mdist-staging/[22m[36mCook-k3Q-WSUi.js            [39m[1m[2m    7.38 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
-[2mdist-staging/[22m[36mDesignSystem-Di4Uc2Ii.js    [39m[1m[2m    7.72 kB[22m[1m[22m[2m │ gzip:   3.22 kB[22m
-[2mdist-staging/[22m[36mExplore-BsVxJ1u5.js         [39m[1m[2m    8.99 kB[22m[1m[22m[2m │ gzip:   3.78 kB[22m
-[2mdist-staging/[22m[36mIsraelMap-BsjDAUvD.js       [39m[1m[2m    9.51 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
-[2mdist-staging/[22m[36mPlaces-CFxUKXIX.js          [39m[1m[2m   10.00 kB[22m[1m[22m[2m │ gzip:   4.40 kB[22m
-[2mdist-staging/[22m[36mCampSearch-51_J4I8X.js      [39m[1m[2m   10.85 kB[22m[1m[22m[2m │ gzip:   4.92 kB[22m
-[2mdist-staging/[22m[36mTripTypePicker-Z9iycZJp.js  [39m[1m[2m   10.86 kB[22m[1m[22m[2m │ gzip:   3.81 kB[22m
-[2mdist-staging/[22m[36mVehiclePicker-Cid6OW0J.js   [39m[1m[2m   12.82 kB[22m[1m[22m[2m │ gzip:   5.27 kB[22m
-[2mdist-staging/[22m[36mAcademy-D806b5MI.js         [39m[1m[2m   16.46 kB[22m[1m[22m[2m │ gzip:   5.75 kB[22m
-[2mdist-staging/[22m[36mMore-CK5hqMNi.js            [39m[1m[2m   19.48 kB[22m[1m[22m[2m │ gzip:   7.72 kB[22m
-[2mdist-staging/[22m[36mDestination-DvplKGmU.js     [39m[1m[2m   27.60 kB[22m[1m[22m[2m │ gzip:   9.20 kB[22m
-[2mdist-staging/[22m[36mBoxScreen-BdK2Eat3.js       [39m[1m[2m   30.24 kB[22m[1m[22m[2m │ gzip:  12.02 kB[22m
-[2mdist-staging/[22m[36mGear-DH2S-rgL.js            [39m[1m[2m   43.99 kB[22m[1m[22m[2m │ gzip:  14.15 kB[22m
+[2mdist-staging/[22m[36mJoin-jgA0xz-O.js            [39m[1m[2m    4.15 kB[22m[1m[22m[2m │ gzip:   2.12 kB[22m
+[2mdist-staging/[22m[36mplacesDb-llm17yoy.js        [39m[1m[2m    4.70 kB[22m[1m[22m[2m │ gzip:   2.50 kB[22m
+[2mdist-staging/[22m[36mplaceFit-nya3rane.js        [39m[1m[2m    5.19 kB[22m[1m[22m[2m │ gzip:   2.86 kB[22m
+[2mdist-staging/[22m[36mRouteFuel-C3WLoZcm.js       [39m[1m[2m    5.50 kB[22m[1m[22m[2m │ gzip:   2.59 kB[22m
+[2mdist-staging/[22m[36mJournalTab-BMJNbkPU.js      [39m[1m[2m    6.99 kB[22m[1m[22m[2m │ gzip:   3.17 kB[22m
+[2mdist-staging/[22m[36mMapScreen-CAt6Ze8p.js       [39m[1m[2m    7.36 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
+[2mdist-staging/[22m[36mCook-DEG3GlMz.js            [39m[1m[2m    7.38 kB[22m[1m[22m[2m │ gzip:   3.12 kB[22m
+[2mdist-staging/[22m[36mDesignSystem-DuTfycHa.js    [39m[1m[2m    7.72 kB[22m[1m[22m[2m │ gzip:   3.22 kB[22m
+[2mdist-staging/[22m[36mExplore-CpQ5jiWb.js         [39m[1m[2m    8.99 kB[22m[1m[22m[2m │ gzip:   3.77 kB[22m
+[2mdist-staging/[22m[36mIsraelMap-D7qmgTJC.js       [39m[1m[2m    9.51 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
+[2mdist-staging/[22m[36mPlaces-BZqZuywY.js          [39m[1m[2m   10.00 kB[22m[1m[22m[2m │ gzip:   4.40 kB[22m
+[2mdist-staging/[22m[36mCampSearch-DaeIt7eD.js      [39m[1m[2m   10.85 kB[22m[1m[22m[2m │ gzip:   4.92 kB[22m
+[2mdist-staging/[22m[36mTripTypePicker-fQ_XB135.js  [39m[1m[2m   10.86 kB[22m[1m[22m[2m │ gzip:   3.82 kB[22m
+[2mdist-staging/[22m[36mVehiclePicker-B6UcanBN.js   [39m[1m[2m   12.82 kB[22m[1m[22m[2m │ gzip:   5.27 kB[22m
+[2mdist-staging/[22m[36mAcademy-MEeqj41O.js         [39m[1m[2m   16.46 kB[22m[1m[22m[2m │ gzip:   5.75 kB[22m
+[2mdist-staging/[22m[36mMore-BcULv0_E.js            [39m[1m[2m   19.48 kB[22m[1m[22m[2m │ gzip:   7.72 kB[22m
+[2mdist-staging/[22m[36mDestination-BCorNYVm.js     [39m[1m[2m   27.60 kB[22m[1m[22m[2m │ gzip:   9.20 kB[22m
+[2mdist-staging/[22m[36mBoxScreen-D7IFih0B.js       [39m[1m[2m   30.24 kB[22m[1m[22m[2m │ gzip:  12.02 kB[22m
+[2mdist-staging/[22m[36mGear-BzaO6lYT.js            [39m[1m[2m   43.99 kB[22m[1m[22m[2m │ gzip:  14.15 kB[22m
 [2mdist-staging/[22m[36mindex.esm-CCAWpmwl.js       [39m[1m[2m   48.25 kB[22m[1m[22m[2m │ gzip:  11.34 kB[22m
-[2mdist-staging/[22m[36mWizard-BZeqBlr2.js          [39m[1m[2m   78.97 kB[22m[1m[22m[2m │ gzip:  21.12 kB[22m
-[2mdist-staging/[22m[36mTripPlan-BI02JlOe.js        [39m[1m[2m  134.90 kB[22m[1m[22m[2m │ gzip:  43.43 kB[22m
+[2mdist-staging/[22m[36mWizard-DfG6d9IR.js          [39m[1m[2m   78.97 kB[22m[1m[22m[2m │ gzip:  21.12 kB[22m
+[2mdist-staging/[22m[36mTripPlan-iQNrtG9X.js        [39m[1m[2m  134.90 kB[22m[1m[22m[2m │ gzip:  43.42 kB[22m
 [2mdist-staging/[22m[36mindex.esm-D_Ez9UD8.js       [39m[1m[2m  195.98 kB[22m[1m[22m[2m │ gzip:  38.91 kB[22m
-[2mdist-staging/[22m[36mindex-Cx-oaroq.js           [39m[1m[2m  536.29 kB[22m[1m[22m[2m │ gzip: 180.95 kB[22m
+[2mdist-staging/[22m[36mindex-BxqaS_fb.js           [39m[1m[2m  536.46 kB[22m[1m[22m[2m │ gzip: 181.02 kB[22m
 [2mdist-staging/[22m[36mindex.esm-1jP3d1p-.js       [39m[1m[2m  663.33 kB[22m[1m[22m[2m │ gzip: 171.92 kB[22m
-[2mdist-staging/[22m[36mIsraelMapGL-B0yA2Xdq.js     [39m[1m[2m1,065.02 kB[22m[1m[22m[2m │ gzip: 289.32 kB[22m
-[32m✓ built in 8.65s[39m
+[2mdist-staging/[22m[36mIsraelMapGL-354vjFuC.js     [39m[1m[2m1,065.02 kB[22m[1m[22m[2m │ gzip: 289.32 kB[22m
+[32m✓ built in 10.51s[39m
 ```
 
 ## rules
 ```
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mremoving a member[2m > [22mafter removal and key rotation, the removed member loses access and cannot rejoin with the old link
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2monly the organiser can remove members or delete the trip
-[22m[39m[2026-10-31T06:25:02.660Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e106 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:02.661Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e03 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mremoving a member[2m > [22m[2monly the organiser can remove members or delete the trip
-[22m[39m[2026-10-31T06:25:02.680Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e107 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:02.687Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e04 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L79:24 for 'delete' @ L79, false for 'delete' @ L79
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mremoving a member[2m > [22monly the organiser can remove members or delete the trip
  [32m✓[39m tests/rules/rules.test.ts[2m > [22msigning in with Google on a second device[2m > [22mthe organiser hands the trip to their Google id (add it and make it the owner)
  [32m✓[39m tests/rules/rules.test.ts[2m > [22msigning in with Google on a second device[2m > [22ma member re-joins under their Google id with the key they joined with
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2msigning in with Google on a second device[2m > [22m[2ma member cannot add another id for someone else
-[22m[39m[2026-10-31T06:25:02.963Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e110 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:02.961Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e0d error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22msigning in with Google on a second device[2m > [22ma member cannot add another id for someone else
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2msigning in with Google on a second device[2m > [22m[2ma member cannot take ownership
-[22m[39m[2026-10-31T06:25:03.020Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e112 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.029Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e0f error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22msigning in with Google on a second device[2m > [22ma member cannot take ownership
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mpersonal trip index (users/{uid})[2m > [22ma person reads and writes their own list
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mpersonal trip index (users/{uid})[2m > [22m[2mnobody else can read or change someone's list
-[22m[39m[2026-10-31T06:25:03.185Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e119 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.192Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e16 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 false for 'create' @ L130, false for 'update' @ L130
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mpersonal trip index (users/{uid})[2m > [22mnobody else can read or change someone's list
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mpersonal trip index (users/{uid})[2m > [22mlisting every user is not allowed
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22ma member adds a photo as themselves
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2ma member cannot add an item in someone else's name
-[22m[39m[2026-10-31T06:25:03.404Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e122 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.439Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e1f error. Code: 7 Message: 7 PERMISSION_DENIED: 
 false for 'create' @ L121, evaluation error at L122:26 for 'update' @ L122, false for 'create' @ L121
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22ma member cannot add an item in someone else's name
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2manother family cannot delete or overwrite a member's photo
-[22m[39m[2026-10-31T06:25:03.472Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e125 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.510Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e22 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L124:26 for 'delete' @ L124, false for 'delete' @ L124
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2manother family cannot delete or overwrite a member's photo
-[22m[39m[2026-10-31T06:25:03.496Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e126 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.539Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e23 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L121:26 for 'create' @ L121, evaluation error at L122:26 for 'update' @ L122, false for 'update' @ L122
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2manother family cannot delete or overwrite a member's photo
-[22m[39m[2026-10-31T06:25:03.518Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e127 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.570Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e24 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L122:26 for 'update' @ L122, false for 'update' @ L122
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22manother family cannot delete or overwrite a member's photo
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22mthe author edits and deletes their own photo
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2mthe author cannot hand the item to someone else
-[22m[39m[2026-10-31T06:25:03.684Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e12e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:03.740Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e2b error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L122:26 for 'update' @ L122, false for 'update' @ L122
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22mthe author cannot hand the item to someone else
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22mthe organiser may remove any item
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22molder items without an author id stay editable by members (no data migration needed)
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2mjournal and photos: authors own their items[2m > [22m[2ma removed member or a stranger cannot add items
-[22m[39m[2026-10-31T06:25:03.892Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e137 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.025Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e34 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L121:26 for 'create' @ L121, evaluation error at L122:26 for 'update' @ L122, false for 'create' @ L121
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22mjournal and photos: authors own their items[2m > [22ma removed member or a stranger cannot add items
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22mthe shared trip document no longer carries any key
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma member reads only their own family's key
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2mthe organiser reads every key and may replace one; members and strangers may not write
-[22m[39m[2026-10-31T06:25:04.194Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e144 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.352Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e41 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L88:25 for 'create' @ L88, evaluation error at L88:25 for 'update' @ L88, false for 'update' @ L88
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22mthe organiser reads every key and may replace one; members and strangers may not write
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma newcomer with the right key joins: join record, then their own entry (no key in it)
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma join record is readable only by its owner
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2ma wrong key, or the key of another family, is refused
-[22m[39m[2026-10-31T06:25:04.587Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e152 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.694Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e4f error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L97:34 for 'create' @ L97, evaluation error at L97:34 for 'update' @ L97, false for 'create' @ L97
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2ma wrong key, or the key of another family, is refused
-[22m[39m[2026-10-31T06:25:04.614Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e153 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.723Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e50 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L97:34 for 'create' @ L97, evaluation error at L97:34 for 'update' @ L97, false for 'create' @ L97
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma wrong key, or the key of another family, is refused
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2mwithout a join record nobody can add themselves
-[22m[39m[2026-10-31T06:25:04.721Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e156 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.819Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e53 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22mwithout a join record nobody can add themselves
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2ma join record cannot be written for someone else
-[22m[39m[2026-10-31T06:25:04.794Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e159 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:04.915Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e56 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 false for 'create' @ L97, false for 'update' @ L97
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma join record cannot be written for someone else
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2mafter the organiser replaces the key, an old join record no longer lets anyone in
-[22m[39m[2026-10-31T06:25:04.881Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e15d error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:05.052Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e5a error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2mafter the organiser replaces the key, an old join record no longer lets anyone in
-[22m[39m[2026-10-31T06:25:04.901Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e15e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:05.081Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e5b error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L97:34 for 'create' @ L97, evaluation error at L97:34 for 'update' @ L97, false for 'update' @ L97
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22mafter the organiser replaces the key, an old join record no longer lets anyone in
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2man expired link admits nobody, even with the right key
-[22m[39m[2026-10-31T06:25:04.989Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e162 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:05.188Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e5f error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L97:34 for 'create' @ L97, evaluation error at L97:34 for 'update' @ L97, false for 'create' @ L97
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22man expired link admits nobody, even with the right key
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22mthe organiser removes the old keys from the shared document and from member entries
 [90mstderr[2m | tests/rules/rules.test.ts[2m > [22m[2minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22m[2ma member cannot remove or change keys in the shared document
-[22m[39m[2026-10-31T06:25:05.212Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x2215e16a error. Code: 7 Message: 7 PERMISSION_DENIED: 
+[22m[39m[2026-10-31T06:47:05.433Z]  @firebase/firestore: Firestore (12.19.0): GrpcConnection RPC 'Write' stream 0x36844e67 error. Code: 7 Message: 7 PERMISSION_DENIED: 
 evaluation error at L80:24 for 'update' @ L80, false for 'update' @ L80
 
  [32m✓[39m tests/rules/rules.test.ts[2m > [22minvite keys are private to the organiser and to each family (secrets/, joins/)[2m > [22ma member cannot remove or change keys in the shared document
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m59 passed[39m[22m[90m (59)[39m
-[2m   Start at [22m 06:24:57
-[2m   Duration [22m 8.11s[2m (transform 59ms, setup 0ms, collect 174ms, tests 7.58s, environment 0ms, prepare 145ms)[22m
+[2m   Start at [22m 06:46:56
+[2m   Duration [22m 8.58s[2m (transform 65ms, setup 0ms, collect 196ms, tests 8.00s, environment 0ms, prepare 173ms)[22m
 
 [32m[1m✔ [22m[39m Script exited successfully (code 0)
 [36m[1mi  emulators:[22m[39m Shutting down emulators.
@@ -401,6 +401,6 @@ all browser suites passed
 ## deploy
 ```
 To https://github.com/danielbutbika-png/campil
-   080ccf2..2f1c260  main -> main
- * [new tag]         deploy-staging-20261031-0634-6e07c84 -> deploy-staging-20261031-0634-6e07c84
+   2f1c260..2e96b9d  main -> main
+ * [new tag]         deploy-staging-20261031-0656-9e0335e -> deploy-staging-20261031-0656-9e0335e
 ```
