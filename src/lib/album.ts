@@ -131,7 +131,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 // ── Video ──
-export interface VideoOpts { portrait: boolean; perPhoto: number; max: number; music?: File | null; families?: string }
+export interface VideoOpts { portrait: boolean; perPhoto: number; max: number; music?: File | null; track?: { mood: import('./music').Mood; seed: string } | null; families?: string }
 export function videoSupport(): { ok: boolean; mime: string; ext: string } {
   const R = (window as any).MediaRecorder as typeof MediaRecorder | undefined;
   if (!R || !HTMLCanvasElement.prototype.captureStream) return { ok: false, mime: '', ext: '' };
@@ -156,9 +156,10 @@ export async function renderVideo(t: Trip, photos: AlbumPhoto[], o: VideoOpts, o
   let audio: AudioContext | null = null, gain: GainNode | null = null;
   const TITLE = 3.5, END = 3.5, D = o.perPhoto, FADE = Math.min(0.9, D / 3);
   const total = TITLE + imgs.length * D + END;
-  if (o.music) {
+  if (o.music || o.track) {
     audio = new AudioContext();
-    const buf = await audio.decodeAudioData(await o.music.arrayBuffer());
+    // the user's own file, or original music composed on the device for this trip
+    const buf = o.music ? await audio.decodeAudioData(await o.music.arrayBuffer()) : await (await import('./music')).renderMusic(o.track!.mood, o.track!.seed, audio.sampleRate);
     const src = audio.createBufferSource(); src.buffer = buf; src.loop = buf.duration < total;
     gain = audio.createGain(); const dest = audio.createMediaStreamDestination();
     src.connect(gain).connect(dest); gain.gain.setValueAtTime(0, audio.currentTime); gain.gain.linearRampToValueAtTime(1, audio.currentTime + 1.5);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MOODS, renderMusic, type Mood } from '../../lib/music';
 import { ImagePlus, Images, Film, LayoutGrid, Share2, Trash2, Download, Loader2, Music, X, Sparkles, Smartphone, Monitor } from 'lucide-react';
 import type { Trip, AlbumPhoto } from '../../lib/types';
 import { useStore } from '../../lib/store';
@@ -7,7 +8,7 @@ import { deletePhoto } from '../../lib/photos';
 import { useCloud } from '../../lib/cloud/sync';
 import { canChange } from '../../lib/authorship';
 import { addDays, fmtDate, shortDay, todayISO, tripLength } from '../../lib/util';
-import { Button, Sheet, Empty, Badge, Chip, toast } from '../../components/ui';
+import { Button, Sheet, Empty, Badge, Chip, cx, toast } from '../../components/ui';
 import { whoAmI } from '../../components/Collab';
 import { Photo } from './JournalTab';
 
@@ -127,6 +128,8 @@ function VideoMaker({ t, photos, onClose }: { t: Trip; photos: AlbumPhoto[]; onC
   const [per, setPer] = useState(3);
   const [max, setMax] = useState(40);
   const [music, setMusic] = useState<File | null>(null);
+  const [src, setSrc] = useState<'none' | 'original' | 'file'>('original');
+  const [mood, setMood] = useState<Mood>('adventure');
   const [progress, setProgress] = useState<number | null>(null);
   const [out, setOut] = useState<{ url: string; blob: Blob; ext: string } | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -135,7 +138,7 @@ function VideoMaker({ t, photos, onClose }: { t: Trip; photos: AlbumPhoto[]; onC
   const go = async () => {
     abort.current = new AbortController(); setProgress(0); setOut(null);
     let lock: any = null; try { lock = await (navigator as any).wakeLock?.request('screen'); } catch { /* not supported */ }
-    try { const r = await renderVideo(t, photos, { portrait, perPhoto: per, max, music, families: familiesLine(t) }, setProgress, abort.current.signal); setOut({ ...r, url: URL.createObjectURL(r.blob) }); }
+    try { const r = await renderVideo(t, photos, { portrait, perPhoto: per, max, music: src === 'file' ? music : null, track: src === 'original' ? { mood, seed: t.name || t.id } : null, families: familiesLine(t) }, setProgress, abort.current.signal); setOut({ ...r, url: URL.createObjectURL(r.blob) }); }
     catch (e: any) { if (e?.name !== 'AbortError') toast(e?.message ?? 'יצירת הסרטון נכשלה'); }
     lock?.release?.(); setProgress(null);
   };
@@ -159,13 +162,43 @@ function VideoMaker({ t, photos, onClose }: { t: Trip; photos: AlbumPhoto[]; onC
           <div><span className="label">פורמט</span><div className="flex flex-wrap gap-2"><Chip active={portrait} onClick={() => setPortrait(true)}><Smartphone size={14} />לאורך — וואטסאפ / סטורי</Chip><Chip active={!portrait} onClick={() => setPortrait(false)}><Monitor size={14} />לרוחב — טלוויזיה / מחשב</Chip></div></div>
           <div><span className="label">שניות לכל תמונה</span><div className="flex gap-2">{[2, 3, 4.5].map(s => <Chip key={s} active={per === s} onClick={() => setPer(s)}>{s === 2 ? 'מהיר' : s === 3 ? 'רגיל' : 'רגוע'}</Chip>)}</div></div>
           <div><span className="label">כמה תמונות</span><div className="flex gap-2">{[20, 40, 80].map(n => <Chip key={n} active={max === n} onClick={() => setMax(n)}>עד {n}</Chip>)}</div></div>
-          <div><label className="label flex items-center gap-1.5" htmlFor="vm"><Music size={14} />מוזיקה (לא חובה) — קובץ שיר מהטלפון</label>
-            <input id="vm" type="file" accept="audio/*" className="sr-only" onChange={e => setMusic(e.target.files?.[0] ?? null)} />
-            <div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="soft" icon={<Music size={14} />} onClick={() => document.getElementById('vm')?.click()}>{music ? 'החלפת שיר' : 'בחירת שיר'}</Button>{music && <><span className="min-w-0 truncate text-sm font-semibold" dir="auto">{music.name}</span><button className="text-sm text-muted underline" onClick={() => setMusic(null)}>הסרה</button></>}</div>
-            <p className="mt-1 text-xs text-muted">השתמשו בשיר שמותר לכם להשתמש בו. בלי קובץ — הסרטון יהיה שקט.</p></div>
+          <div className="space-y-2"><span className="label flex items-center gap-1.5"><Music size={14} />מוזיקה</span>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="מוזיקה לסרטון">{([['original', 'מוזיקה מקורית'], ['file', 'שיר מהטלפון'], ['none', 'בלי מוזיקה']] as const).map(([v, l]) => <Chip key={v} role="radio" aria-checked={src === v} active={src === v} onClick={() => setSrc(v)}>{l}</Chip>)}</div>
+            {src === 'original' && <MoodPicker mood={mood} setMood={setMood} seed={t.name || t.id} />}
+            {src === 'file' && <>
+              <input id="vm" type="file" accept="audio/*" className="sr-only" onChange={e => setMusic(e.target.files?.[0] ?? null)} />
+              <div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="soft" icon={<Music size={14} />} onClick={() => document.getElementById('vm')?.click()}>{music ? 'החלפת שיר' : 'בחירת שיר'}</Button>{music && <><span className="min-w-0 truncate text-sm font-semibold" dir="auto">{music.name}</span><button className="text-sm text-muted underline" onClick={() => setMusic(null)}>הסרה</button></>}</div>
+              <p className="text-xs text-muted">השתמשו בשיר שמותר לכם להשתמש בו.{!music ? ' בלי קובץ — הסרטון יהיה שקט.' : ''}</p></>}
+          </div>
           <Badge tone="info">אורך הסרטון: כ-{len} שניות</Badge>
         </div>
       )}
     </Sheet>
+  );
+}
+
+/** Original music composed on the device: pick a mood, listen, then it goes into the video. */
+function MoodPicker({ mood, setMood, seed }: { mood: Mood; setMood: (m: Mood) => void; seed: string }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'playing'>('idle');
+  const ref = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
+  const stop = () => { try { ref.current?.src.stop(); ref.current?.ctx.close(); } catch { /* already stopped */ } ref.current = null; setState('idle'); };
+  useEffect(() => stop, []);
+  const play = async () => {
+    stop(); setState('loading');
+    try {
+      const ctx = new AudioContext(); const buf = await renderMusic(mood, seed, ctx.sampleRate);
+      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(); src.stop(ctx.currentTime + Math.min(15, buf.duration));
+      src.onended = () => { if (ref.current?.src === src) stop(); };
+      ref.current = { ctx, src }; setState('playing');
+    } catch { setState('idle'); toast('ההשמעה לא זמינה בדפדפן הזה'); }
+  };
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="סגנון המוזיקה">{MOODS.map(m => (
+        <button key={m.id} type="button" role="radio" aria-checked={mood === m.id} onClick={() => { setMood(m.id); stop(); }} className={cx('min-h-14 rounded-xl2 border p-2.5 text-start', mood === m.id ? 'border-forest bg-forest/10' : 'border-line')}>
+          <span className="block font-bold">{m.name}</span><span className="block text-xs text-muted">{m.blurb}</span></button>))}</div>
+      <Button size="sm" variant="soft" icon={state === 'loading' ? <Loader2 size={14} className="animate-spin" /> : state === 'playing' ? <X size={14} /> : <Music size={14} />} onClick={state === 'playing' ? stop : play}>{state === 'playing' ? 'עצירה' : state === 'loading' ? 'מלחינים…' : 'השמעה (15 שניות)'}</Button>
+      <p className="text-xs text-muted">מוזיקה מקורית שנוצרת בטלפון במיוחד לטיול הזה — בלי זכויות יוצרים של אחרים ובלי אינטרנט. שירים מוכרים (כמו בסטורי של אינסטגרם) מוגנים בזכויות יוצרים, ולכן לא זמינים כאן.</p>
+    </div>
   );
 }
