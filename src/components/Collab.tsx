@@ -5,7 +5,8 @@ import { useStore } from '../lib/store';
 import { useCloud, shareTrip, inviteLink, isOnline, leaveTrip, approve, deny, removeMember, setAccess, signInGoogle, signOutGoogle, restoreFromAccount, setMemberFamily, setInviteExpiry, prepareInvites } from '../lib/cloud/sync';
 import { isGroup, familyById } from '../lib/families';
 import type { Member } from '../lib/cloud/model';
-import { parseFirebaseConfig } from '../lib/cloud/model';
+import { parseFirebaseConfig, inviteMessage } from '../lib/cloud/model';
+import { fmtRange } from '../lib/util';
 import { shareText, tripSummary, whatsappURL } from '../lib/share';
 import { Button, Sheet, Badge, cx, toast } from './ui';
 import { notifyState, requestNotify, showSystem, type NotifyState } from '../lib/cloud/notify';
@@ -65,7 +66,7 @@ export function ShareSheet({ t, open, onClose }: { t: Trip; open: boolean; onClo
   useEffect(() => { if (open && cloud) import('../lib/cloud/sync').then(m => m.transport()).catch(() => {}); }, [open, !!cloud]);
   const act = (f: () => Promise<unknown>, ok: string) => f().then(() => toast(ok)).catch(e => toast(e.message));
   const start = async () => { setBusy(true); try { setLink(await shareTrip(t.id)); toast('הטיול משותף — שלחו את הקישור'); } catch (e: any) { toast(e.message); } setBusy(false); };
-  const msg = link ? `הצטרפו לתכנון "${t.name}" ב-CampIL — רואים ומסמנים יחד בזמן אמת:\n${link}` : '';
+  const msg = link ? inviteMessage({ name: t.name, dates: fmtRange(t.start, t.end) }, link, isGroup(t) && t.shared?.familyId ? familyById(t, t.shared.familyId) ?? null : null) : '';
   const copy = async () => { try { await navigator.clipboard.writeText(link!); toast('הקישור הועתק'); } catch { toast('לא ניתן להעתיק — סמנו את הקישור ידנית'); } };
   return (
     <Sheet open={open} onClose={onClose} title="שיתוף הטיול">
@@ -171,7 +172,7 @@ function FamilyLinks({ t }: { t: Trip }) {
       {t.families!.map((f, i) => {
         const link = inviteLink(t.shared!.cloudId, f);
         if (!link) return <div key={f.id} className="flex items-center gap-2 rounded-xl border-2 p-2.5" style={{ borderColor: f.color + '55' }}><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: f.color }} aria-hidden /><span className="min-w-0 flex-1 font-bold">{f.name}</span><Preparing small /></div>;
-        const msg = `${f.name}, הצטרפו לתכנון "${t.name}" ב-CampIL — הציוד של המשפחה שלכם והציוד המשותף, בזמן אמת:\n${link}`;
+        const msg = inviteMessage({ name: t.name, dates: fmtRange(t.start, t.end) }, link, f);
         return (
           <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-xl border-2 p-2.5" style={{ borderColor: f.color + '55' }}>
             <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: f.color }} aria-hidden />

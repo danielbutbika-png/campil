@@ -1,4 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
+import { parseShortJoin } from './lib/cloud/model';
+/** #/j/<short> → the same query the long invite link carries (the config comes from the build). */
+const shortJoinQuery = (seg: string) => { const p = parseShortJoin(seg); const q = new URLSearchParams(); if (p) { q.set('t', p.t); if (p.k) q.set('k', p.k); if (p.f) q.set('f', p.f); if (p.e) q.set('e', String(p.e)); if (p.a) q.set('a', '1'); } return q; };
 import { Home as HomeI, Map as MapI, Backpack, Compass, MoreHorizontal, Plus, WifiOff } from 'lucide-react';
 import { useRoute, href } from './lib/router';
 import { useOnline } from './lib/hooks';
@@ -77,13 +80,13 @@ export default function App() {
   const cloudCfg = useStore(s => s.settings.cloud);
   // Google sign-in is required. Remembered on the device (googleUid), so the app still opens with no signal.
   // An invite link opens first (it has its own sign-in); automated browsers skip this unless a test asks for it.
-  const showWelcome = !!cloudCfg && !cloudCfg.googleUid && path !== '/join' && (!navigator.webdriver || !!(window as any).__campilWelcome);
+  const showWelcome = !!cloudCfg && !cloudCfg.googleUid && path !== '/join' && parts[0] !== 'j' && (!navigator.webdriver || !!(window as any).__campilWelcome);
   useTripEndReminder();
   useEffect(() => {
     // A Firebase config baked in at build time (VITE_FIREBASE_CONFIG) connects sharing with no setup on the phone.
     const built = import.meta.env.VITE_FIREBASE_CONFIG as string | undefined;
     const st = useStore.getState();
-    if (built && !st.settings.cloud && !location.hash.startsWith('#/join')) { // an invite link brings its own config (Join applies it)
+    if (built && !st.settings.cloud && !location.hash.startsWith('#/join') && !location.hash.startsWith('#/j/')) { // an invite link brings its own config (Join applies it)
       try { st.setSettings({ cloud: { config: JSON.parse(built), myName: st.members.find(m => m.role === 'adult')?.name ?? '' } }); } catch { /* malformed */ } }
     startSync();
   }, []);
@@ -99,6 +102,7 @@ export default function App() {
   else if (path === '/gear/labels') screen = <BoxLabels />;
   else if (parts[0] === 'gear') screen = <Gear tab={parts[1] ?? 'inventory'} />;
   else if (path === '/join') screen = <Join query={query} />;
+  else if (parts[0] === 'j' && parts[1]) screen = <Join query={shortJoinQuery(parts[1])} />;
   else if (path === '/camps') screen = <CampSearch query={query} />;
   else if (path === '/explore') screen = <Explore />;
   else if (parts[0] === 'place' && parts[1]) screen = <Destination id={parts[1]} />;

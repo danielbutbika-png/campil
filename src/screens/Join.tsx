@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Users, Loader2, ShieldCheck, Clock } from 'lucide-react';
 import { useStore } from '../lib/store';
-import { decodeInvite } from '../lib/cloud/model';
+import { decodeInvite, builtConfig } from '../lib/cloud/model';
 import { joinTrip, checkApproval, signInGoogle, transport, useCloud, useJoinStep } from '../lib/cloud/sync';
 import { GoogleG, AccountRow } from '../components/Collab';
 import { Button, Card, toast } from '../components/ui';
@@ -19,7 +19,7 @@ export default function Join({ query }: { query: URLSearchParams }) {
   const [err, setErr] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
   let cfg: Record<string, string> | null = null;
-  try { cfg = c ? decodeInvite(c) : null; } catch { cfg = null; }
+  try { cfg = c ? decodeInvite(c) : builtConfig(); } catch { cfg = null; } // short links carry no config: it's this build's own
 
   // connect early so the Google button and account state are ready
   useEffect(() => { if (cfg) { if (!st.settings.cloud) st.setSettings({ cloud: { config: cfg, myName: '' } }); transport().catch(e => setErr(e.message)); } }, []);

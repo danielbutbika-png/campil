@@ -118,3 +118,40 @@ export function parseFirebaseConfig(text: string): Record<string, string> | null
 }
 export const encodeInvite = (cfg: Record<string, string>) => btoa(unescape(encodeURIComponent(JSON.stringify(cfg)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 export const decodeInvite = (s: string) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/')))));
+
+/** The Firebase config baked into this build (VITE_FIREBASE_CONFIG), if any. */
+export function builtConfig(): Record<string, string> | null {
+  try { const b = import.meta.env.VITE_FIREBASE_CONFIG as string | undefined; return b ? JSON.parse(b) : null; } catch { return null; }
+}
+const sameProject = (a: Record<string, string>, b: Record<string, string> | null) => !!b && a.projectId === b.projectId && a.apiKey === b.apiKey && a.appId === b.appId;
+
+export interface JoinParams { t: string; k?: string; f?: string; e?: number; a?: boolean }
+/** Short invite path: #/j/<trip>_<key>[_f<family>][_e<until, base 36>][_a]. Ids are letters and digits only.
+ *  The Firebase config is left out when it is this build's own (every installed CampIL has it). */
+export function shortJoinPath(p: JoinParams): string {
+  const f = p.f ? `_f${p.f.startsWith('fam-') ? p.f.slice(4) : '~' + p.f}` : '';
+  return `#/j/${p.t}_${p.k ?? ''}${f}${p.e ? `_e${p.e.toString(36)}` : ''}${p.a ? '_a' : ''}`;
+}
+export function parseShortJoin(seg: string): JoinParams | null {
+  const [t, k, ...rest] = decodeURIComponent(seg).split('_'); if (!t || !/^[A-Za-z0-9]{8,40}$/.test(t)) return null;
+  const out: JoinParams = { t, ...(k ? { k } : {}) };
+  for (const r of rest) {
+    if (r.startsWith('f')) out.f = r[1] === '~' ? r.slice(2) : 'fam-' + r.slice(1);
+    else if (r.startsWith('e')) out.e = parseInt(r.slice(1), 36);
+    else if (r === 'a') out.a = true;
+  }
+  return out;
+}
+export const configIsBuilt = (cfg: Record<string, string>) => sameProject(cfg, builtConfig());
+
+/** "משפחת כהן" — a family name as written in an invitation (kept as is if it already says משפחה/משפחת). */
+export const familyTitle = (name: string) => (/^משפח(ת|ה)\s/.test(name.trim()) ? name.trim() : `משפחת ${name.trim()}`);
+/** The WhatsApp / share text of an invitation: who is invited, to what, when — then the link. */
+export function inviteMessage(trip: { name: string; dates?: string }, link: string, family?: { name: string } | null): string {
+  const who = family?.name?.trim() ? `${familyTitle(family.name)}, הנכם מוזמנים` : 'הנכם מוזמנים';
+  return [
+    `${who} ל"${trip.name.trim() || 'טיול'}"${trip.dates ? ` (${trip.dates})` : ''}.`,
+    family ? 'ב-CampIL נתכנן יחד: הציוד של המשפחה שלכם, הציוד המשותף והמשימות — בזמן אמת.' : 'ב-CampIL נתכנן יחד את הציוד, המשימות והתפריט — בזמן אמת.',
+    `להצטרפות: ${link}`,
+  ].join('\n');
+}

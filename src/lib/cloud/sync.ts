@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { useStore } from '../store';
 import type { Trip, JournalEntry, AlbumPhoto } from '../types';
 import { connect, type Transport, type PhotoDoc, type Account, type FamilyDoc } from './transport';
-import { diffTrip, fromDoc, toDoc, randomId, PALETTE, encodeInvite, DELETE, clean, type Member, type Pending, type Access, type TripDoc, type Patch } from './model';
+import { diffTrip, fromDoc, toDoc, randomId, PALETTE, encodeInvite, configIsBuilt, shortJoinPath, DELETE, clean, type Member, type Pending, type Access, type TripDoc, type Patch } from './model';
 import { compressImage, getPhoto, putPhoto, blobToDataURL, dataURLToBlob } from '../photos';
 import { toast } from '../../components/ui';
 import { describeChanges, summarize, showSystem, type Change } from './notify';
@@ -401,6 +401,8 @@ export function inviteLink(cid: string, family?: { id: string; name: string }): 
   const f = family ? `&f=${encodeURIComponent(family.id)}&fn=${encodeURIComponent(family.name)}` : '';
   if (!approved && !key) return null;
   const exp = meta?.invite?.until && !approved ? `&e=${meta.invite.until}` : '';
+  // short link when the connection is this build's own (every installed CampIL has it); the long form otherwise
+  if (configIsBuilt(cfg)) return `${location.origin}${location.pathname}${shortJoinPath({ t: cid, k: approved ? undefined : key, f: family?.id, e: !approved ? meta?.invite?.until : undefined, a: approved })}`;
   return `${location.origin}${location.pathname}#/join?t=${cid}${approved ? '&a=1' : ''}${f}${key && !approved ? `&k=${key}` : ''}${exp}&c=${encodeInvite(cfg)}`;
 }
 /** Organiser: move a partner to another family. */
