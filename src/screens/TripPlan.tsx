@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Share2, Pencil, Trash2, CheckCircle2, CalendarDays, MapPin, Users, ArrowRight, Star } from 'lucide-react';
+import { Compass, Share2, Pencil, Trash2, CheckCircle2, CalendarDays, MapPin, Users, ArrowRight, Star } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useTripWeather } from '../lib/hooks';
 import { fmtRange, tripLength, diffDays, todayISO } from '../lib/util';
@@ -88,6 +88,7 @@ function Plan({ t, tab, st, edit, setEdit, confirmDel, setConfirmDel, finish, se
             <a href={href('/trips')} className="flex items-center gap-1 rounded-full bg-black/30 px-3 py-1.5 text-sm font-bold backdrop-blur"><ArrowRight size={16} />הטיולים שלי</a>
             <div className="flex gap-1.5">
               <button onClick={() => setShare(true)} className="grid h-10 w-10 place-items-center rounded-full bg-black/30 backdrop-blur hover:bg-black/45" aria-label="שיתוף הטיול"><Share2 size={18} /></button>
+              <a href={href(`/discover/${t.id}`)} className="grid h-10 w-10 place-items-center rounded-full bg-black/30 backdrop-blur hover:bg-black/45" aria-label="מגלים בסביבה — קפה, אוכל, מסלולים"><Compass size={18} /></a>
               <button onClick={() => setEdit(true)} className="grid h-10 w-10 place-items-center rounded-full bg-black/30 backdrop-blur hover:bg-black/45" aria-label="עריכת פרטי הטיול"><Pencil size={18} /></button>
               <button onClick={() => setConfirmDel(true)} className="grid h-10 w-10 place-items-center rounded-full bg-black/30 backdrop-blur hover:bg-black/45" aria-label="מחיקת הטיול"><Trash2 size={18} /></button>
             </div>

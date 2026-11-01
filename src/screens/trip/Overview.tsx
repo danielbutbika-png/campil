@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { DiscoverPrompt } from '../../components/DiscoverPrompt';
 import { tripRegions } from '../../services/officialAlerts';
 import { RefreshCw, ChevronLeft, AlertCircle, ListChecks, Tent, Flag, ExternalLink } from 'lucide-react';
 import type { Trip, Site } from '../../lib/types';
@@ -52,6 +53,7 @@ export default function Overview({ t, wx, sites, onFinish }: { t: Trip; wx: Trip
         <Card className="flex flex-wrap items-center gap-3 border-sunset/40 p-4"><Flag className="text-sunset" /><p className="flex-1 font-semibold">הטיול הסתיים. סכמו אותו כדי שההמלצות הבאות ילמדו ממנו.</p><Button size="sm" onClick={onFinish}>סיכום הטיול</Button></Card>
       )}
       {!ended && <AssistantCard t={t} />}
+      {!ended && <DiscoverPrompt t={t} />}
       {!ended && <TripReadiness t={t} />}
       {!ended && <FieldCard t={t} point={wx.point ?? null} />}
       {!ended && <TypeChecks t={t} />}
