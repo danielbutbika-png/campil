@@ -93,7 +93,7 @@ export function SiteSheet({ site, onClose }: { site: Site | null; onClose: () =>
         </div>
         <div className="flex flex-wrap gap-2">
           <PlaceLink siteId={site.id} />
-          <a className="inline-flex h-11 items-center gap-2 rounded-full bg-forest px-4 font-bold text-onforest" href={site.officialUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} />אתר המפעיל</a>
+          <a className="inline-flex h-11 items-center gap-2 rounded-full bg-forest px-4 font-bold text-onforest" href={site.officialUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} />{site.operator === 'rtg' || site.operator === 'kkl' ? 'אתר המפעיל' : 'מידע נוסף'}</a>
           <a className="inline-flex h-11 items-center gap-2 rounded-full bg-raised px-4 font-bold" href={n.waze} target="_blank" rel="noreferrer"><Navigation size={16} />Waze</a>
           <a className="inline-flex h-11 items-center gap-2 rounded-full bg-raised px-4 font-bold" href={n.google} target="_blank" rel="noreferrer"><Navigation size={16} />Google Maps</a>
         </div>
