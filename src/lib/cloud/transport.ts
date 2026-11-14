@@ -6,6 +6,7 @@ import { DELETE, applyPatches, type Patch, type TripDoc, type Member } from './m
 export interface JournalDoc { id: string; author: string; byUid?: string; createdAt: string; date: string; title: string; text: string; loc?: any; photos: Record<string, string>; kind?: undefined }
 /** An album photo, stored next to the journal entries (same access rules) with the JPEG as a data URL. */
 export interface PhotoDoc { id: string; kind: 'photo'; by: string; byUid?: string; takenAt: number; addedAt: number; caption?: string; w: number; h: number; collage?: boolean; data: string }
+/** Where an album photo lives: the group album (journal) or one family's private album. */
 export type SubDoc = JournalDoc | PhotoDoc;
 export interface Account { uid: string; provider: 'anonymous' | 'google'; name?: string; email?: string; photo?: string }
 export interface Transport {
@@ -35,6 +36,10 @@ export interface Transport {
   createFamily(tripId: string, famId: string, d: FamilyDoc): Promise<void>;
   patchFamily(tripId: string, famId: string, patches: Patch[]): Promise<void>;
   watchFamily(tripId: string, famId: string, cb: (d: FamilyDoc | null) => void, onErr?: (e: any) => void): () => void;
+  /** One family's private album (trips/{id}/families/{famId}/photos/{photoId}) — only that family's members read it. */
+  putFamPhoto(tripId: string, famId: string, p: PhotoDoc): Promise<void>;
+  deleteFamPhoto(tripId: string, famId: string, photoId: string): Promise<void>;
+  watchFamPhotos(tripId: string, famId: string, cb: (list: PhotoDoc[]) => void, onErr?: (e: any) => void): () => void;
 }
 export interface TripIndexEntry { name: string; start?: string; at: number }
 export interface FamilyDoc { packing: Record<string, any>; updatedAt?: unknown }
@@ -120,6 +125,9 @@ async function firebaseTransport(config: Record<string, string>): Promise<Transp
       await (fs.updateDoc as any)(fs.doc(db, 'trips', tid, 'families', fid), ...args);
     },
     watchFamily: (tid, fid, cb, onErr) => fs.onSnapshot(fs.doc(db, 'trips', tid, 'families', fid), s => cb(s.exists() ? (s.data() as FamilyDoc) : null), e => onErr?.(e)),
+    putFamPhoto: (tid, fid, p) => fs.setDoc(fs.doc(db, 'trips', tid, 'families', fid, 'photos', p.id), JSON.parse(JSON.stringify(p))),
+    deleteFamPhoto: (tid, fid, pid) => fs.deleteDoc(fs.doc(db, 'trips', tid, 'families', fid, 'photos', pid)),
+    watchFamPhotos: (tid, fid, cb, onErr) => fs.onSnapshot(fs.collection(db, 'trips', tid, 'families', fid, 'photos'), s => cb(s.docs.map(d => d.data() as PhotoDoc)), e => onErr?.(e)),
   };
 }
 
@@ -188,6 +196,17 @@ function localTransport(): Transport {
     watchFamily: (tid, fid, cb, onErr) => {
       if ((window as any).__campilNoFamilies) { setTimeout(() => onErr?.(Object.assign(new Error('denied'), { code: 'permission-denied' }))); return () => {}; }
       return watch(`${tid}/families/${fid}`, () => { read(`${tid}/families/${fid}`).then(cb); });
+    },
+    // `__campilNoFamAlbum` simulates a project whose rules don't have family albums yet
+    putFamPhoto: (tid, fid, p) => serial(async () => {
+      if ((window as any).__campilNoFamilies || (window as any).__campilNoFamAlbum) throw Object.assign(new Error('denied'), { code: 'permission-denied' });
+      const k = `${tid}/families/${fid}/photos`; const d = (await read(k)) ?? {}; d[p.id] = p; await write(k, d);
+    }),
+    deleteFamPhoto: (tid, fid, pid) => serial(async () => { const k = `${tid}/families/${fid}/photos`; const d = (await read(k)) ?? {}; delete d[pid]; await write(k, d); }),
+    watchFamPhotos: (tid, fid, cb, onErr) => {
+      if ((window as any).__campilNoFamilies || (window as any).__campilNoFamAlbum) { setTimeout(() => onErr?.(Object.assign(new Error('denied'), { code: 'permission-denied' }))); return () => {}; }
+      const k = `${tid}/families/${fid}/photos`;
+      return watch(k, () => { read(k).then(d => cb(Object.values(d ?? {}))); });
     },
   };
 }

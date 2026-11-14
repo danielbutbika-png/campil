@@ -52,14 +52,15 @@ export async function prepare(file: Blob): Promise<{ blob: Blob; w: number; h: n
 
 export const newPhotoId = () => 'ph-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-export async function addPhotos(tripId: string, files: File[], by: string, byUid: string | undefined, onEach?: (done: number) => void): Promise<AlbumPhoto[]> {
+/** `fam`: put the photos in that family's private album instead of the group album. */
+export async function addPhotos(tripId: string, files: File[], by: string, byUid: string | undefined, onEach?: (done: number) => void, fam?: string): Promise<AlbumPhoto[]> {
   const out: AlbumPhoto[] = [];
   for (const [i, f] of files.entries()) {
     try {
       const { blob, w, h } = await prepare(f);
       const id = newPhotoId();
       await putPhoto(id, blob);
-      out.push({ id, tripId, by, byUid, takenAt: (await exifDate(f)) ?? f.lastModified ?? Date.now(), addedAt: Date.now(), w, h });
+      out.push({ id, tripId, by, byUid, takenAt: (await exifDate(f)) ?? f.lastModified ?? Date.now(), addedAt: Date.now(), w, h, ...(fam ? { fam } : {}) });
     } catch { /* unreadable file: skip */ }
     onEach?.(i + 1);
   }

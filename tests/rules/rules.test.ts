@@ -24,6 +24,7 @@ const trip = () => ({
 const as = (uid: string, email?: string) => env.authenticatedContext(uid, email ? { email } : {}).firestore();
 const tripRef = (db: any) => doc(db, 'trips', T);
 const fam = (db: any, f: string) => doc(db, 'trips', T, 'families', f);
+const famPhoto = (db: any, f: string, id: string) => doc(db, 'trips', T, 'families', f, 'photos', id);
 const upd = (ref: any, ...pairs: unknown[]) => (updateDoc as any)(ref, ...pairs);
 
 beforeAll(async () => {
@@ -38,6 +39,7 @@ beforeEach(async () => {
     await setDoc(fam(db, 'A'), { packing: { a1: { id: 'a1', name: 'שק שינה של א', packed: false } } });
     await setDoc(fam(db, 'B'), { packing: { b1: { id: 'b1', name: 'תרופה של ב', packed: false } } });
     await setDoc(doc(db, 'trips', T, 'journal', 'p1'), { kind: 'photo', by: 'א', data: 'x' });
+    await setDoc(famPhoto(db, 'B', 'fp1'), { kind: 'photo', by: 'ב', byUid: 'MB', data: 'x' });
   });
 });
 
@@ -65,6 +67,27 @@ describe('families are private from each other', () => {
   it('a member updates only their own family progress', async () => {
     await assertSucceeds(upd(tripRef(as('MA')), 'progress.A', { packed: 1, total: 2 }));
     await assertFails(upd(tripRef(as('MA')), 'progress.B', { packed: 0, total: 9 }));
+  });
+});
+
+describe('family albums are private', () => {
+  it('family B reads its own album', async () => { await assertSucceeds(getDoc(famPhoto(as('MB'), 'B', 'fp1'))); });
+  it('family A cannot read family B photos', async () => { await assertFails(getDoc(famPhoto(as('MA'), 'B', 'fp1'))); });
+  it('the organiser (in family A) cannot read family B photos', async () => { await assertFails(getDoc(famPhoto(as('O'), 'B', 'fp1'))); });
+  it('a stranger cannot read a family album', async () => { await assertFails(getDoc(famPhoto(as('S'), 'B', 'fp1'))); });
+  it('a member adds a photo to their own family album, as themselves', async () => {
+    await assertSucceeds(setDoc(famPhoto(as('MA'), 'A', 'fp2'), { kind: 'photo', by: 'א', byUid: 'MA', data: 'x' }));
+    await assertFails(setDoc(famPhoto(as('MA'), 'A', 'fp3'), { kind: 'photo', by: 'א', byUid: 'O', data: 'x' }));
+  });
+  it('no one adds photos to another family album', async () => {
+    await assertFails(setDoc(famPhoto(as('MA'), 'B', 'fp4'), { kind: 'photo', by: 'א', byUid: 'MA', data: 'x' }));
+    await assertFails(setDoc(famPhoto(as('O'), 'B', 'fp5'), { kind: 'photo', by: 'מ', byUid: 'O', data: 'x' }));
+  });
+  it('only the author changes or removes a family photo', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(famPhoto(ctx.firestore(), 'A', 'fa'), { kind: 'photo', by: 'א', byUid: 'MA', data: 'x' }); });
+    await assertFails(deleteDoc(famPhoto(as('O'), 'A', 'fa')));
+    await assertSucceeds(upd(famPhoto(as('MA'), 'A', 'fa'), 'caption', 'שלום'));
+    await assertSucceeds(deleteDoc(famPhoto(as('MA'), 'A', 'fa')));
   });
 });
 

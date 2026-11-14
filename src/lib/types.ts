@@ -124,7 +124,9 @@ export interface JournalEntry {
 }
 
 /** A photo in a trip's shared album. The image itself is in IndexedDB under `id`. */
-export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: string; takenAt: number; addedAt: number; caption?: string; w: number; h: number; collage?: boolean }
+export interface AlbumPhoto { id: string; tripId: string; by: string; byUid?: string; takenAt: number; addedAt: number; caption?: string; w: number; h: number; collage?: boolean;
+  /** in this family's private album (trips/{id}/families/{fam}/photos) — absent: the group album everyone sees */
+  fam?: string }
 
 /** What a user checked themselves on the operator's site (kept on this device). */
 export interface SiteCheck { at: string; url?: string; booking?: 'required' | 'recommended' | 'none'; access?: 'yes' | 'partial' | 'no'; lodging?: 'yes' | 'no'; note?: string }

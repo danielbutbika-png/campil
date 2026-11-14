@@ -15,8 +15,10 @@ export interface TripMeta { owner: string; access: Access; pending: Record<strin
 export type FamMode = 'pending' | 'on' | 'legacy';
 interface CloudState { status: 'off' | 'connecting' | 'on' | 'error'; error?: string; pending: number; lastSync?: number; uid?: string; account?: Account; members: Record<string, Record<string, Member>>; meta: Record<string, TripMeta>;
   /** invite keys this device may read (organiser: all; a member: their own family's) — never stored in the shared document */
-  keys: Record<string, { all?: string; fam: Record<string, string> }> }
-export const useCloud = create<CloudState>(() => ({ status: 'off', pending: 0, members: {}, meta: {}, keys: {} }));
+  keys: Record<string, { all?: string; fam: Record<string, string> }>;
+  /** my family's private album per trip: 'on' works, 'off' = the project's rules don't allow it yet (photos stay on the device) */
+  famAlbum: Record<string, 'on' | 'off'> }
+export const useCloud = create<CloudState>(() => ({ status: 'off', pending: 0, members: {}, meta: {}, keys: {}, famAlbum: {} }));
 /** Count a write until the server confirms it (Firestore keeps it on the device while offline). */
 function track<T>(p: Promise<T>): Promise<T> {
   useCloud.setState(s => ({ pending: s.pending + 1 }));
@@ -30,6 +32,8 @@ const watchers = new Map<string, () => void>();
 const last = new Map<string, Trip>();
 const lastJ = new Map<string, string>();
 const lastP = new Map<string, string>(); // album photo id → synced metadata
+const moving = new Set<string>(); // photos this device is moving between the group and the family album right now
+const whereP = new Map<string, string>(); // album photo id → where its cloud copy is: 'g' (group album) or 'f:<family id>'
 let started = false;
 // per shared trip: the latest trip document, my family's private document, and whether family documents work
 const mainDocs = new Map<string, TripDoc>();
@@ -125,9 +129,11 @@ function watch(cid: string) {
     const fresh = photos.filter(r => !lastP.has(r.id) && !st.album.some(p => p.id === r.id));
     const incoming: AlbumPhoto[] = [];
     for (const r of photos) {
-      const meta: AlbumPhoto = { id: r.id, tripId: local.id, by: r.by, byUid: r.byUid, takenAt: r.takenAt, addedAt: r.addedAt, caption: r.caption, w: r.w, h: r.h, collage: r.collage };
+      const meta: AlbumPhoto = { id: r.id, tripId: local.id, by: r.by, byUid: r.byUid, takenAt: r.takenAt, addedAt: r.addedAt, caption: r.caption, w: r.w, h: r.h, collage: r.collage, fam: undefined };
+      // a photo this device is moving into the family album: its group copy is on its way out — don't bring it back
+      if (moving.has(r.id)) continue;
       if (!(await getPhoto(r.id).catch(() => null))) await putPhoto(r.id, await dataURLToBlob(r.data));
-      lastP.set(r.id, metaKey(meta));
+      lastP.set(r.id, metaKey(meta)); whereP.set(r.id, 'g');
       const cur = st.album.find(p => p.id === r.id);
       if (!cur || metaKey(cur) !== metaKey(meta)) incoming.push(meta);
     }
@@ -138,7 +144,7 @@ function watch(cid: string) {
       announce(cid, [...(coll ? [{ by: coll.by, text: 'הכין/ה את קולאז׳ הטיול — הוא באלבום' }] : []), ...[...byWho].map(([by, n]) => ({ by, text: n === 1 ? 'הוסיף/ה תמונה לאלבום' : `הוסיף/ה ${n} תמונות לאלבום` }))]);
     }
     const photoIds = new Set(photos.map(r => r.id));
-    for (const p of useStore.getState().album) if (p.tripId === local.id && lastP.has(p.id) && !photoIds.has(p.id)) { lastP.delete(p.id); st.removePhoto(p.id); }
+    for (const p of useStore.getState().album) if (p.tripId === local.id && !p.fam && whereP.get(p.id) === 'g' && lastP.has(p.id) && !photoIds.has(p.id)) { lastP.delete(p.id); whereP.delete(p.id); st.removePhoto(p.id); }
     for (const r of list) {
       if (r.kind === 'photo') continue;
       if (!first && !lastJ.has(r.id) && !st.journal.some(j => j.id === r.id)) announce(cid, [{ by: r.author ?? null, text: `הוסיף/ה ליומן: ${r.title || 'רשומה חדשה'}` }]);
@@ -164,8 +170,36 @@ function follow(cid: string, fid: string | null) {
   const entry = { fid, doc: null as FamilyDoc | null, loaded: false, off: () => {} };
   famDocs.set(cid, entry);
   if (famMode.get(cid) !== 'legacy') famMode.set(cid, 'pending');
-  entry.off = tp.watchFamily(cid, fid, d => { entry.doc = d; entry.loaded = true; if (famMode.get(cid) === 'pending') famMode.set(cid, 'on'); apply(cid); },
+  const offDoc = tp.watchFamily(cid, fid, d => { entry.doc = d; entry.loaded = true; if (famMode.get(cid) === 'pending') famMode.set(cid, 'on'); apply(cid); },
     (e: any) => { if (e?.code === 'permission-denied') { famMode.set(cid, 'legacy'); entry.loaded = true; apply(cid); } });
+  const offAlbum = watchFamAlbum(cid, fid);
+  entry.off = () => { offDoc(); offAlbum(); };
+}
+
+/** My family's private album: photos only my family's members can see. */
+function watchFamAlbum(cid: string, fid: string) {
+  const key = `f:${cid}:${fid}`; const where = `f:${fid}`;
+  return tp!.watchFamPhotos(cid, fid, async list => {
+    useCloud.setState(s => ({ famAlbum: { ...s.famAlbum, [cid]: 'on' } }));
+    const local = tripByCloud(cid); if (!local) return;
+    const st = useStore.getState(); const first = !primed.has(key); primed.add(key);
+    const incoming: AlbumPhoto[] = [];
+    for (const r of list) {
+      const meta: AlbumPhoto = { id: r.id, tripId: local.id, by: r.by, byUid: r.byUid, takenAt: r.takenAt, addedAt: r.addedAt, caption: r.caption, w: r.w, h: r.h, collage: r.collage, fam: fid };
+      const cur = st.album.find(p => p.id === r.id);
+      if (moving.has(r.id)) continue; // this device is moving it to the group album
+      if (!(await getPhoto(r.id).catch(() => null))) await putPhoto(r.id, await dataURLToBlob(r.data));
+      lastP.set(r.id, metaKey(meta)); whereP.set(r.id, where);
+      if (!cur || metaKey(cur) !== metaKey(meta)) incoming.push(meta);
+    }
+    if (incoming.length) st.upsertPhotos(incoming);
+    const fresh = incoming.filter(p => !st.album.some(x => x.id === p.id) && !p.collage);
+    if (!first && fresh.length) { const by = new Map<string, number>(); for (const p of fresh) by.set(p.by, (by.get(p.by) ?? 0) + 1); announce(cid, [...by].map(([b, n]) => ({ by: b, text: n === 1 ? 'הוסיף/ה תמונה לאלבום' : `הוסיף/ה ${n} תמונות לאלבום` }))); }
+    const ids = new Set(list.map(r => r.id));
+    for (const p of useStore.getState().album) if (p.tripId === local.id && p.fam === fid && whereP.get(p.id) === where && !ids.has(p.id)) { lastP.delete(p.id); whereP.delete(p.id); st.removePhoto(p.id); }
+    // photos added while the family album wasn't available yet (kept on this device) go up now
+    for (const p of useStore.getState().album) if (p.tripId === local.id && p.fam === fid && !ids.has(p.id) && !lastP.has(p.id)) { lastP.set(p.id, metaKey(p)); track(pushPhoto(p, cid)).catch(() => lastP.delete(p.id)); }
+  }, (e: any) => { if (e?.code === 'permission-denied') useCloud.setState(s => ({ famAlbum: { ...s.famAlbum, [cid]: 'off' } })); });
 }
 
 /** Rebuild the local trip from the trip document + my family's document, announce partners' changes, migrate. */
@@ -304,11 +338,20 @@ function push(cid: string, base: Trip, t: Trip) {
   if (main.length) track(tp.patch(cid, main)).catch(err => { useCloud.setState({ status: 'error', error: err.message }); toast('השינוי נשמר במכשיר ויסונכרן כשהחיבור יחזור'); });
 }
 
-const metaKey = (p: AlbumPhoto) => JSON.stringify([p.by, p.takenAt, p.caption ?? '', p.collage ?? false]);
+const metaKey = (p: AlbumPhoto) => JSON.stringify([p.by, p.takenAt, p.caption ?? '', p.collage ?? false, p.fam ?? '']);
+/** Upload a photo to where it belongs (group album or my family's album), then remove the copy from where it was. */
 async function pushPhoto(p: AlbumPhoto, cid: string) {
   const b = await getPhoto(p.id); if (!b) return;
-  await tp!.putEntry(cid, JSON.parse(JSON.stringify({ id: p.id, kind: 'photo', by: p.by, byUid: p.byUid ?? tp!.uid, takenAt: p.takenAt, addedAt: p.addedAt, caption: p.caption, w: p.w, h: p.h, collage: p.collage, data: await blobToDataURL(b) })));
+  const doc: PhotoDoc = JSON.parse(JSON.stringify({ id: p.id, kind: 'photo', by: p.by, byUid: p.byUid ?? tp!.uid, takenAt: p.takenAt, addedAt: p.addedAt, caption: p.caption, w: p.w, h: p.h, collage: p.collage, data: await blobToDataURL(b) }));
+  const to = p.fam ? `f:${p.fam}` : 'g'; const was = whereP.get(p.id);
+  const move = !!was && was !== to; if (move) moving.add(p.id);
+  try {
+    if (p.fam) await tp!.putFamPhoto(cid, p.fam, doc); else await tp!.putEntry(cid, doc);
+    whereP.set(p.id, to);
+    if (move) await dropPhoto(cid, p.id, was!).catch(() => {});
+  } finally { if (move) setTimeout(() => moving.delete(p.id), 1500); }
 }
+const dropPhoto = (cid: string, id: string, where: string) => (where === 'g' ? tp!.deleteEntry(cid, id) : tp!.deleteFamPhoto(cid, where.slice(2), id));
 
 async function pushJournal(e: JournalEntry, cid: string) {
   const photos: Record<string, string> = {};
@@ -353,9 +396,12 @@ export async function startSync() {
       for (const p of s.album) {
         const t = s.trips.find(x => x.id === p.tripId); if (!t?.shared) continue;
         const k = metaKey(p); if (lastP.get(p.id) === k) continue;
-        lastP.set(p.id, k); track(pushPhoto(p, t.shared.cloudId)).catch(() => { lastP.delete(p.id); toast('תמונה לא סונכרנה — ננסה שוב'); });
+        if (p.fam && useCloud.getState().famAlbum[t.shared.cloudId] === 'off') continue; // kept on the device until the family album works
+        lastP.set(p.id, k); track(pushPhoto(p, t.shared.cloudId)).catch((e: any) => { lastP.delete(p.id);
+          if (p.fam && e?.code === 'permission-denied') { useCloud.setState(c => ({ famAlbum: { ...c.famAlbum, [t.shared!.cloudId]: 'off' } })); toast('התמונה נשמרה רק במכשיר — האלבום המשפחתי עוד לא פעיל בענן'); }
+          else toast('תמונה לא סונכרנה — ננסה שוב'); });
       }
-      for (const p of prev.album) if (!s.album.some(x => x.id === p.id)) { const t = s.trips.find(x => x.id === p.tripId); if (t?.shared && lastP.has(p.id)) { lastP.delete(p.id); tp.deleteEntry(t.shared.cloudId, p.id).catch(() => {}); } }
+      for (const p of prev.album) if (!s.album.some(x => x.id === p.id)) { const t = s.trips.find(x => x.id === p.tripId); const w = whereP.get(p.id); if (t?.shared && lastP.has(p.id)) { lastP.delete(p.id); whereP.delete(p.id); dropPhoto(t.shared.cloudId, p.id, w ?? (p.fam ? `f:${p.fam}` : 'g')).catch(() => {}); } }
     }
   });
   const beat = () => { if (document.visibilityState !== 'visible' || !tp) return; for (const cid of watchers.keys()) tp.patch(cid, [{ path: ['members', tp.uid, 'lastSeen'], value: Date.now() }]).catch(() => {}); };

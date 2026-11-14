@@ -3,6 +3,7 @@ rules_version = '2';
 //
 // trips/{tripId}                    the shared trip: plan, shared gear, menu, schedule, members, invite keys
 // trips/{tripId}/families/{famId}   one family's private gear — readable/writable only by that family's members
+// trips/{tripId}/families/{famId}/photos/{id}  that family's private album — that family's members only
 // trips/{tripId}/secrets/{all|fam-<id>}  invite keys — the organiser, and members of that family only
 // trips/{tripId}/joins/{uid}  a newcomer's key, readable only by them, checked when they add themselves
 // trips/{tripId}/journal/{entryId}  journal entries and album photos — members only
@@ -107,6 +108,18 @@ service cloud.firestore {
         allow read, update, delete: if inFamily();
         // the organiser seeds a family's starting list once (it can't read it back afterwards)
         allow create: if inFamily() || (request.auth != null && trip().owner == request.auth.uid);
+      }
+
+      // A family's private album: only that family's members see it (not the organiser, not other families).
+      // Each member adds photos as themselves and changes or removes only their own.
+      match /families/{famId}/photos/{photoId} {
+        function trip8() { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
+        function inFamily8() { return request.auth != null && request.auth.uid in trip8().members && trip8().members[request.auth.uid].get('familyId', null) == famId; }
+        function mine8() { return resource.data.get('byUid', null) == request.auth.uid; }
+        allow read: if inFamily8();
+        allow create: if inFamily8() && request.resource.data.get('byUid', '') == request.auth.uid;
+        allow update: if inFamily8() && mine8() && request.resource.data.get('byUid', '') == request.auth.uid;
+        allow delete: if inFamily8() && mine8();
       }
 
       // Journal entries and album photos: every member reads them; only the author changes or deletes their own
